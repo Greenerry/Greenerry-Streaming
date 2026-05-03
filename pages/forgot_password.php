@@ -8,10 +8,10 @@ $emailValue = trim($_POST['email'] ?? '');
 $motivoValue = trim($_POST['motivo'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $err = validate_email($emailValue);
+    $err = verify_csrf_request() ?? validate_email($emailValue);
 
     if (!$err && mb_strlen($motivoValue) > 500) {
-        $err = 'O pedido nao pode ter mais de 500 caracteres.';
+        $err = tr('error.reset_request_long');
     }
 
     if (!$err) {
@@ -19,18 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = db_one($conn, "SELECT idCliente, email, nome FROM cliente WHERE email = '{$emailSafe}' LIMIT 1");
 
         if (!$user) {
-            $err = 'Nao existe nenhuma conta com esse email.';
+            $err = tr('error.account_not_found');
         } else {
             $motivoSafe = db_escape($conn, $motivoValue);
             $sql = "INSERT INTO pedido_reset_password (idCliente, email, motivo, estado)
                     VALUES (" . (int)$user['idCliente'] . ", '{$emailSafe}', '{$motivoSafe}', 'pendente')";
 
             if (mysqli_query($conn, $sql)) {
-                $ok = 'Pedido enviado. O admin ira analisar e responder manualmente.';
+                $ok = tr('success.reset_request');
                 $emailValue = '';
                 $motivoValue = '';
             } else {
-                $err = 'Nao foi possivel registar o pedido.';
+                $err = tr('error.reset_request_save');
             }
         }
     }
@@ -64,6 +64,7 @@ include '../includes/header.php';
     <div class="card surface-card surface-card--soft">
       <div class="card-body">
         <form method="post" class="stack-form" novalidate>
+          <?= csrf_input() ?>
           <div class="fg">
             <label class="flabel" for="email">Email</label>
             <input id="email" type="email" name="email" class="finput" required maxlength="150" value="<?= h($emailValue) ?>">

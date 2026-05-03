@@ -40,23 +40,23 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="library-hero hero-card--single">
       <div class="library-hero-copy">
-        <span class="slabel">Biblioteca</span>
-        <h2>A tua biblioteca.</h2>
+        <span class="slabel" data-t="library_label">Biblioteca</span>
+        <h2 data-t="library_title">A tua biblioteca.</h2>
       </div>
     </div>
 
     <section class="library-section">
       <div class="section-band">
         <div class="page-intro">
-          <span class="slabel">Faixas</span>
-          <h2>Favoritas</h2>
+          <span class="slabel" data-t="library_tracks_label">Faixas</span>
+          <h2 data-t="library_favourites_title">Favoritas</h2>
         </div>
       </div>
 
       <div id="favs-empty" class="cart-empty-state is-hidden">
         <div class="cart-empty-icon">Fav</div>
-        <h3>Ainda nao tens favoritas.</h3>
-        <a href="music.php" class="btn btn-ghost btn-sm">Descobrir musica</a>
+        <h3 data-t="library_empty_favourites">Ainda nao tens favoritas.</h3>
+        <a href="music.php" class="btn btn-ghost btn-sm" data-t="library_discover_music">Descobrir musica</a>
       </div>
 
       <div class="grid stg" id="favs-grid"></div>
@@ -65,21 +65,21 @@ include '../includes/header.php';
     <section class="library-section">
       <div class="section-band">
         <div class="page-intro">
-          <span class="slabel">Artistas</span>
-          <h2>A seguir</h2>
+          <span class="slabel" data-t="library_artists_label">Artistas</span>
+          <h2 data-t="library_following_title">A seguir</h2>
         </div>
       </div>
 
       <?php if (!is_user_logged_in()): ?>
         <div class="card surface-card surface-card--soft">
           <div class="card-body">
-            <p>Faz login para guardares artistas.</p>
+            <p data-t="library_login_artists">Faz login para guardares artistas.</p>
           </div>
         </div>
       <?php elseif (!$followedArtists): ?>
         <div class="card surface-card surface-card--soft">
           <div class="card-body">
-            <p>Ainda nao segues artistas.</p>
+            <p data-t="library_no_following">Ainda nao segues artistas.</p>
           </div>
         </div>
       <?php else: ?>

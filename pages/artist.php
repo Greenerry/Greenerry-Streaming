@@ -13,6 +13,55 @@ if (!$artist) {
     exit;
 }
 
+$perPage = 20;
+$releasePage = max(1, (int)($_GET['rel_page'] ?? 1));
+$productPage = max(1, (int)($_GET['merch_page'] ?? 1));
+
+$totalReleases = (int)(db_one(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM release_musical
+     WHERE idCliente = {$artistId}
+       AND estado = 'aprovado'
+       AND ativo = 1"
+)['total'] ?? 0);
+$totalTracks = (int)(db_one(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM faixa f
+     JOIN release_musical r ON r.idRelease = f.idRelease
+     WHERE r.idCliente = {$artistId}
+       AND r.estado = 'aprovado'
+       AND r.ativo = 1
+       AND f.estado = 'aprovada'
+       AND f.ativo = 1"
+)['total'] ?? 0);
+$totalProducts = (int)(db_one(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM produto
+     WHERE idCliente = {$artistId}
+       AND estado = 'aprovado'
+       AND ativo = 1"
+)['total'] ?? 0);
+
+$releasePages = max(1, (int)ceil($totalReleases / $perPage));
+$productPages = max(1, (int)ceil($totalProducts / $perPage));
+$releasePage = min($releasePage, $releasePages);
+$productPage = min($productPage, $productPages);
+$releaseOffset = ($releasePage - 1) * $perPage;
+$productOffset = ($productPage - 1) * $perPage;
+
+$artistPageUrl = static function (string $key, int $targetPage) use ($artistId, $releasePage, $productPage): string {
+    $query = [
+        'id' => $artistId,
+        'rel_page' => $releasePage,
+        'merch_page' => $productPage,
+        $key => $targetPage
+    ];
+    return 'artist.php?' . http_build_query($query);
+};
+
 $releases = db_all(
     $conn,
     "SELECT r.*, COUNT(f.idFaixa) AS total_faixas
@@ -22,28 +71,8 @@ $releases = db_all(
        AND r.estado = 'aprovado'
        AND r.ativo = 1
      GROUP BY r.idRelease
-     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC"
-);
-
-$tracks = db_all(
-    $conn,
-    "SELECT
-        f.idFaixa,
-        f.titulo,
-        f.numero_faixa,
-        f.ficheiro_audio,
-        r.idRelease,
-        r.titulo AS release_titulo,
-        r.tipo,
-        r.capa
-     FROM faixa f
-     JOIN release_musical r ON r.idRelease = f.idRelease
-     WHERE r.idCliente = {$artistId}
-       AND r.estado = 'aprovado'
-       AND r.ativo = 1
-       AND f.estado = 'aprovada'
-       AND f.ativo = 1
-     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC, f.numero_faixa ASC"
+     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC
+     LIMIT {$perPage} OFFSET {$releaseOffset}"
 );
 
 $products = db_all(
@@ -54,7 +83,8 @@ $products = db_all(
      WHERE p.idCliente = {$artistId}
        AND p.estado = 'aprovado'
        AND p.ativo = 1
-     ORDER BY p.created_at DESC"
+     ORDER BY p.created_at DESC
+     LIMIT {$perPage} OFFSET {$productOffset}"
 );
 
 $viewerId = current_user_id();
@@ -64,30 +94,38 @@ $followMessage = '';
 
 if ($viewerId > 0 && !$isOwnArtistPage) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['artist_action'] ?? '') === 'toggle_follow') {
-        $existingFollow = db_one(
-            $conn,
-            "SELECT idSeguirArtista
-             FROM seguir_artista
-             WHERE idSeguidor = {$viewerId}
-               AND idArtista = {$artistId}
-             LIMIT 1"
-        );
+        $followMessage = verify_csrf_request() ?? '';
 
-        if ($existingFollow) {
-            mysqli_query(
+        if ($followMessage === '') {
+            $existingFollow = db_one(
                 $conn,
-                "DELETE FROM seguir_artista
+                "SELECT idSeguirArtista
+                 FROM seguir_artista
                  WHERE idSeguidor = {$viewerId}
-                   AND idArtista = {$artistId}"
+                   AND idArtista = {$artistId}
+                 LIMIT 1"
             );
-            $followMessage = 'Deixaste de seguir este artista.';
-        } else {
-            mysqli_query(
-                $conn,
-                "INSERT INTO seguir_artista (idSeguidor, idArtista)
-                 VALUES ({$viewerId}, {$artistId})"
-            );
-            $followMessage = 'Agora segues este artista.';
+
+            if ($existingFollow) {
+                mysqli_query(
+                    $conn,
+                    "DELETE FROM seguir_artista
+                     WHERE idSeguidor = {$viewerId}
+                       AND idArtista = {$artistId}"
+                );
+                $followMessage = current_lang() === 'en'
+                    ? 'You stopped following this artist.'
+                    : 'Deixaste de seguir este artista.';
+            } else {
+                mysqli_query(
+                    $conn,
+                    "INSERT INTO seguir_artista (idSeguidor, idArtista)
+                     VALUES ({$viewerId}, {$artistId})"
+                );
+                $followMessage = current_lang() === 'en'
+                    ? 'You are now following this artist.'
+                    : 'Agora segues este artista.';
+            }
         }
     }
 
@@ -128,6 +166,7 @@ include '../includes/header.php';
       <?php endif; ?>
       <?php if ($viewerId > 0 && !$isOwnArtistPage): ?>
         <form method="post" class="artist-hero-actions">
+          <?= csrf_input() ?>
           <input type="hidden" name="artist_action" value="toggle_follow">
           <button type="submit" class="btn <?= $isFollowingArtist ? 'btn-outline' : 'btn-dark' ?>">
             <?= $isFollowingArtist ? 'A seguir' : 'Seguir artista' ?>
@@ -142,15 +181,15 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="artist-overview">
       <div class="stat">
-        <div class="stat-val"><?= count($releases) ?></div>
+        <div class="stat-val"><?= $totalReleases ?></div>
         <div class="stat-lbl" data-t="artist_stat_releases">Releases</div>
       </div>
       <div class="stat">
-        <div class="stat-val"><?= count($tracks) ?></div>
+        <div class="stat-val"><?= $totalTracks ?></div>
         <div class="stat-lbl" data-t="artist_stat_tracks">Tracks</div>
       </div>
       <div class="stat">
-        <div class="stat-val"><?= count($products) ?></div>
+        <div class="stat-val"><?= $totalProducts ?></div>
         <div class="stat-lbl" data-t="artist_stat_products">Products</div>
       </div>
     </div>
@@ -162,7 +201,7 @@ include '../includes/header.php';
 
     <div class="grid stg">
       <?php foreach ($releases as $release): ?>
-        <div class="mcard">
+        <a class="mcard" href="release.php?id=<?= (int)$release['idRelease'] ?>">
           <div class="cover">
             <?php if (!empty($release['capa'])): ?>
               <img src="<?= h(asset_url('img', $release['capa'])) ?>" alt="<?= h($release['titulo']) ?>">
@@ -171,46 +210,27 @@ include '../includes/header.php';
           <div class="meta">
             <span class="badge badge-dark"><?= h($release['tipo']) ?></span>
             <h4><?= h($release['titulo']) ?></h4>
-            <div class="sub"><?= (int)$release['total_faixas'] ?> track(s)</div>
+            <div class="sub"><?= (int)$release['total_faixas'] ?> <span data-t="release_tracks_count">faixas</span></div>
           </div>
-        </div>
+        </a>
       <?php endforeach; ?>
     </div>
 
-    <div class="page-intro mt8">
-      <span class="slabel" data-t="artist_tracks_label">Tracks</span>
-      <h2 data-t="artist_tracks_title">Tracks</h2>
-    </div>
-
-    <div class="grid stg">
-      <?php foreach ($tracks as $track): ?>
-        <?php
-        $payload = [
-            'id' => (int)$track['idFaixa'],
-            'title' => $track['titulo'],
-            'artist' => $artist['nome'],
-            'cover' => asset_url('img', $track['capa']),
-            'audio' => asset_url('audio', $track['ficheiro_audio']),
-            'artistId' => $artistId,
-            'artistFoto' => asset_url('img', $artist['foto']),
-            'type' => $track['tipo'],
-            'releaseKey' => $track['idRelease'] . '-' . $artistId
-        ];
-        ?>
-        <div class="mcard" onclick="playTrack('<?= h(addslashes($track['titulo'])) ?>','<?= h(addslashes($artist['nome'])) ?>','<?= h($payload['cover']) ?>','<?= h($payload['audio']) ?>',<?= $artistId ?>,'<?= h($payload['artistFoto']) ?>',<?= (int)$track['idFaixa'] ?>)" data-track='<?= json_encode($payload) ?>'>
-          <div class="cover">
-            <?php if (!empty($track['capa'])): ?>
-              <img src="<?= h(asset_url('img', $track['capa'])) ?>" alt="<?= h($track['titulo']) ?>">
-            <?php endif; ?>
-            <div class="cover-ov"><button class="pbt">Play</button></div>
-          </div>
-          <div class="meta">
-            <h4><?= h($track['titulo']) ?></h4>
-            <div class="sub"><?= h($track['release_titulo']) ?></div>
-          </div>
-        </div>
-      <?php endforeach; ?>
-    </div>
+    <?php if ($releasePages > 1): ?>
+      <nav class="pager" aria-label="Pagination">
+        <?php if ($releasePage > 1): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= h($artistPageUrl('rel_page', $releasePage - 1)) ?>" data-t="pagination_previous">Anterior</a>
+        <?php else: ?>
+          <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+        <?php endif; ?>
+        <span class="pager-status"><span data-t="pagination_page">Pagina</span> <?= $releasePage ?> <span data-t="pagination_of">de</span> <?= $releasePages ?></span>
+        <?php if ($releasePage < $releasePages): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= h($artistPageUrl('rel_page', $releasePage + 1)) ?>" data-t="pagination_next">Seguinte</a>
+        <?php else: ?>
+          <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+        <?php endif; ?>
+      </nav>
+    <?php endif; ?>
 
     <?php if ($products): ?>
       <div class="page-intro mt8">
@@ -234,6 +254,22 @@ include '../includes/header.php';
           </a>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($productPages > 1): ?>
+        <nav class="pager" aria-label="Pagination">
+          <?php if ($productPage > 1): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($artistPageUrl('merch_page', $productPage - 1)) ?>" data-t="pagination_previous">Anterior</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+          <?php endif; ?>
+          <span class="pager-status"><span data-t="pagination_page">Pagina</span> <?= $productPage ?> <span data-t="pagination_of">de</span> <?= $productPages ?></span>
+          <?php if ($productPage < $productPages): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($artistPageUrl('merch_page', $productPage + 1)) ?>" data-t="pagination_next">Seguinte</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 </section>

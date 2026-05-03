@@ -35,6 +35,21 @@ $items = db_all(
 );
 
 $payment = db_one($conn, "SELECT * FROM pagamento WHERE idEncomenda = {$orderId} LIMIT 1");
+$receiptTitle = tr('receipt.title', ['id' => (string)$orderId]);
+$receiptCustomer = tr('receipt.customer');
+$receiptDetails = tr('receipt.details');
+$receiptDate = tr('receipt.date');
+$receiptStatus = tr('receipt.status');
+$receiptPayment = tr('receipt.payment');
+$receiptDelivery = tr('receipt.delivery');
+$receiptProduct = tr('receipt.product');
+$receiptQty = tr('receipt.qty');
+$receiptPrice = tr('receipt.price');
+$receiptLine = tr('receipt.line');
+$receiptSubtotal = tr('receipt.subtotal');
+$receiptVat = tr('receipt.vat');
+$receiptTotal = tr('receipt.total');
+$receiptFooter = tr('receipt.footer');
 
 $html = '<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
@@ -54,27 +69,27 @@ td{padding:12px 10px;border-bottom:1px solid #e4e9e6;color:#1f3028;}
 .foot{margin-top:24px;font-size:11px;color:#7f8b84;text-align:center;}
 </style></head><body>
 <div class="brand">GREENERRY</div>
-<div class="sub">Recibo da encomenda #' . (int)$orderId . '</div>
+<div class="sub">' . h($receiptTitle) . '</div>
 
 <div class="panel">
   <div class="row">
     <div class="col">
-      <div class="label">Cliente</div>
+      <div class="label">' . h($receiptCustomer) . '</div>
       <p class="value"><strong>' . h($order['nome']) . '</strong></p>
       <p class="value">' . h($order['email']) . '</p>
       ' . ($order['nif'] ? '<p class="value">NIF: ' . h($order['nif']) . '</p>' : '') . '
     </div>
     <div class="col right">
-      <div class="label">Detalhes</div>
-      <p class="value">Data: <strong>' . date('d/m/Y', strtotime($order['created_at'])) . '</strong></p>
-      <p class="value">Estado: <strong>' . h(order_status_label($order['estado_encomenda'])) . '</strong></p>
-      <p class="value">Pagamento: <strong>' . h(payment_method_label($order['metodo_pagamento'])) . '</strong></p>
+      <div class="label">' . h($receiptDetails) . '</div>
+      <p class="value">' . h($receiptDate) . ': <strong>' . date('d/m/Y', strtotime($order['created_at'])) . '</strong></p>
+      <p class="value">' . h($receiptStatus) . ': <strong>' . h(order_status_label($order['estado_encomenda'])) . '</strong></p>
+      <p class="value">' . h($receiptPayment) . ': <strong>' . h(payment_method_label($order['metodo_pagamento'])) . '</strong></p>
     </div>
   </div>
 </div>
 
 <div class="panel">
-  <div class="label">Entrega</div>
+  <div class="label">' . h($receiptDelivery) . '</div>
   <p class="value"><strong>' . h($order['nome_destinatario'] ?? $order['nome']) . '</strong></p>
   <p class="value">' . h($order['morada'] ?? '') . '</p>
   <p class="value">' . h(trim(($order['codigo_postal'] ?? '') . ' ' . ($order['cidade'] ?? ''))) . '</p>
@@ -85,10 +100,10 @@ td{padding:12px 10px;border-bottom:1px solid #e4e9e6;color:#1f3028;}
 <table>
   <thead>
     <tr>
-      <th>Produto</th>
-      <th>Qtd</th>
-      <th>Preco</th>
-      <th style="text-align:right">Linha</th>
+      <th>' . h($receiptProduct) . '</th>
+      <th>' . h($receiptQty) . '</th>
+      <th>' . h($receiptPrice) . '</th>
+      <th style="text-align:right">' . h($receiptLine) . '</th>
     </tr>
   </thead>
   <tbody>';
@@ -104,21 +119,21 @@ foreach ($items as $item) {
 
 $html .= '
     <tr class="totals">
-      <td colspan="3">Subtotal</td>
+      <td colspan="3">' . h($receiptSubtotal) . '</td>
       <td style="text-align:right">' . h(format_eur((float)$order['subtotal'])) . '</td>
     </tr>
     <tr class="totals">
-      <td colspan="3">IVA</td>
+      <td colspan="3">' . h($receiptVat) . '</td>
       <td style="text-align:right">' . h(format_eur((float)$order['iva_total'])) . '</td>
     </tr>
     <tr class="totals">
-      <td colspan="3">Total final</td>
+      <td colspan="3">' . h($receiptTotal) . '</td>
       <td style="text-align:right">' . h(format_eur((float)$order['total_final'])) . '</td>
     </tr>
   </tbody>
 </table>
 
-<div class="foot">Greenerry receipt generated for school demonstration use.</div>
+<div class="foot">' . h($receiptFooter) . '</div>
 </body></html>';
 
 $autoload = __DIR__ . '/../vendor/autoload.php';

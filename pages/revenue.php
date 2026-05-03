@@ -35,36 +35,36 @@ include '../includes/header.php';
 <section class="content-shell">
   <div class="wrap">
     <div class="page-intro">
-      <span class="slabel">Rendimento</span>
-      <h2>Resumo das vendas</h2>
-      <p>Os ganhos sao calculados a partir do valor artistico registado em cada item da encomenda.</p>
+      <span class="slabel" data-t="revenue_label">Rendimento</span>
+      <h2 data-t="revenue_title">Resumo das vendas</h2>
+      <p data-t="revenue_intro">Os ganhos sao calculados a partir do valor artistico registado em cada item da encomenda.</p>
     </div>
 
     <div class="stats-grid">
       <div class="stat">
         <div class="stat-val"><?= h(format_eur((float)($summary['total_artist_value'] ?? 0))) ?></div>
-        <div class="stat-lbl">Valor recebido</div>
+        <div class="stat-lbl" data-t="revenue_received">Valor recebido</div>
       </div>
       <div class="stat">
         <div class="stat-val"><?= (int)($summary['total_orders'] ?? 0) ?></div>
-        <div class="stat-lbl">Encomendas entregues</div>
+        <div class="stat-lbl" data-t="revenue_orders">Encomendas entregues</div>
       </div>
       <div class="stat">
         <div class="stat-val"><?= (int)($summary['total_items'] ?? 0) ?></div>
-        <div class="stat-lbl">Itens vendidos</div>
+        <div class="stat-lbl" data-t="revenue_items">Itens vendidos</div>
       </div>
       <div class="stat">
         <div class="stat-val"><?= h(format_eur((float)($summary['total_commission'] ?? 0))) ?></div>
-        <div class="stat-lbl">Comissao da plataforma</div>
+        <div class="stat-lbl" data-t="revenue_commission">Comissao da plataforma</div>
       </div>
     </div>
 
     <div class="card surface-card mt8">
       <div class="card-body">
-        <h3 class="section-card-title">Movimentos recentes</h3>
+        <h3 class="section-card-title" data-t="revenue_recent">Movimentos recentes</h3>
 
         <?php if (!$sales): ?>
-          <p>Ainda nao tens vendas registadas.</p>
+          <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
         <?php else: ?>
           <div class="tbl-wrap">
             <table>
@@ -86,8 +86,8 @@ include '../includes/header.php';
                     <td><?= h($sale['nome_produto']) ?></td>
                     <td><?= (int)$sale['quantidade'] ?></td>
                     <td><span class="badge <?= h(state_badge_class($sale['estado_item'])) ?>"><?= h(order_status_label($sale['estado_item'])) ?></span></td>
-                    <td><?= h(format_eur((float)$sale['valor_artista'])) ?></td>
-                    <td><?= h(format_eur((float)$sale['comissao_valor'])) ?></td>
+                    <td><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['valor_artista'])) ?></td>
+                    <td><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['comissao_valor'])) ?></td>
                     <td><?= date('d/m/Y', strtotime($sale['created_at'])) ?></td>
                   </tr>
                 <?php endforeach; ?>

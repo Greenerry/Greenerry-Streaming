@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/config.php';
 
 if (!is_user_logged_in()) {
     http_response_code(401);
-    echo json_encode(['error' => 'Nao autenticado'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => tr('error.api_unauthenticated')], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -58,7 +58,14 @@ if ($action === 'add') {
     $trackId = (int)($_POST['musicId'] ?? 0);
     if ($trackId <= 0) {
         http_response_code(400);
-        echo json_encode(['error' => 'Faixa invalida'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $trackExists = db_one($conn, "SELECT idFaixa FROM faixa WHERE idFaixa = {$trackId} AND ativo = 1 LIMIT 1");
+    if (!$trackExists) {
+        http_response_code(404);
+        echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -71,7 +78,7 @@ if ($action === 'remove') {
     $trackId = (int)($_POST['musicId'] ?? 0);
     if ($trackId <= 0) {
         http_response_code(400);
-        echo json_encode(['error' => 'Faixa invalida'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -84,7 +91,7 @@ if ($action === 'check') {
     $trackId = (int)($_GET['musicId'] ?? 0);
     if ($trackId <= 0) {
         http_response_code(400);
-        echo json_encode(['error' => 'Faixa invalida'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -94,4 +101,4 @@ if ($action === 'check') {
 }
 
 http_response_code(400);
-echo json_encode(['error' => 'Acao invalida'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);

@@ -5,12 +5,12 @@ $type = trim($_GET['tipo'] ?? '');
 $search = trim($_GET['q'] ?? '');
 $typeSafe = db_escape($conn, $type);
 $searchSafe = db_escape($conn, $search);
+$perPage = 20;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
 $where = "
     WHERE r.estado = 'aprovado'
       AND r.ativo = 1
-      AND f.estado = 'aprovada'
-      AND f.ativo = 1
       AND c.estado = 'ativo'
 ";
 
@@ -18,15 +18,34 @@ if ($type !== '' && in_array($type, ['Single', 'EP', 'Album'], true)) {
     $where .= " AND r.tipo = '{$typeSafe}'";
 }
 if ($search !== '') {
-    $where .= " AND (f.titulo LIKE '%{$searchSafe}%' OR r.titulo LIKE '%{$searchSafe}%' OR c.nome LIKE '%{$searchSafe}%')";
+    $where .= " AND (
+        r.titulo LIKE '%{$searchSafe}%'
+        OR c.nome LIKE '%{$searchSafe}%'
+        OR EXISTS (
+            SELECT 1
+            FROM faixa fs
+            WHERE fs.idRelease = r.idRelease
+              AND fs.estado = 'aprovada'
+              AND fs.ativo = 1
+              AND fs.titulo LIKE '%{$searchSafe}%'
+        )
+    )";
 }
 
-$tracks = db_all(
+$totalReleases = (int)(db_one(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM release_musical r
+     JOIN cliente c ON c.idCliente = r.idCliente
+     {$where}"
+)['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalReleases / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$offset = ($pageNumber - 1) * $perPage;
+
+$releases = db_all(
     $conn,
     "SELECT
-        f.idFaixa,
-        f.titulo AS faixa_titulo,
-        f.ficheiro_audio,
         r.idRelease,
         r.titulo AS release_titulo,
         r.tipo,
@@ -34,13 +53,43 @@ $tracks = db_all(
         r.data_lancamento,
         c.idCliente AS artistId,
         c.nome AS artist_nome,
-        c.foto AS artist_foto
-     FROM faixa f
-     JOIN release_musical r ON r.idRelease = f.idRelease
+        c.foto AS artist_foto,
+        COUNT(f.idFaixa) AS total_faixas,
+        first_track.idFaixa AS first_track_id,
+        first_track.titulo AS first_track_title,
+        first_track.ficheiro_audio AS first_track_audio
+     FROM release_musical r
      JOIN cliente c ON c.idCliente = r.idCliente
+     LEFT JOIN faixa f
+        ON f.idRelease = r.idRelease
+       AND f.estado = 'aprovada'
+       AND f.ativo = 1
+     LEFT JOIN faixa first_track
+        ON first_track.idFaixa = (
+            SELECT f2.idFaixa
+            FROM faixa f2
+            WHERE f2.idRelease = r.idRelease
+              AND f2.estado = 'aprovada'
+              AND f2.ativo = 1
+            ORDER BY f2.numero_faixa ASC
+            LIMIT 1
+        )
      {$where}
-     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC, f.numero_faixa ASC"
+     GROUP BY r.idRelease, r.titulo, r.tipo, r.capa, r.data_lancamento, r.created_at, c.idCliente, c.nome, c.foto, first_track.idFaixa, first_track.titulo, first_track.ficheiro_audio
+     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC
+     LIMIT {$perPage} OFFSET {$offset}"
 );
+
+$paginationQuery = [];
+if ($search !== '') {
+    $paginationQuery['q'] = $search;
+}
+if ($type !== '') {
+    $paginationQuery['tipo'] = $type;
+}
+$pageUrl = static function (int $targetPage) use ($paginationQuery): string {
+    return 'music.php?' . http_build_query($paginationQuery + ['page' => $targetPage]);
+};
 
 include '../includes/header.php';
 ?>
@@ -65,7 +114,7 @@ include '../includes/header.php';
       </form>
     </div>
 
-    <?php if (!$tracks): ?>
+    <?php if (!$releases): ?>
       <div class="card surface-card">
         <div class="card-body text-center">
           <p data-t="music_empty">No approved tracks matched your search.</p>
@@ -73,39 +122,62 @@ include '../includes/header.php';
       </div>
     <?php else: ?>
       <div class="grid stg">
-        <?php foreach ($tracks as $track): ?>
+        <?php foreach ($releases as $release): ?>
           <?php
-          $cover = asset_url('img', $track['capa']);
-          $audio = asset_url('audio', $track['ficheiro_audio']);
-          $artistFoto = asset_url('img', $track['artist_foto']);
+          $cover = asset_url('img', $release['capa']);
+          $audio = asset_url('audio', $release['first_track_audio']);
+          $artistFoto = asset_url('img', $release['artist_foto']);
           $payload = [
-              'id' => (int)$track['idFaixa'],
-              'title' => $track['faixa_titulo'],
-              'artist' => $track['artist_nome'],
+              'id' => (int)$release['first_track_id'],
+              'title' => $release['first_track_title'],
+              'artist' => $release['artist_nome'],
               'cover' => $cover,
               'audio' => $audio,
-              'artistId' => (int)$track['artistId'],
+              'artistId' => (int)$release['artistId'],
               'artistFoto' => $artistFoto,
-              'type' => $track['tipo'],
-              'releaseKey' => $track['idRelease'] . '-' . $track['artistId']
+              'type' => $release['tipo'],
+              'releaseKey' => $release['idRelease'] . '-' . $release['artistId']
           ];
           ?>
-          <div class="mcard" onclick="playTrack('<?= h(addslashes($track['faixa_titulo'])) ?>','<?= h(addslashes($track['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$track['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$track['idFaixa'] ?>)" data-track='<?= json_encode($payload) ?>'>
+          <a class="mcard" href="release.php?id=<?= (int)$release['idRelease'] ?>" data-track='<?= h(json_encode($payload)) ?>'>
             <div class="cover">
               <?php if ($cover): ?>
-                <img src="<?= h($cover) ?>" alt="<?= h($track['faixa_titulo']) ?>">
+                <img src="<?= h($cover) ?>" alt="<?= h($release['release_titulo']) ?>">
               <?php endif; ?>
-              <div class="cover-ov"><button class="pbt">Play</button></div>
+              <div class="cover-ov">
+                <?php if (!empty($release['first_track_audio'])): ?>
+                  <button type="button" class="pbt" data-t="release_play_track" onclick="event.preventDefault(); event.stopPropagation(); playTrack('<?= h(addslashes($release['first_track_title'])) ?>','<?= h(addslashes($release['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$release['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$release['first_track_id'] ?>)">Play</button>
+                <?php endif; ?>
+              </div>
             </div>
             <div class="meta">
-              <span class="badge badge-dark"><?= h($track['tipo']) ?></span>
-              <h4><?= h($track['faixa_titulo']) ?></h4>
-              <a href="artist.php?id=<?= (int)$track['artistId'] ?>" class="sub" onclick="event.stopPropagation()"><?= h($track['artist_nome']) ?></a>
-              <div class="sub"><?= h($track['release_titulo']) ?></div>
+              <span class="badge badge-dark"><?= h($release['tipo']) ?></span>
+              <h4><?= h($release['release_titulo']) ?></h4>
+              <div class="sub"><?= h($release['artist_nome']) ?></div>
+              <div class="sub"><?= (int)$release['total_faixas'] ?> <span data-t="release_tracks_count">faixas</span></div>
             </div>
-          </div>
+          </a>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($totalPages > 1): ?>
+        <nav class="pager" aria-label="Pagination">
+          <?php if ($pageNumber > 1): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber - 1)) ?>" data-t="pagination_previous">Anterior</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+          <?php endif; ?>
+          <span class="pager-status">
+            <span data-t="pagination_page">Pagina</span> <?= $pageNumber ?>
+            <span data-t="pagination_of">de</span> <?= $totalPages ?>
+          </span>
+          <?php if ($pageNumber < $totalPages): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber + 1)) ?>" data-t="pagination_next">Seguinte</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 </section>

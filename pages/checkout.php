@@ -19,22 +19,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $notes = trim($_POST['observacoes'] ?? '');
     $cart = json_decode($_POST['cart_json'] ?? '[]', true);
 
-    if ($recipient === '' || mb_strlen($recipient) < 3) {
-        $err = 'Indica o nome do destinatario.';
-    } elseif ($address === '' || mb_strlen($address) < 5) {
-        $err = 'A morada deve ter pelo menos 5 caracteres.';
-    } elseif ($city === '' || mb_strlen($city) < 2) {
-        $err = 'Indica a cidade.';
-    } elseif (!preg_match('/^\d{4}-\d{3}$/', $postalCode)) {
-        $err = 'Codigo postal invalido. Usa o formato 0000-000.';
-    } elseif (!preg_match('/^(\+351\s?)?9\d{8}$/', $phone)) {
-        $err = 'Telefone invalido. Usa 912345678 ou +351 912345678.';
-    } elseif ($nif !== '' && !preg_match('/^\d{9}$/', $nif)) {
-        $err = 'NIF invalido. Deve ter 9 digitos.';
-    } elseif (!in_array($paymentMethod, ['cartao', 'mbway', 'transferencia'], true)) {
-        $err = 'Metodo de pagamento invalido.';
-    } elseif (!$cart) {
-        $err = 'O carrinho esta vazio.';
+    $err = verify_csrf_request() ?? '';
+
+    if (!$err && ($recipient === '' || mb_strlen($recipient) < 3)) {
+        $err = tr('error.required_recipient');
+    } elseif (!$err && ($address === '' || mb_strlen($address) < 5)) {
+        $err = tr('error.short_address');
+    } elseif (!$err && ($city === '' || mb_strlen($city) < 2)) {
+        $err = tr('error.required_city');
+    } elseif (!$err && !preg_match('/^\d{4}-\d{3}$/', $postalCode)) {
+        $err = tr('error.invalid_postal');
+    } elseif (!$err && !preg_match('/^(\+351\s?)?9\d{8}$/', $phone)) {
+        $err = tr('error.invalid_phone');
+    } elseif (!$err && $nif !== '' && !preg_match('/^\d{9}$/', $nif)) {
+        $err = tr('error.invalid_nif');
+    } elseif (!$err && !in_array($paymentMethod, ['cartao', 'mbway', 'transferencia'], true)) {
+        $err = tr('error.invalid_payment_method');
+    } elseif (!$err && !$cart) {
+        $err = tr('error.empty_cart');
     }
 
     $orderLines = [];
@@ -49,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             $sizeId = (int)($item['sizeId'] ?? 0);
 
             if ($productId <= 0) {
-                $err = 'Existe um produto invalido no carrinho.';
+                $err = tr('error.invalid_cart_product');
                 break;
             }
 
@@ -66,12 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             );
 
             if (!$product) {
-                $err = 'Um dos produtos ja nao esta disponivel.';
+                $err = tr('error.product_unavailable');
                 break;
             }
 
             if ((int)$product['idCliente'] === $uid) {
-                $err = 'Nao podes comprar os teus proprios produtos.';
+                $err = tr('error.own_product_purchase');
                 break;
             }
 
@@ -88,16 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 );
 
                 if (!$size) {
-                    $err = 'Seleciona um tamanho valido para ' . $product['nomeProduto'] . '.';
+                    $err = tr('error.invalid_size_for_product', ['product' => $product['nomeProduto']]);
                     break;
                 }
 
                 if ((int)$size['stock'] < $quantity) {
-                    $err = 'Nao ha stock suficiente para ' . $product['nomeProduto'] . ' no tamanho ' . $size['etiqueta'] . '.';
+                    $err = tr('error.insufficient_size_stock', ['product' => $product['nomeProduto'], 'size' => $size['etiqueta']]);
                     break;
                 }
             } elseif ((int)$product['stock_total'] < $quantity) {
-                $err = 'Nao ha stock suficiente para ' . $product['nomeProduto'] . '.';
+                $err = tr('error.insufficient_stock', ['product' => $product['nomeProduto']]);
                 break;
             }
 
@@ -268,10 +270,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             );
 
             mysqli_commit($conn);
-            $ok = 'Encomenda registada com sucesso.';
+            $ok = tr('success.order_created');
         } catch (Throwable $e) {
             mysqli_rollback($conn);
-            $err = 'Nao foi possivel concluir a encomenda.';
+            $err = tr('error.order_create');
         }
     }
 }
@@ -282,9 +284,9 @@ include '../includes/header.php';
 <section class="content-shell">
   <div class="wrap">
     <div class="page-intro">
-      <span class="slabel">Checkout</span>
-      <h2>Finalizar encomenda</h2>
-      <p>Confirma a morada, o pagamento e o resumo dos artigos antes de concluir.</p>
+      <span class="slabel" data-t="checkout_label">Checkout</span>
+      <h2 data-t="checkout_title">Finalizar encomenda</h2>
+      <p data-t="checkout_intro">Confirma a morada, o pagamento e o resumo dos artigos antes de concluir.</p>
     </div>
 
     <?php if ($err): ?>
@@ -294,12 +296,12 @@ include '../includes/header.php';
     <?php if ($ok): ?>
       <div class="card surface-card">
         <div class="card-body text-center">
-          <span class="badge badge-blue">Encomenda criada</span>
-          <h3 class="mt4">Pedido #<?= (int)$orderId ?></h3>
-          <p>O recibo ja esta disponivel e o carrinho pode ser limpo em seguranca.</p>
+          <span class="badge badge-blue" data-t="checkout_success_badge">Encomenda criada</span>
+          <h3 class="mt4"><span data-t="checkout_order_number">Pedido</span> #<?= (int)$orderId ?></h3>
+          <p data-t="checkout_success_text">O recibo ja esta disponivel e o carrinho pode ser limpo em seguranca.</p>
           <div class="hero-actions" style="justify-content:center;margin-top:18px;">
-            <a href="receipt.php?id=<?= (int)$orderId ?>" class="btn btn-dark" target="_blank">Abrir recibo</a>
-            <a href="profile.php" class="btn btn-ghost">Ver perfil</a>
+            <a href="receipt.php?id=<?= (int)$orderId ?>" class="btn btn-dark" target="_blank" data-t="checkout_open_receipt">Abrir recibo</a>
+            <a href="profile.php" class="btn btn-ghost" data-t="checkout_view_profile">Ver perfil</a>
           </div>
         </div>
       </div>
@@ -317,40 +319,41 @@ include '../includes/header.php';
         <div class="card surface-card">
           <div class="card-body">
             <form method="post" class="stack-form" id="checkout-form">
+              <?= csrf_input() ?>
               <input type="hidden" name="cart_json" id="cart_json">
 
-              <h3 class="section-card-title">Entrega</h3>
+              <h3 class="section-card-title" data-t="checkout_delivery">Entrega</h3>
 
               <div class="frow">
                 <div class="fg">
-                  <label class="flabel" for="nome_destinatario">Nome do destinatario</label>
+                  <label class="flabel" for="nome_destinatario" data-t="checkout_recipient">Nome do destinatario</label>
                   <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required>
                 </div>
                 <div class="fg">
-                  <label class="flabel" for="telefone">Telefone</label>
+                  <label class="flabel" for="telefone" data-t="checkout_phone">Telefone</label>
                   <input id="telefone" type="tel" name="telefone" class="finput" required placeholder="+351 912345678">
                 </div>
               </div>
 
               <div class="fg">
-                <label class="flabel" for="morada">Morada</label>
+                <label class="flabel" for="morada" data-t="checkout_address">Morada</label>
                 <input id="morada" type="text" name="morada" class="finput" required>
               </div>
 
               <div class="frow">
                 <div class="fg">
-                  <label class="flabel" for="cidade">Cidade</label>
+                  <label class="flabel" for="cidade" data-t="checkout_city">Cidade</label>
                   <input id="cidade" type="text" name="cidade" class="finput" required>
                 </div>
                 <div class="fg">
-                  <label class="flabel" for="codigo_postal">Codigo postal</label>
+                  <label class="flabel" for="codigo_postal" data-t="checkout_postal">Codigo postal</label>
                   <input id="codigo_postal" type="text" name="codigo_postal" class="finput" required placeholder="1000-001">
                 </div>
               </div>
 
               <div class="frow">
                 <div class="fg">
-                  <label class="flabel" for="pais">Pais</label>
+                  <label class="flabel" for="pais" data-t="checkout_country">Pais</label>
                   <input id="pais" type="text" name="pais" class="finput" value="Portugal">
                 </div>
                 <div class="fg">
@@ -360,40 +363,40 @@ include '../includes/header.php';
               </div>
 
               <div class="fg">
-                <label class="flabel" for="metodo">Pagamento</label>
+                <label class="flabel" for="metodo" data-t="checkout_payment">Pagamento</label>
                 <select id="metodo" name="metodo" class="finput">
-                  <option value="cartao">Cartao</option>
+                  <option value="cartao" data-t="checkout_card">Cartao</option>
                   <option value="mbway">MB Way</option>
-                  <option value="transferencia">Transferencia</option>
+                  <option value="transferencia" data-t="checkout_transfer">Transferencia</option>
                 </select>
               </div>
 
               <div class="fg">
-                <label class="flabel" for="observacoes">Observacoes</label>
-                <textarea id="observacoes" name="observacoes" class="finput" placeholder="Notas opcionais para a entrega ou pagamento."></textarea>
+                <label class="flabel" for="observacoes" data-t="checkout_notes">Observacoes</label>
+                <textarea id="observacoes" name="observacoes" class="finput" data-tp="checkout_notes_placeholder" placeholder="Notas opcionais para a entrega ou pagamento."></textarea>
               </div>
 
-              <button type="submit" name="place_order" class="btn btn-dark btn-full">Confirmar encomenda</button>
+              <button type="submit" name="place_order" class="btn btn-dark btn-full" data-t="checkout_confirm">Confirmar encomenda</button>
             </form>
           </div>
         </div>
 
         <div class="card surface-card">
           <div class="card-body">
-            <h3 class="section-card-title">Resumo</h3>
+            <h3 class="section-card-title" data-t="checkout_summary">Resumo</h3>
             <div id="checkout-items" class="simple-list"></div>
             <div class="divider"></div>
             <div class="simple-list">
               <div class="simple-list-item">
-                <strong>Subtotal</strong>
+                <strong data-t="cart_subtotal">Subtotal</strong>
                 <span id="checkout-subtotal">0,00 EUR</span>
               </div>
               <div class="simple-list-item">
-                <strong>IVA</strong>
+                <strong data-t="checkout_vat">IVA</strong>
                 <span id="checkout-iva">0,00 EUR</span>
               </div>
               <div class="simple-list-item">
-                <strong>Total final</strong>
+                <strong data-t="checkout_final_total">Total final</strong>
                 <span id="checkout-total">0,00 EUR</span>
               </div>
             </div>
@@ -412,8 +415,13 @@ include '../includes/header.php';
 
         cartJson.value = JSON.stringify(cart);
 
+        const renderEmptyCart = () => {
+          items.innerHTML = `<p>${document.documentElement.lang === 'en' ? 'The cart is empty.' : 'O carrinho esta vazio.'}</p>`;
+        };
+
         if (!cart.length) {
-          items.innerHTML = '<p>O carrinho esta vazio.</p>';
+          renderEmptyCart();
+          window.addEventListener('greenerry:langchange', renderEmptyCart);
           return;
         }
 

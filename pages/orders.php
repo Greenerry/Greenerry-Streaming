@@ -7,26 +7,39 @@ $feedback = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $error = verify_csrf_request() ?? '';
     $orderId = (int)($_POST['order_id'] ?? 0);
     $action = $_POST['action'] ?? '';
 
-    if ($orderId > 0 && in_array($action, ['prepare', 'ship', 'deliver', 'cancel'], true)) {
+    if (!$error && $orderId > 0 && in_array($action, ['prepare', 'ship', 'deliver', 'cancel'], true)) {
         $ownedItems = db_all(
             $conn,
             "SELECT ei.*, p.usa_tamanhos
              FROM encomenda_item ei
              JOIN produto p ON p.idProduto = ei.idProduto
              WHERE ei.idEncomenda = {$orderId}
-               AND ei.idArtista = {$uid}"
+               AND ei.idArtista = {$uid}
+               AND ei.estado_item != 'cancelado'"
         );
 
         if ($ownedItems) {
-            $nextState = match ($action) {
-                'prepare' => 'em_preparacao',
-                'ship' => 'enviado',
-                'deliver' => 'entregue',
-                'cancel' => 'cancelado',
-            };
+            switch ($action) {
+                case 'prepare':
+                    $nextState = 'em_preparacao';
+                    break;
+                case 'ship':
+                    $nextState = 'enviado';
+                    break;
+                case 'deliver':
+                    $nextState = 'entregue';
+                    break;
+                case 'cancel':
+                    $nextState = 'cancelado';
+                    break;
+                default:
+                    $nextState = '';
+                    break;
+            }
 
             mysqli_begin_transaction($conn);
 
@@ -72,25 +85,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      WHERE idEncomenda = {$orderId}"
                 );
 
+                $totalItems = (int)$summary['total'];
+                $cancelledItems = (int)$summary['cancelados'];
+                $activeItems = max(0, $totalItems - $cancelledItems);
+
                 $orderState = 'pendente';
-                if ((int)$summary['cancelados'] === (int)$summary['total']) {
+                if ($cancelledItems === $totalItems) {
                     $orderState = 'cancelada';
-                } elseif ((int)$summary['entregues'] === (int)$summary['total']) {
+                } elseif ((int)$summary['entregues'] === $activeItems) {
                     $orderState = 'entregue';
-                } elseif ((int)$summary['enviados'] > 0 || (int)$summary['entregues'] > 0) {
+                } elseif ((int)$summary['enviados'] + (int)$summary['entregues'] === $activeItems) {
                     $orderState = 'enviada';
                 } elseif ((int)$summary['em_preparacao'] > 0) {
                     $orderState = 'em_preparacao';
                 }
 
-                mysqli_query($conn, "UPDATE encomenda SET estado_encomenda = '{$orderState}' WHERE idEncomenda = {$orderId}");
+                $paymentUpdate = $orderState === 'cancelada' ? ", estado_pagamento = 'reembolsado'" : '';
+                mysqli_query($conn, "UPDATE encomenda SET estado_encomenda = '{$orderState}'{$paymentUpdate} WHERE idEncomenda = {$orderId}");
                 mysqli_commit($conn);
 
                 $feedback = 'Estado da encomenda atualizado.';
             } catch (Throwable $e) {
                 mysqli_rollback($conn);
-                $error = 'Nao foi possivel atualizar a encomenda.';
+                $error = tr('error.order_update');
             }
+        } else {
+            $error = current_lang() === 'en'
+                ? 'This order has no editable items left.'
+                : 'Esta encomenda ja nao tem itens editaveis.';
         }
     }
 }
@@ -122,9 +144,9 @@ include '../includes/header.php';
 <section class="content-shell">
   <div class="wrap">
     <div class="page-intro">
-      <span class="slabel">Pedidos</span>
-      <h2>Encomendas do teu merch</h2>
-      <p>Acompanha o estado das encomendas e marca o progresso de cada pedido.</p>
+      <span class="slabel" data-t="orders_label">Pedidos</span>
+      <h2 data-t="orders_title">Encomendas do teu merch</h2>
+      <p data-t="orders_intro">Acompanha o estado das encomendas e marca o progresso de cada pedido.</p>
     </div>
 
     <?php if ($feedback): ?>
@@ -137,7 +159,7 @@ include '../includes/header.php';
     <?php if (!$orders): ?>
       <div class="card surface-card">
         <div class="card-body text-center">
-          <p>Ainda nao existem encomendas para os teus produtos.</p>
+          <p data-t="orders_empty">Ainda nao existem encomendas para os teus produtos.</p>
         </div>
       </div>
     <?php else: ?>
@@ -153,6 +175,13 @@ include '../includes/header.php';
                  AND ei.idArtista = {$uid}
                ORDER BY ei.idEncomendaItem ASC"
           );
+          $hasEditableItems = false;
+          foreach ($items as $itemCheck) {
+              if ($itemCheck['estado_item'] !== 'cancelado') {
+                  $hasEditableItems = true;
+                  break;
+              }
+          }
           ?>
           <article class="card surface-card order-shell">
             <div class="card-body">
@@ -182,19 +211,24 @@ include '../includes/header.php';
                     </div>
                     <div class="order-line-side">
                       <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
-                      <span><?= h(format_eur((float)$item['valor_artista'])) ?></span>
+                      <span><?= h(format_eur($item['estado_item'] === 'cancelado' ? 0.0 : (float)$item['valor_artista'])) ?></span>
                     </div>
                   </div>
                 <?php endforeach; ?>
               </div>
 
-              <form method="post" class="admin-action-buttons mt6">
-                <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm">Em preparacao</button>
-                <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm">Marcar enviada</button>
-                <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm">Marcar entregue</button>
-                <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm">Cancelar itens</button>
-              </form>
+              <?php if ($hasEditableItems && $order['estado_encomenda'] !== 'cancelada'): ?>
+                <form method="post" class="admin-action-buttons mt6">
+                  <?= csrf_input() ?>
+                  <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
+                  <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm">Em preparacao</button>
+                  <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm">Marcar enviada</button>
+                  <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm">Marcar entregue</button>
+                  <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm">Cancelar itens</button>
+                </form>
+              <?php else: ?>
+                <p class="color-text3 mt6" data-t="orders_cancelled_locked">Itens cancelados ficam bloqueados e nao podem ser alterados.</p>
+              <?php endif; ?>
             </div>
           </article>
         <?php endforeach; ?>

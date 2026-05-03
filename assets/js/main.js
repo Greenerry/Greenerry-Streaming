@@ -26,6 +26,25 @@ function _norm(track) {
 let T = { pt: {}, en: {} };
 let lang = localStorage.getItem('g_lang') || 'pt';
 const PLAYER_STATE_KEY = 'g_track';
+const THEME_KEY = 'g_theme';
+
+function initThemeToggle() {
+  const current = localStorage.getItem(THEME_KEY) || document.documentElement.dataset.theme || 'dark';
+  document.documentElement.dataset.theme = current;
+
+  document.querySelectorAll('#theme-toggle, [data-theme-toggle]').forEach((button) => {
+    button.setAttribute('aria-pressed', current === 'light' ? 'true' : 'false');
+    button.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem(THEME_KEY, next);
+      document.cookie = `g_theme=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
+      document.querySelectorAll('#theme-toggle, [data-theme-toggle]').forEach((item) => {
+        item.setAttribute('aria-pressed', next === 'light' ? 'true' : 'false');
+      });
+    });
+  });
+}
 
 function _readEmbeddedTranslations() {
   const el = document.getElementById('greenerry-translations');
@@ -62,6 +81,7 @@ function setLang(nextLang) {
 
   lang = nextLang;
   localStorage.setItem('g_lang', nextLang);
+  document.cookie = `g_lang=${encodeURIComponent(nextLang)}; path=/; max-age=31536000; samesite=lax`;
   document.documentElement.lang = nextLang;
 
   document.querySelectorAll('[data-t]').forEach((el) => {
@@ -75,6 +95,10 @@ function setLang(nextLang) {
   document.querySelectorAll('.lang button').forEach((button) => {
     button.classList.toggle('on', button.dataset.l === nextLang);
   });
+
+  window.dispatchEvent(new CustomEvent('greenerry:langchange', {
+    detail: { lang: nextLang }
+  }));
 }
 
 window.GreenerrySetLang = setLang;
@@ -461,36 +485,48 @@ let _shuffle = true;
 async function _loadTracks() {
   _allTracks = [];
 
-  document.querySelectorAll('[data-track]').forEach((el) => {
-    try {
-      _allTracks.push(_norm(JSON.parse(el.dataset.track)));
-    } catch {}
-  });
-
-  if (_allTracks.length) return;
-
   try {
     const response = await fetch(window.SITE_BASE + '/api/tracks.php');
-    if (response.ok) _allTracks = ((await response.json()) || []).map(_norm);
+    if (response.ok) {
+      _allTracks = ((await response.json()) || []).map(_norm).filter((track) => track?.audio);
+      if (_allTracks.length) return;
+    }
   } catch {}
+
+  document.querySelectorAll('[data-track]').forEach((el) => {
+    try {
+      const track = _norm(JSON.parse(el.dataset.track));
+      if (track?.audio) _allTracks.push(track);
+    } catch {}
+  });
 }
 
-function _pick(excluded) {
-  const pool = _allTracks.filter((track) => !excluded.some((item) => item.title === track.title && item.audio === track.audio));
+function _sameTrack(a, b) {
+  return !!a && !!b && (String(a.id || '') === String(b.id || '') || (a.audio && b.audio && a.audio === b.audio));
+}
+
+function _pickRandomTrack(excluded = []) {
+  const pool = _allTracks.filter((track) => !excluded.some((item) => _sameTrack(item, track)));
   const source = pool.length ? pool : _allTracks;
   if (!source.length) return null;
-  return _shuffle ? source[Math.floor(Math.random() * source.length)] : source[0];
+  return source[Math.floor(Math.random() * source.length)];
 }
 
-function _fillQueue() {
+function _fillRandomQueue(minItems = 3) {
   if (!_allTracks.length) return;
 
-  const excluded = _cur ? [_cur, ..._queue] : [..._queue];
-  while (_queue.length < 3) {
-    const track = _pick(excluded);
-    if (!track) break;
+  while (_queue.length < minItems) {
+    const excluded = _cur ? [_cur, ..._queue] : [..._queue];
+    let track = _pickRandomTrack(excluded);
+    if (!track) return;
+
+    if (_queue.some((item) => _sameTrack(item, track)) || (_cur && _sameTrack(_cur, track))) {
+      const fallback = _allTracks.find((item) => !excluded.some((excludedTrack) => _sameTrack(excludedTrack, item)));
+      if (!fallback) return;
+      track = fallback;
+    }
+
     _queue.push(track);
-    excluded.push(track);
   }
 }
 
@@ -498,7 +534,8 @@ function _renderQueue() {
   const list = document.getElementById('queue-list');
   if (!list) return;
 
-  _fillQueue();
+  _fillRandomQueue(3);
+
   if (!_queue.length) {
     list.innerHTML = '';
     return;
@@ -521,31 +558,33 @@ function _renderQueue() {
 }
 
 /* Navigation */
-function nextTrack() {
-  if (!_queue.length) _fillQueue();
+async function nextTrack() {
+  if (!_allTracks.length) await _loadTracks();
+  _fillRandomQueue(1);
   const track = _queue.shift();
-  _fillQueue();
-  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id);
+  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
 }
 
-function prevTrack() {
-  const track = _pick(_cur ? [_cur] : []);
-  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id);
+async function prevTrack() {
+  if (!_allTracks.length) await _loadTracks();
+  const track = _pickRandomTrack(_cur ? [_cur] : []);
+  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
 }
 
-function playReleaseByKey(key) {
+async function playReleaseByKey(key) {
+  if (!_allTracks.length) await _loadTracks();
   const tracks = _allTracks.filter((track) => track.releaseKey === key);
   if (!tracks.length) return;
   _queue = tracks.slice(1);
+  _fillRandomQueue(3);
   const track = tracks[0];
-  playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id);
+  playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
 }
 
 /* Shuffle */
 function toggleShuffle() {
   _shuffle = !_shuffle;
   _queue = [];
-  _fillQueue();
   _renderQueue();
 
   const button = document.getElementById('pb-shuffle');
@@ -600,13 +639,16 @@ function closeMobileSidebar() {
 }
 
 /* Play a track */
-async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, musicId) {
+async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, musicId, options = {}) {
   _cur = { id: musicId, title, artist, cover, audioSrc, audio: audioSrc, artistId, artistFoto };
 
   if (!_allTracks.length) await _loadTracks();
 
-  _queue = _queue.filter((track) => !(track.title === title && track.audio === audioSrc));
-  _fillQueue();
+  if (!options.keepQueue) {
+    _queue = [];
+  } else {
+    _queue = _queue.filter((track) => !_sameTrack(track, _cur));
+  }
 
   const sidebarBody = document.getElementById('sr-body');
   const sidebarEmpty = document.getElementById('sr-empty');
@@ -926,6 +968,98 @@ function toast(msg) {
   }, 2200);
 }
 
+/* Smooth internal navigation keeps iPhone audio alive */
+const _softNavPages = new Set([
+  'index.php',
+  'music.php',
+  'release.php',
+  'artists.php',
+  'artist.php',
+  'shop.php',
+  'favourites.php'
+]);
+let _softNavBusy = false;
+
+function _pageNameFromUrl(url) {
+  const path = url.pathname.replace(/\/+$/, '');
+  return path.substring(path.lastIndexOf('/') + 1) || 'index.php';
+}
+
+function _canSoftNavigate(link, event) {
+  if (!_cur) return false;
+  if (!link || link.target || link.hasAttribute('download')) return false;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return false;
+
+  const url = new URL(link.href, window.location.href);
+  if (url.origin !== window.location.origin) return false;
+  if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false;
+
+  return _softNavPages.has(_pageNameFromUrl(url));
+}
+
+function _syncNavActive() {
+  const current = _pageNameFromUrl(new URL(window.location.href));
+
+  document.querySelectorAll('.sl-link').forEach((link) => {
+    try {
+      const linkPage = _pageNameFromUrl(new URL(link.href, window.location.href));
+      link.classList.toggle('on', linkPage === current);
+    } catch {}
+  });
+}
+
+async function _softNavigate(url, push = true) {
+  if (_softNavBusy) return;
+  _softNavBusy = true;
+
+  try {
+    _saveState();
+    const response = await fetch(url.href, { headers: { 'X-Requested-With': 'fetch' } });
+    if (!response.ok) throw new Error('Navigation failed');
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const nextBody = doc.querySelector('.page-body');
+    const currentBody = document.querySelector('.page-body');
+    if (!nextBody || !currentBody) throw new Error('Missing page body');
+
+    currentBody.innerHTML = nextBody.innerHTML;
+    document.title = doc.title || document.title;
+
+    if (push) history.pushState({ greenerrySoftNav: true }, '', url.href);
+    window.scrollTo(0, 0);
+
+    setLang(lang);
+    closeMobileSidebar();
+    updateCartBadgeGlobal();
+    _syncNavActive();
+    _registerMotion(currentBody);
+    _initPageContent();
+    await _loadTracks();
+    _renderQueue();
+  } catch (error) {
+    window.location.href = url.href;
+  } finally {
+    _softNavBusy = false;
+  }
+}
+
+function _bindSoftNavigation() {
+  history.replaceState({ greenerrySoftNav: true }, '', window.location.href);
+
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href]');
+    if (!_canSoftNavigate(link, event)) return;
+
+    event.preventDefault();
+    _softNavigate(new URL(link.href, window.location.href));
+  });
+
+  window.addEventListener('popstate', () => {
+    _softNavigate(new URL(window.location.href), false);
+  });
+}
+
 /* Page init */
 function _initPageContent() {
   if (document.getElementById('favs-grid')) {
@@ -956,11 +1090,13 @@ function _initPageContent() {
 /* Init */
 document.addEventListener('DOMContentLoaded', async () => {
   await loadTranslations();
+  initThemeToggle();
   document.querySelectorAll('.lang button').forEach((button) => {
     button.addEventListener('click', () => setLang(button.dataset.l));
   });
   setLang(lang);
   _bindValidationToasts();
+  _bindSoftNavigation();
 
   const nav = document.getElementById('main-nav');
   if (nav) {
@@ -1021,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (saved.queue?.length) _queue = saved.queue;
 
       await _loadTracks();
-      _fillQueue();
 
       _setText('pb-title', saved.title);
       _setText('pb-artist', saved.artist);
@@ -1087,12 +1222,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (button && sidebar && !sidebar.classList.contains('open')) button.classList.add('visible');
     } else {
       await _loadTracks();
-      _fillQueue();
     }
   } catch (error) {
     console.warn('Restore failed:', error);
     await _loadTracks();
-    _fillQueue();
   }
 
   updateCartBadgeGlobal();

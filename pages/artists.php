@@ -3,8 +3,33 @@ require_once '../includes/config.php';
 
 $search = trim($_GET['q'] ?? '');
 $searchSafe = db_escape($conn, $search);
-$where = $search !== '' ? "WHERE nome LIKE '%{$searchSafe}%'" : '';
-$artists = db_all($conn, "SELECT * FROM vw_artistas_publicos {$where} ORDER BY total_releases DESC, nome ASC");
+$searchSql = $search !== '' ? "AND c.nome LIKE '%{$searchSafe}%'" : '';
+$artists = db_all(
+    $conn,
+    "SELECT
+        c.idCliente,
+        c.nome,
+        c.email,
+        c.foto,
+        c.banner,
+        c.bio,
+        c.slug,
+        COUNT(DISTINCT r.idRelease) AS total_releases,
+        COUNT(DISTINCT f.idFaixa) AS total_faixas
+     FROM cliente c
+     JOIN release_musical r
+        ON r.idCliente = c.idCliente
+       AND r.estado = 'aprovado'
+       AND r.ativo = 1
+     LEFT JOIN faixa f
+        ON f.idRelease = r.idRelease
+       AND f.estado = 'aprovada'
+       AND f.ativo = 1
+     WHERE c.estado = 'ativo'
+       {$searchSql}
+     GROUP BY c.idCliente, c.nome, c.email, c.foto, c.banner, c.bio, c.slug
+     ORDER BY total_releases DESC, nome ASC"
+);
 
 include '../includes/header.php';
 ?>

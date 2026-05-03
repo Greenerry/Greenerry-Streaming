@@ -11,10 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['senha'] ?? '';
     $loginType = $loginTypeValue;
 
-    $err = validate_email($emailValue) ?? ($password === '' ? 'A palavra-passe e obrigatoria.' : null);
+    $err = verify_csrf_request()
+        ?? validate_email($emailValue)
+        ?? ($password === '' ? tr('error.required_password') : null);
 
     if (!$err && !in_array($loginType, ['cliente', 'admin'], true)) {
-        $err = 'Tipo de acesso invalido.';
+        $err = tr('error.invalid_access_type');
     }
 
     if (!$err) {
@@ -23,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($loginType === 'admin') {
             if (!$adminByEmail || !password_matches($password, $adminByEmail['palavra_passe'])) {
-                $err = 'Credenciais de administrador invalidas.';
+                $err = tr('error.invalid_admin_credentials');
             } else {
                 mysqli_query($conn, "UPDATE admin SET ultimo_login = NOW() WHERE idAdmin = " . (int)$adminByEmail['idAdmin']);
                 login_admin_session($adminByEmail);
@@ -34,13 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = db_one($conn, "SELECT * FROM cliente WHERE email = '{$emailSafe}' LIMIT 1");
 
             if ($adminByEmail && password_matches($password, $adminByEmail['palavra_passe'])) {
-                $err = 'Usa a opcao Administracao para entrar como admin.';
+                $err = tr('error.use_admin_login');
             }
 
             if (!$err && (!$user || !password_matches($password, $user['palavra_passe']))) {
-                $err = 'Email ou palavra-passe incorretos.';
+                $err = tr('error.invalid_login');
             } elseif (!$err && $user['estado'] !== 'ativo') {
-                $err = 'A conta nao esta ativa.';
+                $err = tr('error.account_inactive');
             } elseif (!$err) {
                 mysqli_query($conn, "UPDATE cliente SET ultimo_login = NOW() WHERE idCliente = " . (int)$user['idCliente']);
                 login_user_session($user);
@@ -58,8 +60,8 @@ include '../includes/header.php';
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
-        <span class="slabel">Acesso</span>
-        <h2>Aceder a conta</h2>
+        <span class="slabel" data-t="login_label">Acesso</span>
+        <h2 data-t="login_title">Aceder a conta</h2>
       </div>
 
       <?php if ($err): ?>
@@ -67,14 +69,15 @@ include '../includes/header.php';
       <?php endif; ?>
 
       <form method="post" class="auth-form" novalidate>
+        <?= csrf_input() ?>
         <div class="segmented-field">
           <label class="segmented-option">
             <input type="radio" name="login_type" value="cliente" <?= $loginTypeValue === 'cliente' ? 'checked' : '' ?>>
-            <span>Utilizador / Artista</span>
+            <span data-t="login_user_type">Utilizador / Artista</span>
           </label>
           <label class="segmented-option">
             <input type="radio" name="login_type" value="admin" <?= $loginTypeValue === 'admin' ? 'checked' : '' ?>>
-            <span>Administracao</span>
+            <span data-t="login_admin_type">Administracao</span>
           </label>
         </div>
 
@@ -84,20 +87,20 @@ include '../includes/header.php';
         </div>
 
         <div class="fg">
-          <label class="flabel" for="senha">Palavra-passe</label>
+          <label class="flabel" for="senha" data-t="login_password">Palavra-passe</label>
           <input id="senha" type="password" name="senha" class="finput" required minlength="8" autocomplete="current-password">
         </div>
 
         <div class="auth-actions">
-          <a href="forgot_password.php" class="auth-link">Esqueceste-te da palavra-passe?</a>
+          <a href="forgot_password.php" class="auth-link" data-t="login_forgot">Esqueceste-te da palavra-passe?</a>
         </div>
 
-        <button type="submit" class="btn btn-dark btn-full btn-lg">Entrar</button>
+        <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="login_submit">Entrar</button>
       </form>
 
       <p class="auth-foot-note">
-        Ainda nao tens conta?
-        <a href="registar.php">Criar conta</a>
+        <span data-t="login_no_account">Ainda nao tens conta?</span>
+        <a href="registar.php" data-t="login_create_account">Criar conta</a>
       </p>
     </div>
   </div>

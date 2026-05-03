@@ -12,7 +12,7 @@ if (is_user_logged_in()) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="<?= h(current_lang()) ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -20,6 +20,9 @@ if (is_user_logged_in()) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <script>
+    document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
+  </script>
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body data-user-id="<?= (int)$jsUserId ?>">
@@ -103,6 +106,16 @@ if (is_user_logged_in()) {
     </nav>
 
     <div class="sl-foot">
+      <div class="sl-mobile-preferences">
+        <div class="lang">
+          <button type="button" data-l="pt">PT</button>
+          <button type="button" data-l="en">EN</button>
+        </div>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Theme" title="Theme">
+          <svg class="theme-toggle-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="theme-toggle-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
       <?php if (is_user_logged_in() || is_admin_logged_in()): ?>
         <a href="<?= $_base ?>/pages/logout.php" class="sl-link sl-link--muted">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -125,6 +138,10 @@ if (is_user_logged_in()) {
             <button type="button" data-l="pt" onclick="window.GreenerrySetLang && window.GreenerrySetLang('pt')">PT</button>
             <button type="button" data-l="en" onclick="window.GreenerrySetLang && window.GreenerrySetLang('en')">EN</button>
           </div>
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Theme" title="Theme">
+            <svg class="theme-toggle-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <svg class="theme-toggle-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+          </button>
           <?php if ($displayName): ?>
             <span class="nav-user-name"><?= h($displayName) ?></span>
           <?php elseif (!is_admin_logged_in()): ?>

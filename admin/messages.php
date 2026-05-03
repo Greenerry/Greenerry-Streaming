@@ -6,11 +6,12 @@ $adminId = current_admin_id();
 $feedback = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $feedback = verify_csrf_request() ?? '';
     $messageId = (int)($_POST['message_id'] ?? 0);
     $reply = trim($_POST['reply'] ?? '');
     $state = $_POST['state'] ?? 'respondida';
 
-    if ($messageId > 0 && $reply !== '') {
+    if ($feedback === '' && $messageId > 0 && $reply !== '') {
         $replySafe = db_escape($conn, $reply);
         $stateSafe = db_escape($conn, in_array($state, ['respondida', 'fechada'], true) ? $state : 'respondida');
 
@@ -20,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              SET resposta_admin = '{$replySafe}', estado = '{$stateSafe}', idAdminResposta = {$adminId}, responded_at = NOW()
              WHERE idMensagem = {$messageId}"
         );
-        $feedback = 'Resposta enviada com sucesso.';
+        $feedback = tr('success.admin_reply_sent');
     }
 }
 
@@ -63,25 +64,20 @@ include 'admin_header.php';
   <div class="alert alert-ok"><?= h($feedback) ?></div>
 <?php endif; ?>
 
-<section class="admin-summary-grid">
-  <div class="admin-summary-card admin-summary-card--lead">
-    <span class="admin-kicker" data-admin-t="messages_kicker">Support Desk</span>
-    <h3 data-admin-t="messages_hero_title">Mensagens e respostas.</h3>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span>Em aberto</span>
-    <strong><?= (int)$messageStats['abertas'] ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span>Respondidas</span>
-    <strong><?= (int)$messageStats['respondidas'] ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span>Fechadas</span>
-    <strong><?= (int)$messageStats['fechadas'] ?></strong>
-  </div>
+<section class="stats-grid">
+  <div class="stat"><div class="stat-val"><?= (int)$messageStats['abertas'] ?></div><div class="stat-lbl" data-admin-t="messages_open">Em aberto</div></div>
+  <div class="stat"><div class="stat-val"><?= (int)$messageStats['respondidas'] ?></div><div class="stat-lbl" data-admin-t="messages_answered">Respondidas</div></div>
+  <div class="stat"><div class="stat-val"><?= (int)$messageStats['fechadas'] ?></div><div class="stat-lbl" data-admin-t="messages_closed">Fechadas</div></div>
 </section>
 
+<div class="admin-search-row">
+  <label class="sbar">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="search" data-admin-search="messages-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
+  </label>
+</div>
+
+<div id="messages-search" data-admin-search-scope>
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="messages_inbox">Inbox</h4>
@@ -95,13 +91,13 @@ include 'admin_header.php';
         <article class="admin-review-card">
           <div class="admin-review-main">
             <div class="admin-review-meta">
-              <span class="badge <?= h(state_badge_class($message['estado'])) ?>"><?= h(ucfirst($message['estado'])) ?></span>
+              <span class="badge <?= h(state_badge_class($message['estado'])) ?>"><?= h(order_status_label($message['estado'])) ?></span>
               <strong><?= h($message['assunto']) ?></strong>
               <p><?= h($message['cliente_nome']) ?> - <?= h($message['cliente_email']) ?></p>
               <p><?= nl2br(h($message['mensagem'])) ?></p>
               <?php if (!empty($message['resposta_admin'])): ?>
                 <div class="message-reply-box">
-                  <span class="slabel">Resposta atual<?= !empty($message['admin_nome']) ? ' - ' . h($message['admin_nome']) : '' ?></span>
+                  <span class="slabel"><span data-admin-t="messages_current_reply">Resposta atual</span><?= !empty($message['admin_nome']) ? ' - ' . h($message['admin_nome']) : '' ?></span>
                   <p><?= nl2br(h($message['resposta_admin'])) ?></p>
                 </div>
               <?php endif; ?>
@@ -109,6 +105,7 @@ include 'admin_header.php';
           </div>
 
           <form method="post" class="admin-review-actions">
+            <?= csrf_input() ?>
             <input type="hidden" name="message_id" value="<?= (int)$message['idMensagem'] ?>">
             <textarea name="reply" class="finput" placeholder="Escreve aqui a resposta do admin." data-admin-tp="messages_reply_placeholder"></textarea>
             <div class="frow">
@@ -129,5 +126,6 @@ include 'admin_header.php';
     </div>
   <?php endif; ?>
 </section>
+</div>
 
 <?php include 'admin_footer.php'; ?>

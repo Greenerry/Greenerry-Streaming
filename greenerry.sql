@@ -28,9 +28,26 @@ CREATE TABLE admin (
 
 -- Palavra-passe provisoria para ambiente escolar.
 -- Nesta versao ja fica guardada com hash para evitar texto simples.
-INSERT INTO admin (nome, email, palavra_passe, cargo)
+INSERT INTO admin (idAdmin, nome, email, palavra_passe, cargo)
 VALUES
-('Admin Principal', 'admin@greenerry.com', '$2y$10$gBHujQ1KDiDGW5o0ERXQC.Tp4/zoy4KFu7jNAO3SMyJ.ctc0.GJl.', 'Administrador Principal');
+(1, 'Admin Principal', 'admin@greenerry.com', '$2y$10$gBHujQ1KDiDGW5o0ERXQC.Tp4/zoy4KFu7jNAO3SMyJ.ctc0.GJl.', 'Administrador Principal');
+
+CREATE TABLE site_config (
+    setting_key VARCHAR(80) PRIMARY KEY,
+    setting_value TEXT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO site_config (setting_key, setting_value) VALUES
+('site_name', 'Greenerry'),
+('contact_email', 'support@greenerry.test'),
+('contact_phone', '+351 900 000 000'),
+('instagram_url', '#'),
+('x_url', '#'),
+('footer_note', '(c) 2026 Greenerry. Built for PAP presentation use.'),
+('support_hours', 'Mon-Fri, 09:00-18:00'),
+('commission_percent', '5'),
+('shipping_note', 'Digital support and merch handled by Greenerry admin.');
 
 -- ============================================================
 -- 2. UTILIZADORES / ARTISTAS
@@ -78,6 +95,7 @@ CREATE TABLE categoria (
     idCategoria INT AUTO_INCREMENT PRIMARY KEY,
     nomeCategoria VARCHAR(100) NOT NULL UNIQUE,
     descricaoCategoria TEXT NULL,
+    usa_tamanhos TINYINT(1) NOT NULL DEFAULT 0,
     estado ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
     idAdminCriador INT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -87,13 +105,13 @@ CREATE TABLE categoria (
         ON DELETE SET NULL
 );
 
-INSERT INTO categoria (nomeCategoria, descricaoCategoria, idAdminCriador) VALUES
-('T-Shirt', 'T-shirts oficiais dos artistas.', 1),
-('Hoodie', 'Sweatshirts e hoodies de merchandising.', 1),
-('Vinil', 'Edicoes em vinil para colecao.', 1),
-('CD', 'Edicoes fisicas em CD.', 1),
-('Poster', 'Posters e material visual promocional.', 1),
-('Acessorio', 'Acessorios como sacos, pins e outros artigos.', 1);
+INSERT INTO categoria (nomeCategoria, descricaoCategoria, usa_tamanhos, idAdminCriador) VALUES
+('T-Shirt', 'T-shirts oficiais dos artistas.', 1, 1),
+('Hoodie', 'Sweatshirts e hoodies de merchandising.', 1, 1),
+('Vinil', 'Edicoes em vinil para colecao.', 0, 1),
+('CD', 'Edicoes fisicas em CD.', 0, 1),
+('Poster', 'Posters e material visual promocional.', 1, 1),
+('Acessorio', 'Acessorios como sacos, pins e outros artigos.', 0, 1);
 
 CREATE TABLE tamanho (
     idTamanho INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,6 +141,7 @@ CREATE TABLE release_musical (
     data_lancamento DATE NULL,
     estado ENUM('pendente', 'aprovado', 'rejeitado', 'inativo') NOT NULL DEFAULT 'pendente',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
+    bloqueado_admin TINYINT(1) NOT NULL DEFAULT 0,
     motivo_rejeicao TEXT NULL,
     idAdminAprovacao INT NULL,
     aprovado_em DATETIME NULL,
@@ -201,6 +220,7 @@ CREATE TABLE produto (
     imagem VARCHAR(255) NULL,
     estado ENUM('pendente', 'aprovado', 'rejeitado', 'inativo') NOT NULL DEFAULT 'pendente',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
+    bloqueado_admin TINYINT(1) NOT NULL DEFAULT 0,
     motivo_rejeicao TEXT NULL,
     idAdminAprovacao INT NULL,
     aprovado_em DATETIME NULL,
@@ -366,47 +386,3 @@ CREATE INDEX idx_mensagem_admin_estado ON mensagem_admin (estado, created_at);
 CREATE INDEX idx_pedido_reset_estado ON pedido_reset_password (estado, created_at);
 CREATE INDEX idx_notificacao_cliente_lida ON notificacao (idCliente, lida);
 
--- ============================================================
--- 9. VISTAS UTEIS PARA O ADMIN
--- ============================================================
-
--- Nota:
--- Este ficheiro fica sem dados de apresentacao para poderes
--- inserir manualmente os teus proprios clientes, musicas e produtos.
-
-CREATE OR REPLACE VIEW vw_artistas_publicos AS
-SELECT
-    c.idCliente,
-    c.nome,
-    c.email,
-    c.foto,
-    c.banner,
-    c.bio,
-    c.slug,
-    COUNT(DISTINCT r.idRelease) AS total_releases,
-    COUNT(DISTINCT f.idFaixa) AS total_faixas
-FROM cliente c
-JOIN release_musical r
-    ON r.idCliente = c.idCliente
-   AND r.estado = 'aprovado'
-   AND r.ativo = 1
-LEFT JOIN faixa f
-    ON f.idRelease = r.idRelease
-   AND f.estado = 'aprovada'
-   AND f.ativo = 1
-WHERE c.estado = 'ativo'
-GROUP BY
-    c.idCliente, c.nome, c.email, c.foto, c.banner, c.bio, c.slug;
-
-CREATE OR REPLACE VIEW vw_resumo_encomenda_artista AS
-SELECT
-    ei.idArtista,
-    c.nome AS nome_artista,
-    COUNT(DISTINCT ei.idEncomenda) AS total_encomendas,
-    SUM(ei.quantidade) AS total_itens_vendidos,
-    SUM(ei.valor_artista) AS total_a_receber,
-    SUM(ei.comissao_valor) AS total_comissao
-FROM encomenda_item ei
-JOIN cliente c
-    ON c.idCliente = ei.idArtista
-GROUP BY ei.idArtista, c.nome;

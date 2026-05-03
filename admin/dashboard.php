@@ -4,20 +4,34 @@ require_admin_login();
 
 $stats = [
     'clientes' => db_one($conn, "SELECT COUNT(*) AS total FROM cliente WHERE estado = 'ativo'")['total'] ?? 0,
+    'categorias' => db_one($conn, "SELECT COUNT(*) AS total FROM categoria WHERE estado = 'ativo'")['total'] ?? 0,
     'produtos_pendentes' => db_one($conn, "SELECT COUNT(*) AS total FROM produto WHERE estado = 'pendente'")['total'] ?? 0,
     'releases_pendentes' => db_one($conn, "SELECT COUNT(*) AS total FROM release_musical WHERE estado = 'pendente'")['total'] ?? 0,
     'mensagens_abertas' => db_one($conn, "SELECT COUNT(*) AS total FROM mensagem_admin WHERE estado = 'aberta'")['total'] ?? 0,
     'resets_pendentes' => db_one($conn, "SELECT COUNT(*) AS total FROM pedido_reset_password WHERE estado IN ('pendente', 'em_analise')")['total'] ?? 0,
     'encomendas' => db_one($conn, "SELECT COUNT(*) AS total FROM encomenda")['total'] ?? 0
 ];
+$attentionTotal = (int)$stats['produtos_pendentes'] + (int)$stats['releases_pendentes'] + (int)$stats['mensagens_abertas'] + (int)$stats['resets_pendentes'];
 
 $finance = db_one(
     $conn,
     "SELECT
-        COALESCE(SUM(CASE WHEN estado_pagamento = 'pago' THEN total_final END), 0) AS total_revenue,
-        COALESCE(SUM(CASE WHEN estado_pagamento = 'pago' THEN comissao_total END), 0) AS total_commission,
-        COALESCE(SUM(CASE WHEN estado_pagamento = 'pago' THEN subtotal END), 0) AS total_artist_base
-     FROM encomenda"
+        COALESCE(SUM(CASE WHEN e.estado_pagamento = 'pago' AND e.estado_encomenda != 'cancelada' AND ei.estado_item != 'cancelado' THEN ei.total_linha END), 0) AS total_revenue,
+        COALESCE(SUM(CASE WHEN e.estado_pagamento = 'pago' AND e.estado_encomenda != 'cancelada' AND ei.estado_item != 'cancelado' THEN ei.comissao_valor END), 0) AS total_commission,
+        COALESCE(SUM(CASE WHEN e.estado_pagamento = 'pago' AND e.estado_encomenda != 'cancelada' AND ei.estado_item != 'cancelado' THEN ei.valor_artista END), 0) AS total_artist_base
+     FROM encomenda e
+     JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda"
+);
+$paidOrderStats = db_one(
+    $conn,
+    "SELECT
+        COUNT(DISTINCT e.idEncomenda) AS total_paid_orders,
+        COALESCE(SUM(ei.total_linha) / NULLIF(COUNT(DISTINCT e.idEncomenda), 0), 0) AS average_order_value
+     FROM encomenda e
+     JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
+     WHERE e.estado_pagamento = 'pago'
+       AND e.estado_encomenda != 'cancelada'
+       AND ei.estado_item != 'cancelado'"
 );
 
 $orderStates = db_one(
@@ -31,31 +45,21 @@ $orderStates = db_one(
      FROM encomenda"
 );
 
-$topArtists = db_all(
-    $conn,
-    "SELECT
-        c.nome,
-        COUNT(*) AS total_linhas,
-        COALESCE(SUM(ei.quantidade), 0) AS total_itens,
-        COALESCE(SUM(ei.valor_artista), 0) AS total_artist_value
-     FROM encomenda_item ei
-     JOIN cliente c ON c.idCliente = ei.idArtista
-     GROUP BY ei.idArtista, c.nome
-     ORDER BY total_artist_value DESC, total_itens DESC
-     LIMIT 4"
-);
-
 $monthlyPerformance = db_all(
     $conn,
     "SELECT
-        DATE_FORMAT(created_at, '%Y-%m') AS period_key,
-        DATE_FORMAT(created_at, '%m/%Y') AS period_label,
-        COUNT(*) AS total_orders,
-        COALESCE(SUM(comissao_total), 0) AS total_commission,
-        COALESCE(SUM(total_final), 0) AS total_revenue
-     FROM encomenda
-     WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-     GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%m/%Y')
+        DATE_FORMAT(e.created_at, '%Y-%m') AS period_key,
+        DATE_FORMAT(e.created_at, '%m/%Y') AS period_label,
+        COUNT(DISTINCT e.idEncomenda) AS total_orders,
+        COALESCE(SUM(ei.comissao_valor), 0) AS total_commission,
+        COALESCE(SUM(ei.total_linha), 0) AS total_revenue
+     FROM encomenda e
+     JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
+     WHERE e.created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+       AND e.estado_pagamento = 'pago'
+       AND e.estado_encomenda != 'cancelada'
+       AND ei.estado_item != 'cancelado'
+     GROUP BY DATE_FORMAT(e.created_at, '%Y-%m'), DATE_FORMAT(e.created_at, '%m/%Y')
      ORDER BY period_key ASC"
 );
 
@@ -65,11 +69,11 @@ foreach ($monthlyPerformance as $entry) {
 }
 
 $orderStateCards = [
-    ['label' => 'Pendentes', 'value' => (int)($orderStates['pendente'] ?? 0)],
-    ['label' => 'Em preparacao', 'value' => (int)($orderStates['em_preparacao'] ?? 0)],
-    ['label' => 'Enviadas', 'value' => (int)($orderStates['enviada'] ?? 0)],
-    ['label' => 'Entregues', 'value' => (int)($orderStates['entregue'] ?? 0)],
-    ['label' => 'Canceladas', 'value' => (int)($orderStates['cancelada'] ?? 0)]
+    ['label' => order_status_label('pendente'), 'value' => (int)($orderStates['pendente'] ?? 0)],
+    ['label' => order_status_label('em_preparacao'), 'value' => (int)($orderStates['em_preparacao'] ?? 0)],
+    ['label' => order_status_label('enviada'), 'value' => (int)($orderStates['enviada'] ?? 0)],
+    ['label' => order_status_label('entregue'), 'value' => (int)($orderStates['entregue'] ?? 0)],
+    ['label' => order_status_label('cancelada'), 'value' => (int)($orderStates['cancelada'] ?? 0)]
 ];
 
 $pendingProducts = db_all(
@@ -102,23 +106,44 @@ $openMessages = db_all(
      LIMIT 5"
 );
 
+$recentOrders = db_all(
+    $conn,
+    "SELECT e.idEncomenda, e.total_final, e.estado_encomenda, e.estado_pagamento, c.nome AS cliente_nome
+     FROM encomenda e
+     JOIN cliente c ON c.idCliente = e.idCliente
+     ORDER BY e.created_at DESC
+     LIMIT 4"
+);
+
 include 'admin_header.php';
 ?>
 
-<div class="admin-top">
+<section class="admin-dashboard-hero">
   <div>
+    <span class="admin-kicker" data-admin-t="dash_kicker">Greenerry Control</span>
     <h2 data-admin-t="dash_title">Painel</h2>
+    <p data-admin-t="dash_hero_title">Tudo o que importa, num so painel.</p>
   </div>
-</div>
+  <div class="admin-export-panel">
+    <span data-admin-t="reports_export_label">Relatorio executivo</span>
+    <strong data-admin-t="reports_export_title">Excel profissional</strong>
+    <p data-admin-t="reports_export_desc">Resumo, receita mensal, artistas, categorias e encomendas recentes.</p>
+    <a href="reports.php?export=excel" class="btn btn-dark btn-sm" data-admin-t="reports_export_excel">Exportar Excel</a>
+  </div>
+</section>
 
 <section class="admin-summary-grid">
-  <div class="admin-summary-card admin-summary-card--lead">
-    <span class="admin-kicker" data-admin-t="dash_kicker">Greenerry Control</span>
-    <h3 data-admin-t="dash_hero_title">Tudo o que importa, num so painel.</h3>
-  </div>
   <div class="admin-summary-card admin-finance-stat">
     <span data-admin-t="stat_paid_revenue">Receita paga</span>
     <strong><?= h(format_eur((float)($finance['total_revenue'] ?? 0))) ?></strong>
+  </div>
+  <div class="admin-summary-card admin-finance-stat">
+    <span data-admin-t="stat_attention">Por rever</span>
+    <strong><?= $attentionTotal ?></strong>
+  </div>
+  <div class="admin-summary-card admin-finance-stat">
+    <span data-admin-t="stat_paid_orders">Encomendas pagas</span>
+    <strong><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?></strong>
   </div>
   <div class="admin-summary-card admin-finance-stat">
     <span data-admin-t="stat_platform_commission">Comissao da plataforma</span>
@@ -128,16 +153,34 @@ include 'admin_header.php';
     <span data-admin-t="stat_artist_base">Base para artistas</span>
     <strong><?= h(format_eur((float)($finance['total_artist_base'] ?? 0))) ?></strong>
   </div>
+  <div class="admin-summary-card admin-finance-stat">
+    <span data-admin-t="stat_average_order">Ticket medio</span>
+    <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
+  </div>
 </section>
 
-<div class="stats-grid">
-  <div class="stat"><div class="stat-val"><?= (int)$stats['clientes'] ?></div><div class="stat-lbl" data-admin-t="card_active_clients">Clientes ativos</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['produtos_pendentes'] ?></div><div class="stat-lbl" data-admin-t="card_pending_products">Produtos pendentes</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['releases_pendentes'] ?></div><div class="stat-lbl" data-admin-t="card_pending_releases">Lancamentos pendentes</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['mensagens_abertas'] ?></div><div class="stat-lbl" data-admin-t="card_open_messages">Mensagens abertas</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['resets_pendentes'] ?></div><div class="stat-lbl" data-admin-t="card_reset_requests">Pedidos de reset</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['encomendas'] ?></div><div class="stat-lbl" data-admin-t="card_orders">Encomendas</div></div>
-</div>
+<section class="admin-command-grid">
+  <a href="products.php" class="admin-command-card">
+    <span data-admin-t="nav_products">Produtos</span>
+    <strong><?= (int)$stats['produtos_pendentes'] ?></strong>
+    <small data-admin-t="dash_need_review">precisam de revisao</small>
+  </a>
+  <a href="releases.php" class="admin-command-card">
+    <span data-admin-t="nav_releases">Lancamentos</span>
+    <strong><?= (int)$stats['releases_pendentes'] ?></strong>
+    <small data-admin-t="dash_need_review">precisam de revisao</small>
+  </a>
+  <a href="messages.php" class="admin-command-card">
+    <span data-admin-t="nav_messages">Mensagens</span>
+    <strong><?= (int)$stats['mensagens_abertas'] ?></strong>
+    <small data-admin-t="dash_need_reply">por responder</small>
+  </a>
+  <a href="orders.php" class="admin-command-card">
+    <span data-admin-t="nav_orders">Encomendas</span>
+    <strong><?= (int)$stats['encomendas'] ?></strong>
+    <small data-admin-t="dash_total_registered">registadas</small>
+  </a>
+</section>
 
 <div class="admin-insight-grid">
   <section class="acard-box admin-analytics-card">
@@ -175,6 +218,28 @@ include 'admin_header.php';
             </div>
             <strong><?= h($entry['period_label']) ?></strong>
             <span><?= (int)$entry['total_orders'] ?> encomendas</span>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </section>
+
+  <section class="acard-box admin-analytics-card">
+    <div class="acard-box-head">
+      <h4 data-admin-t="dash_recent_orders">Encomendas recentes</h4>
+      <a href="orders.php" class="btn btn-ghost btn-sm" data-admin-t="btn_view_all">Ver tudo</a>
+    </div>
+    <?php if (!$recentOrders): ?>
+      <p data-admin-t="orders_empty">Sem encomendas registadas.</p>
+    <?php else: ?>
+      <div class="simple-list">
+        <?php foreach ($recentOrders as $order): ?>
+          <div class="simple-list-item">
+            <div>
+              <strong>#<?= (int)$order['idEncomenda'] ?> - <?= h($order['cliente_nome']) ?></strong>
+              <p><?= h(order_status_label((string)$order['estado_encomenda'])) ?> / <?= h(payment_status_label((string)$order['estado_pagamento'])) ?></p>
+            </div>
+            <span><?= h(format_eur((float)$order['total_final'])) ?></span>
           </div>
         <?php endforeach; ?>
       </div>
@@ -251,27 +316,23 @@ include 'admin_header.php';
 
   <section class="acard-box">
     <div class="acard-box-head">
-      <h4 data-admin-t="box_top_artists">Artistas com maior retorno</h4>
-      <span class="admin-card-note" data-admin-t="box_by_value">Por valor acumulado</span>
+      <h4 data-admin-t="box_catalog_health">Catalogo</h4>
+      <a href="categories.php" class="btn btn-ghost btn-sm" data-admin-t="nav_categories">Categorias</a>
     </div>
-    <?php if (!$topArtists): ?>
-      <p data-admin-t="empty_top_artists">Ainda nao existem vendas suficientes para calcular o ranking.</p>
-    <?php else: ?>
-      <div class="simple-list">
-        <?php foreach ($topArtists as $artist): ?>
-          <div class="simple-list-item simple-list-item--stacked">
-            <div>
-              <strong><?= h($artist['nome']) ?></strong>
-              <p><?= (int)$artist['total_itens'] ?> itens vendidos</p>
-            </div>
-            <div class="admin-inline-values">
-              <span><?= h(format_eur((float)$artist['total_artist_value'])) ?></span>
-              <small><?= (int)$artist['total_linhas'] ?> linhas</small>
-            </div>
-          </div>
-        <?php endforeach; ?>
+    <div class="simple-list">
+      <div class="simple-list-item">
+        <strong data-admin-t="card_active_clients">Clientes ativos</strong>
+        <span><?= (int)$stats['clientes'] ?></span>
       </div>
-    <?php endif; ?>
+      <div class="simple-list-item">
+        <strong data-admin-t="card_orders">Encomendas</strong>
+        <span><?= (int)$stats['encomendas'] ?></span>
+      </div>
+      <div class="simple-list-item">
+        <strong data-admin-t="card_active_categories">Categorias ativas</strong>
+        <span><?= (int)$stats['categorias'] ?></span>
+      </div>
+    </div>
   </section>
 </div>
 

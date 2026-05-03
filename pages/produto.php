@@ -58,7 +58,7 @@ $sizeSummary = array_map(static function ($size) {
 
 <section class="content-shell">
   <div class="wrap">
-    <a href="shop.php" class="auth-link">Voltar a loja</a>
+    <a href="shop.php" class="auth-link" data-t="product_back">Voltar a loja</a>
 
     <div class="product-hero">
       <div class="card surface-card product-media-card">
@@ -75,23 +75,23 @@ $sizeSummary = array_map(static function ($size) {
         <div class="card-body">
           <span class="badge badge-dark"><?= h($product['nomeCategoria']) ?></span>
           <h1 class="product-title"><?= h($product['nomeProduto']) ?></h1>
-          <p class="product-copy">Merch oficial do artista <a href="artist.php?id=<?= (int)$product['artist_id'] ?>" class="auth-link"><?= h($product['artista_nome']) ?></a>.</p>
+          <p class="product-copy"><span data-t="product_official_merch">Merch oficial do artista</span> <a href="artist.php?id=<?= (int)$product['artist_id'] ?>" class="auth-link"><?= h($product['artista_nome']) ?></a>.</p>
 
           <div class="product-price-row">
             <strong><?= h(format_eur((float)$product['precoAtual'])) ?></strong>
-            <span>IVA a adicionar: <?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</span>
+            <span><span data-t="product_vat_add">IVA a adicionar</span>: <?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</span>
           </div>
 
           <?php if (!empty($product['descricaoProduto'])): ?>
             <div class="message-reply-box">
-              <span class="slabel">Descricao</span>
+              <span class="slabel" data-t="product_description">Descricao</span>
               <p><?= nl2br(h($product['descricaoProduto'])) ?></p>
             </div>
           <?php endif; ?>
 
           <?php if ($sizes): ?>
             <div class="message-reply-box">
-              <span class="slabel">Tamanhos disponiveis</span>
+              <span class="slabel" data-t="product_sizes_available">Tamanhos disponiveis</span>
               <p><?= h(implode(' - ', $sizeSummary)) ?></p>
             </div>
           <?php endif; ?>
@@ -108,12 +108,12 @@ $sizeSummary = array_map(static function ($size) {
           >
             <?php if ($sizes): ?>
               <div class="fg">
-                <label class="flabel" for="product-size">Tamanho</label>
+                <label class="flabel" for="product-size" data-t="product_size">Tamanho</label>
                 <select id="product-size" class="finput">
-                  <option value="">Seleciona um tamanho</option>
+                  <option value="" data-t="product_select_size">Seleciona um tamanho</option>
                   <?php foreach ($sizes as $size): ?>
                     <option value="<?= (int)$size['idTamanho'] ?>" data-stock="<?= (int)$size['stock'] ?>" <?= (int)$size['stock'] <= 0 ? 'disabled' : '' ?>>
-                      <?= h($size['etiqueta']) ?><?php if ((int)$size['stock'] <= 0): ?> - Sem stock<?php endif; ?>
+                      <?= h($size['etiqueta']) ?><?php if ((int)$size['stock'] <= 0): ?> - <?= current_lang() === 'en' ? 'Out of stock' : 'Sem stock' ?><?php endif; ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -128,19 +128,19 @@ $sizeSummary = array_map(static function ($size) {
               </div>
 
               <button type="button" class="btn btn-dark" id="product-add-btn" onclick="handleProductAddToCart()" <?= $isOwnProduct ? 'disabled aria-disabled="true"' : '' ?>>
-                <?= $isOwnProduct ? 'Produto teu' : 'Adicionar ao carrinho' ?>
+                <span data-t="<?= $isOwnProduct ? 'product_own' : 'product_add_to_cart' ?>"><?= $isOwnProduct ? 'Produto teu' : 'Adicionar ao carrinho' ?></span>
               </button>
             </div>
 
             <p class="product-stock-note" id="product-stock-note">
               <?php if ($isOwnProduct): ?>
-                Nao podes comprar o teu proprio produto.
+                <?= current_lang() === 'en' ? 'You cannot buy your own product.' : 'Nao podes comprar o teu proprio produto.' ?>
               <?php elseif ($sizes): ?>
-                Seleciona um tamanho para ver o stock.
+                <?= current_lang() === 'en' ? 'Select a size to see stock.' : 'Seleciona um tamanho para ver o stock.' ?>
               <?php elseif ((int)$product['stock_total'] > 0): ?>
-                Em stock: <?= (int)$product['stock_total'] ?> unidade(s)
+                <?= current_lang() === 'en' ? 'In stock' : 'Em stock' ?>: <?= (int)$product['stock_total'] ?> <?= current_lang() === 'en' ? 'unit(s)' : 'unidade(s)' ?>
               <?php else: ?>
-                Sem stock
+                <?= current_lang() === 'en' ? 'Out of stock' : 'Sem stock' ?>
               <?php endif; ?>
             </p>
           </div>
@@ -150,8 +150,8 @@ $sizeSummary = array_map(static function ($size) {
 
     <?php if ($relatedProducts): ?>
       <div class="page-intro mt8">
-        <span class="slabel">Mais merch</span>
-        <h2>Produtos relacionados</h2>
+        <span class="slabel" data-t="product_more_merch">Mais merch</span>
+        <h2 data-t="product_related">Produtos relacionados</h2>
       </div>
 
       <div class="grid stg">
@@ -225,6 +225,17 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     updateStockNote(Number(box.dataset.baseStock || 0));
   }
+
+  window.addEventListener('greenerry:langchange', () => {
+    if (sizeSelect) {
+      const selected = sizeSelect.options[sizeSelect.selectedIndex];
+      const stock = Number(selected?.dataset?.stock || 0);
+      updateStockNote(stock, selected?.value ? (selected.textContent || '').split(' - ')[0] : '');
+      return;
+    }
+
+    updateStockNote(Number(box.dataset.baseStock || 0));
+  });
 
   window.handleProductAddToCart = () => {
     if (box.dataset.ownProduct === '1') {

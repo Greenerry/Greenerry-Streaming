@@ -11,19 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['senha'] ?? '';
     $confirmPassword = $_POST['confirmar_senha'] ?? '';
 
-    $err = validate_nome($nomeValue)
+    $err = verify_csrf_request()
+        ?? validate_nome($nomeValue)
         ?? validate_email($emailValue)
         ?? validate_password($password);
 
     if (!$err && $password !== $confirmPassword) {
-        $err = 'As palavras-passe nao coincidem.';
+        $err = tr('error.password_mismatch');
     }
 
     if (!$err) {
         $emailSafe = db_escape($conn, $emailValue);
         $exists = db_one($conn, "SELECT idCliente FROM cliente WHERE email = '{$emailSafe}' LIMIT 1");
         if ($exists) {
-            $err = 'Ja existe uma conta com esse email.';
+            $err = tr('error.account_exists');
         } else {
             $nomeSafe = db_escape($conn, $nomeValue);
             $slug = ensure_unique_cliente_slug($conn, $nomeValue);
@@ -44,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
 
-                $ok = 'Conta criada com sucesso. Ja podes entrar.';
+                $ok = tr('success.account_created');
             } else {
-                $err = 'Nao foi possivel criar a conta. Tenta novamente.';
+                $err = tr('error.create_account');
             }
         }
     }
@@ -59,8 +60,8 @@ include '../includes/header.php';
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
-        <span class="slabel">Registo</span>
-        <h2>Criar conta</h2>
+        <span class="slabel" data-t="register_label">Registo</span>
+        <h2 data-t="register_title">Criar conta</h2>
       </div>
 
       <?php if ($err): ?>
@@ -72,6 +73,7 @@ include '../includes/header.php';
       <?php endif; ?>
 
       <form method="post" class="auth-form" novalidate>
+        <?= csrf_input() ?>
         <div class="fg">
           <label class="flabel" for="nome">Nome</label>
           <input id="nome" type="text" name="nome" class="finput" required maxlength="120" autocomplete="name" value="<?= h($nomeValue) ?>">
@@ -84,21 +86,21 @@ include '../includes/header.php';
 
         <div class="frow">
           <div class="fg">
-            <label class="flabel" for="senha">Palavra-passe</label>
+            <label class="flabel" for="senha" data-t="register_password">Palavra-passe</label>
             <input id="senha" type="password" name="senha" class="finput" required minlength="8" autocomplete="new-password">
           </div>
           <div class="fg">
-            <label class="flabel" for="confirmar_senha">Confirmar palavra-passe</label>
+            <label class="flabel" for="confirmar_senha" data-t="register_confirm_password">Confirmar palavra-passe</label>
             <input id="confirmar_senha" type="password" name="confirmar_senha" class="finput" required minlength="8" autocomplete="new-password">
           </div>
         </div>
 
-        <button type="submit" class="btn btn-dark btn-full btn-lg">Criar conta</button>
+        <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="register_submit">Criar conta</button>
       </form>
 
       <p class="auth-foot-note">
-        Ja tens conta?
-        <a href="login.php">Entrar</a>
+        <span data-t="register_have_account">Ja tens conta?</span>
+        <a href="login.php" data-t="register_login">Entrar</a>
       </p>
     </div>
   </div>
