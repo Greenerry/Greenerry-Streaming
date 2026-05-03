@@ -278,7 +278,7 @@ function tr(string $key, array $replace = []): string
             'receipt.subtotal' => 'Subtotal',
             'receipt.vat' => 'IVA',
             'receipt.total' => 'Total final',
-            'receipt.footer' => 'Recibo Greenerry gerado para demonstracao escolar.'
+            'receipt.footer' => 'Recibo gerado automaticamente pela plataforma Greenerry.'
         ],
         'en' => [
             'status.approved' => 'Approved',
@@ -417,7 +417,7 @@ function tr(string $key, array $replace = []): string
             'receipt.subtotal' => 'Subtotal',
             'receipt.vat' => 'VAT',
             'receipt.total' => 'Final total',
-            'receipt.footer' => 'Greenerry receipt generated for school demonstration use.'
+            'receipt.footer' => 'Receipt generated automatically by the Greenerry platform.'
         ],
     ];
 

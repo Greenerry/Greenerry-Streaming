@@ -8,7 +8,7 @@ $siteEmail = site_setting('contact_email', 'support@greenerry.test');
 $sitePhone = site_setting('contact_phone', '+351 900 000 000');
 $instagramUrl = site_setting('instagram_url', '#');
 $xUrl = site_setting('x_url', '#');
-$footerNote = site_setting('footer_note', '(c) 2026 Greenerry. Built for PAP presentation use.');
+$footerNote = site_setting('footer_note', '(c) 2026 Greenerry. Independent music and merch platform.');
 ?>
   </div><!-- end .page-body -->
 

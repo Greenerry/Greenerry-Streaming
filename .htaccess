@@ -1,0 +1,9 @@
+Options -Indexes
+
+<FilesMatch "\.(sql|lock|env|ini|bak|backup)$">
+    Require all denied
+</FilesMatch>
+
+<Files "composer.json">
+    Require all denied
+</Files>
