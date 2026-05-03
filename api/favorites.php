@@ -11,6 +11,12 @@ if (!is_user_logged_in()) {
 $uid = current_user_id();
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) {
+    http_response_code(403);
+    echo json_encode(['error' => tr('error.invalid_session')], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($action === 'get') {
     $rows = db_all(
         $conn,

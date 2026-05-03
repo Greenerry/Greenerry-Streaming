@@ -398,6 +398,7 @@ document.querySelectorAll('.js-toggle-item').forEach((button) => {
     const body = new URLSearchParams();
     body.set('type', button.dataset.type);
     body.set('id', button.dataset.id);
+    if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
 
     const response = await fetch('../api/toggle_item.php', {
       method: 'POST',

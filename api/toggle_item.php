@@ -12,6 +12,12 @@ $uid = current_user_id();
 $type = $_POST['type'] ?? '';
 $id = (int)($_POST['id'] ?? 0);
 
+if (!verify_csrf_token($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => tr('error.invalid_session')], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($id <= 0 || !in_array($type, ['music', 'merch'], true)) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);

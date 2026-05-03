@@ -20,6 +20,9 @@ $adminName = trim((string)($_SESSION['admin_name'] ?? 'Admin'));
   <link rel="stylesheet" href="../assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body>
+<script>
+window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
+</script>
 <div class="admin-shell">
   <button type="button" class="admin-mobile-menu" id="admin-mobile-menu" aria-label="Menu" aria-controls="admin-sidebar" aria-expanded="false">
     <span></span><span></span><span></span>

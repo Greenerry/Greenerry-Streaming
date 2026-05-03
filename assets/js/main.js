@@ -22,6 +22,12 @@ function _norm(track) {
   return track;
 }
 
+function _csrfBody(params = {}) {
+  const body = new URLSearchParams(params);
+  if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
+  return body.toString();
+}
+
 /* Translations */
 let T = { pt: {}, en: {} };
 let lang = localStorage.getItem('g_lang') || 'pt';
@@ -316,7 +322,7 @@ function toggleFav() {
     fetch(window.SITE_BASE + '/api/favorites.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'action=' + action + '&musicId=' + _cur.id
+      body: _csrfBody({ action, musicId: _cur.id })
     })
       .then((response) => response.json())
       .then(() => {
@@ -458,7 +464,7 @@ function removeFav(musicId) {
   fetch(window.SITE_BASE + '/api/favorites.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'action=remove&musicId=' + musicId
+    body: _csrfBody({ action: 'remove', musicId })
   })
     .then((response) => response.json())
     .then(() => {

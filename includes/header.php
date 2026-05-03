@@ -26,7 +26,10 @@ if (is_user_logged_in()) {
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body data-user-id="<?= (int)$jsUserId ?>">
-<script>window.SITE_BASE='<?= $_base ?>';</script>
+<script>
+window.SITE_BASE='<?= $_base ?>';
+window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
+</script>
 
 <div class="sl-overlay" id="sl-overlay"></div>
 

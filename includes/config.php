@@ -9,16 +9,18 @@ $_scriptDir = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ??
 $_base = preg_replace('#/(pages|admin|api|includes)$#', '', $_scriptDir);
 $_base = $_base === '/' || $_base === '.' ? '' : rtrim((string)$_base, '/');
 
-if ($_live) {
-    $db_host = 'sql101.infinityfree.com';
-    $db_user = 'if0_41799412';
-    $db_pass = 'eVqksGzq7mP';
-    $db_name = 'if0_41799412_greenerry';
-} else {
-    $db_host = 'localhost';
-    $db_user = 'root';
-    $db_pass = '';
-    $db_name = 'greenerry';
+$localConfig = __DIR__ . '/config.local.php';
+if (is_file($localConfig)) {
+    require $localConfig;
+}
+
+$db_host = getenv('GREENERRY_DB_HOST') ?: ($db_host ?? ($_live ? '' : 'localhost'));
+$db_user = getenv('GREENERRY_DB_USER') ?: ($db_user ?? ($_live ? '' : 'root'));
+$db_pass = getenv('GREENERRY_DB_PASS') ?: ($db_pass ?? '');
+$db_name = getenv('GREENERRY_DB_NAME') ?: ($db_name ?? ($_live ? '' : 'greenerry'));
+
+if ($db_host === '' || $db_user === '' || $db_name === '') {
+    die('Configura as credenciais da base de dados em variaveis de ambiente ou em includes/config.local.php.');
 }
 
 $conn = mysqli_connect($db_host, $db_user, $db_pass, $db_name);
@@ -128,6 +130,12 @@ function verify_csrf_request(): ?string
     }
 
     return null;
+}
+
+function verify_csrf_token(?string $token): bool
+{
+    $sessionToken = (string)($_SESSION['csrf_token'] ?? '');
+    return $token !== null && $token !== '' && $sessionToken !== '' && hash_equals($sessionToken, $token);
 }
 
 function tr(string $key, array $replace = []): string
@@ -621,6 +629,7 @@ function current_admin(mysqli $conn): ?array
 
 function login_user_session(array $user): void
 {
+    session_regenerate_id(true);
     $_SESSION['user_logged_in'] = true;
     $_SESSION['user_id'] = (int)$user['idCliente'];
     $_SESSION['user_email'] = $user['email'];
@@ -629,6 +638,7 @@ function login_user_session(array $user): void
 
 function login_admin_session(array $admin): void
 {
+    session_regenerate_id(true);
     $_SESSION['admin_logged_in'] = true;
     $_SESSION['admin_id'] = (int)$admin['idAdmin'];
     $_SESSION['admin_email'] = $admin['email'];
@@ -733,7 +743,7 @@ function password_matches(string $plainPassword, string $storedPassword): bool
         return true;
     }
 
-    return hash_equals($storedPassword, $plainPassword);
+    return false;
 }
 
 function validate_uploaded_image(array $file, int $maxBytes = 5_000_000): ?string
