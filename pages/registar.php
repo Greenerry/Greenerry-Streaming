@@ -76,7 +76,7 @@ include '../includes/header.php';
         <?= csrf_input() ?>
         <div class="fg">
           <label class="flabel" for="nome">Nome</label>
-          <input id="nome" type="text" name="nome" class="finput" required maxlength="120" autocomplete="name" value="<?= h($nomeValue) ?>">
+          <input id="nome" type="text" name="nome" class="finput" required maxlength="120" autocomplete="name" data-name-only value="<?= h($nomeValue) ?>">
         </div>
 
         <div class="fg">

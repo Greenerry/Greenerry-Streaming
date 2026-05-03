@@ -23,16 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
     if (!$err && ($recipient === '' || mb_strlen($recipient) < 3)) {
         $err = tr('error.required_recipient');
+    } elseif (!$err && (($nameErr = validate_nome($recipient)) !== null)) {
+        $err = $nameErr;
     } elseif (!$err && ($address === '' || mb_strlen($address) < 5)) {
         $err = tr('error.short_address');
-    } elseif (!$err && ($city === '' || mb_strlen($city) < 2)) {
-        $err = tr('error.required_city');
-    } elseif (!$err && !preg_match('/^\d{4}-\d{3}$/', $postalCode)) {
-        $err = tr('error.invalid_postal');
-    } elseif (!$err && !preg_match('/^(\+351\s?)?9\d{8}$/', $phone)) {
+    } elseif (!$err && (($cityErr = validate_city($city)) !== null)) {
+        $err = $cityErr;
+    } elseif (!$err && (($postalErr = validate_postal_code($postalCode)) !== null)) {
+        $err = $postalErr;
+    } elseif (!$err && $phone === '') {
         $err = tr('error.invalid_phone');
-    } elseif (!$err && $nif !== '' && !preg_match('/^\d{9}$/', $nif)) {
-        $err = tr('error.invalid_nif');
+    } elseif (!$err && (($phoneErr = validate_phone($phone)) !== null)) {
+        $err = $phoneErr;
+    } elseif (!$err && (($nifErr = validate_nif($nif)) !== null)) {
+        $err = $nifErr;
     } elseif (!$err && !in_array($paymentMethod, ['cartao', 'mbway', 'transferencia'], true)) {
         $err = tr('error.invalid_payment_method');
     } elseif (!$err && !$cart) {
@@ -327,11 +331,11 @@ include '../includes/header.php';
               <div class="frow">
                 <div class="fg">
                   <label class="flabel" for="nome_destinatario" data-t="checkout_recipient">Nome do destinatario</label>
-                  <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required>
+                  <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required maxlength="120" data-name-only>
                 </div>
                 <div class="fg">
                   <label class="flabel" for="telefone" data-t="checkout_phone">Telefone</label>
-                  <input id="telefone" type="tel" name="telefone" class="finput" required placeholder="+351 912345678">
+                  <input id="telefone" type="tel" name="telefone" class="finput" required maxlength="16" placeholder="+351 912345678">
                 </div>
               </div>
 
@@ -343,11 +347,11 @@ include '../includes/header.php';
               <div class="frow">
                 <div class="fg">
                   <label class="flabel" for="cidade" data-t="checkout_city">Cidade</label>
-                  <input id="cidade" type="text" name="cidade" class="finput" required>
+                  <input id="cidade" type="text" name="cidade" class="finput" required maxlength="120" data-name-only>
                 </div>
                 <div class="fg">
                   <label class="flabel" for="codigo_postal" data-t="checkout_postal">Codigo postal</label>
-                  <input id="codigo_postal" type="text" name="codigo_postal" class="finput" required placeholder="1000-001">
+                  <input id="codigo_postal" type="text" name="codigo_postal" class="finput" required maxlength="8" placeholder="1000-001">
                 </div>
               </div>
 

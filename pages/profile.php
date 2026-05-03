@@ -14,7 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $foto = $user['foto'] ?? '';
     $banner = $user['banner'] ?? '';
 
-    $err = verify_csrf_request() ?? validate_nome($nome);
+    $err = verify_csrf_request()
+        ?? validate_nome($nome)
+        ?? validate_phone($telefone);
 
     $imgDir = __DIR__ . '/../assets/img/';
     if (!is_dir($imgDir)) {
@@ -143,12 +145,12 @@ include '../includes/header.php';
               <?= csrf_input() ?>
               <div class="fg">
                 <label class="flabel" for="nome" data-t="profile_field_name">Nome</label>
-                <input id="nome" type="text" name="nome" class="finput" required value="<?= h($user['nome']) ?>">
+                <input id="nome" type="text" name="nome" class="finput" required maxlength="120" data-name-only value="<?= h($user['nome']) ?>">
               </div>
 
               <div class="fg">
                 <label class="flabel" for="telefone" data-t="profile_field_phone">Telefone</label>
-                <input id="telefone" type="text" name="telefone" class="finput" value="<?= h($user['telefone'] ?? '') ?>">
+                <input id="telefone" type="tel" name="telefone" class="finput" maxlength="16" placeholder="+351 912345678" value="<?= h($user['telefone'] ?? '') ?>">
               </div>
 
               <div class="fg">

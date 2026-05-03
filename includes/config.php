@@ -168,6 +168,7 @@ function tr(string $key, array $replace = []): string
             'error.required_name' => 'O nome e obrigatorio.',
             'error.short_name' => 'O nome deve ter pelo menos 2 caracteres.',
             'error.long_name' => 'O nome nao pode ter mais de 120 caracteres.',
+            'error.invalid_name_chars' => 'O nome deve conter apenas letras, espacos, hifens ou apostrofes.',
             'error.required_email' => 'O email e obrigatorio.',
             'error.invalid_email' => 'O email introduzido nao e valido.',
             'error.long_email' => 'O email nao pode ter mais de 150 caracteres.',
@@ -202,6 +203,7 @@ function tr(string $key, array $replace = []): string
             'error.required_recipient' => 'Indica o nome do destinatario.',
             'error.short_address' => 'A morada deve ter pelo menos 5 caracteres.',
             'error.required_city' => 'Indica a cidade.',
+            'error.invalid_city_chars' => 'A cidade deve conter apenas letras, espacos, hifens ou apostrofes.',
             'error.empty_cart' => 'O carrinho esta vazio.',
             'error.invalid_cart_product' => 'Existe um produto invalido no carrinho.',
             'error.product_unavailable' => 'Um dos produtos ja nao esta disponivel.',
@@ -307,6 +309,7 @@ function tr(string $key, array $replace = []): string
             'error.required_name' => 'Name is required.',
             'error.short_name' => 'Name must have at least 2 characters.',
             'error.long_name' => 'Name cannot have more than 120 characters.',
+            'error.invalid_name_chars' => 'Name can only contain letters, spaces, hyphens or apostrophes.',
             'error.required_email' => 'Email is required.',
             'error.invalid_email' => 'The email address is not valid.',
             'error.long_email' => 'Email cannot have more than 150 characters.',
@@ -341,6 +344,7 @@ function tr(string $key, array $replace = []): string
             'error.required_recipient' => 'Enter the recipient name.',
             'error.short_address' => 'The address must have at least 5 characters.',
             'error.required_city' => 'Enter the city.',
+            'error.invalid_city_chars' => 'City can only contain letters, spaces, hyphens or apostrophes.',
             'error.empty_cart' => 'The cart is empty.',
             'error.invalid_cart_product' => 'There is an invalid product in the cart.',
             'error.product_unavailable' => 'One of the products is no longer available.',
@@ -704,7 +708,42 @@ function validate_nome(string $nome): ?string
     if (mb_strlen($nome) > 120) {
         return tr('error.long_name');
     }
+    if (!preg_match("/^[\\p{L}\\p{M}][\\p{L}\\p{M}\\s.'-]*$/u", $nome)) {
+        return tr('error.invalid_name_chars');
+    }
     return null;
+}
+
+function validate_city(string $city): ?string
+{
+    $city = trim($city);
+    if ($city === '' || mb_strlen($city) < 2) {
+        return tr('error.required_city');
+    }
+    if (!preg_match("/^[\\p{L}\\p{M}][\\p{L}\\p{M}\\s.'-]*$/u", $city)) {
+        return tr('error.invalid_city_chars');
+    }
+    return null;
+}
+
+function validate_phone(?string $phone): ?string
+{
+    $phone = trim((string)$phone);
+    if ($phone !== '' && !preg_match('/^(\\+351\\s?)?9\\d{8}$/', $phone)) {
+        return tr('error.invalid_phone');
+    }
+    return null;
+}
+
+function validate_postal_code(string $postalCode): ?string
+{
+    return preg_match('/^\\d{4}-\\d{3}$/', trim($postalCode)) ? null : tr('error.invalid_postal');
+}
+
+function validate_nif(?string $nif): ?string
+{
+    $nif = trim((string)$nif);
+    return $nif === '' || preg_match('/^\\d{9}$/', $nif) ? null : tr('error.invalid_nif');
 }
 
 function validate_email(string $email): ?string

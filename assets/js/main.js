@@ -28,6 +28,17 @@ function _csrfBody(params = {}) {
   return body.toString();
 }
 
+function initInputValidation(root = document) {
+  root.querySelectorAll('[data-name-only]').forEach((input) => {
+    if (input.dataset.nameOnlyReady === '1') return;
+    input.dataset.nameOnlyReady = '1';
+    input.addEventListener('input', () => {
+      const clean = input.value.replace(new RegExp('[0-9_+=@#$%^&*()\\[\\]{}<>/\\\\|~`:;"!?]', 'g'), '');
+      if (input.value !== clean) input.value = clean;
+    });
+  });
+}
+
 /* Translations */
 let T = { pt: {}, en: {} };
 let lang = localStorage.getItem('g_lang') || 'pt';
@@ -336,7 +347,9 @@ function toggleFav() {
         _updateFavIcon();
         if (document.getElementById('favs-grid')) renderFavs();
       })
-      .catch((error) => console.log('Favorite error:', error));
+      .catch((error) => {
+        if (window.DEBUG_GREENERRY) console.warn('Favorite error:', error);
+      });
     return;
   }
 
@@ -406,7 +419,7 @@ function renderFavs() {
       _displayFavGrid(favs, grid);
     })
     .catch((error) => {
-      console.log('Load favs error:', error);
+      if (window.DEBUG_GREENERRY) console.warn('Load favs error:', error);
       const favs = favGet();
       if (!favs.length) {
         if (empty) empty.style.display = 'block';
@@ -471,7 +484,9 @@ function removeFav(musicId) {
       renderFavs();
       updateFavBadge();
     })
-    .catch((error) => console.log('Remove fav error:', error));
+    .catch((error) => {
+      if (window.DEBUG_GREENERRY) console.warn('Remove fav error:', error);
+    });
 }
 
 function updateFavBadge() {
@@ -1068,6 +1083,8 @@ function _bindSoftNavigation() {
 
 /* Page init */
 function _initPageContent() {
+  initInputValidation();
+
   if (document.getElementById('favs-grid')) {
     renderFavs();
     updateFavBadge();
