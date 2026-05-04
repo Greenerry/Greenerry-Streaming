@@ -70,6 +70,30 @@ foreach ($categoryRevenue as $category) {
     $maxCategoryRevenue = max($maxCategoryRevenue, (float)$category['total_value']);
 }
 
+$breakdownTotal = max(
+    1,
+    (float)($finance['paid_revenue'] ?? 0) + (float)($finance['commission'] ?? 0) + (float)($finance['artist_value'] ?? 0) + (float)($finance['blocked_value'] ?? 0)
+);
+$incomeBreakdown = [
+    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#c9d0db'],
+    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#9dafaa'],
+    ['label' => 'Base artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#8b98aa'],
+    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#d7b676'],
+];
+$breakdownStops = [];
+$breakdownCursor = 0.0;
+foreach ($incomeBreakdown as $item) {
+    $slice = $item['value'] > 0 ? ($item['value'] / $breakdownTotal) * 100 : 0;
+    $next = min(100, $breakdownCursor + $slice);
+    if ($next > $breakdownCursor) {
+        $breakdownStops[] = $item['color'] . ' ' . round($breakdownCursor, 2) . '% ' . round($next, 2) . '%';
+    }
+    $breakdownCursor = $next;
+}
+$donutStyle = $breakdownStops
+    ? 'background: conic-gradient(' . implode(', ', $breakdownStops) . ', rgba(255,255,255,.10) ' . round($breakdownCursor, 2) . '% 100%);'
+    : 'background: conic-gradient(#c9d0db 0 38%, #9dafaa 38% 62%, #8b98aa 62% 84%, #d7b676 84% 100%);';
+
 if (($_GET['export'] ?? '') === 'excel') {
     $recentOrdersExport = db_all(
         $conn,
@@ -352,7 +376,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="reports_kicker">Analytics</span>
     <h2 data-admin-t="reports_title">Relatorios</h2>
+    <p data-admin-t="reports_intro">Receita, categorias, artistas e exportacao executiva num so lugar.</p>
   </div>
   <a href="reports.php?export=excel" class="btn btn-dark btn-sm" data-admin-t="reports_export_excel">Exportar Excel</a>
 </div>
@@ -363,6 +389,54 @@ include 'admin_header.php';
   <div class="stat"><div class="stat-val"><?= h(format_eur((float)($finance['artist_value'] ?? 0))) ?></div><div class="stat-lbl" data-admin-t="stat_artist_base">Base para artistas</div></div>
   <div class="stat"><div class="stat-val"><?= h(format_eur((float)($finance['blocked_value'] ?? 0))) ?></div><div class="stat-lbl" data-admin-t="reports_blocked_value">Cancelado/reembolsado</div></div>
 </div>
+
+<section class="admin-report-grid">
+  <article class="acard-box admin-donut-card">
+    <div class="acard-box-head">
+      <h4 data-admin-t="reports_income_breakdown">Receita detalhada</h4>
+      <span class="admin-card-note" data-admin-t="reports_live_finance">Financas em direto</span>
+    </div>
+    <div class="admin-donut" style="<?= h($donutStyle) ?>">
+      <div>
+        <strong><?= $breakdownTotal > 1 ? round(((float)($finance['paid_revenue'] ?? 0) / $breakdownTotal) * 100, 1) : 0 ?>%</strong>
+        <span data-admin-t="reports_paid_short">pago</span>
+      </div>
+    </div>
+    <div class="admin-donut-legend">
+      <?php foreach ($incomeBreakdown as $item): ?>
+        <div>
+          <span style="background: <?= h($item['color']) ?>"></span>
+          <strong data-admin-t="<?= h($item['tkey']) ?>"><?= h($item['label']) ?></strong>
+          <em><?= h(format_eur($item['value'])) ?></em>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </article>
+
+  <article class="acard-box admin-report-bars-card">
+    <div class="acard-box-head">
+      <h4 data-admin-t="reports_category_revenue">Receita por categoria</h4>
+      <span class="admin-card-note" data-admin-t="reports_top_categories">Top categorias</span>
+    </div>
+    <?php if (!$categoryRevenue): ?>
+      <p data-admin-t="reports_empty_categories">Ainda nao existem vendas por categoria.</p>
+    <?php else: ?>
+      <div class="admin-bar-list">
+        <?php foreach (array_slice($categoryRevenue, 0, 5) as $category): ?>
+          <?php $width = $maxCategoryRevenue > 0 ? max(8, (int)round(((float)$category['total_value'] / $maxCategoryRevenue) * 100)) : 8; ?>
+          <div class="admin-bar-row">
+            <div class="admin-bar-row-head">
+              <strong><?= h($category['categoria_nome']) ?></strong>
+              <p><?= (int)$category['items_count'] ?> <span data-admin-t="orders_items">items</span></p>
+            </div>
+            <span><?= h(format_eur((float)$category['total_value'])) ?></span>
+            <div class="admin-bar-track"><div style="width: <?= $width ?>%"></div></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </article>
+</section>
 
 <section class="acard-box">
   <div class="acard-box-head">
@@ -415,29 +489,6 @@ include 'admin_header.php';
               <p><?= (int)$artist['orders_count'] ?> <span data-admin-t="card_orders">encomendas</span></p>
             </div>
             <span><?= h(format_eur((float)$artist['artist_total'])) ?></span>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </section>
-
-  <section class="acard-box">
-    <div class="acard-box-head">
-      <h4 data-admin-t="reports_category_revenue">Receita por categoria</h4>
-    </div>
-    <?php if (!$categoryRevenue): ?>
-      <p data-admin-t="reports_empty_categories">Ainda nao existem vendas por categoria.</p>
-    <?php else: ?>
-      <div class="admin-bar-list">
-        <?php foreach ($categoryRevenue as $category): ?>
-          <?php $width = $maxCategoryRevenue > 0 ? max(8, (int)round(((float)$category['total_value'] / $maxCategoryRevenue) * 100)) : 8; ?>
-          <div class="admin-bar-row">
-            <div class="admin-bar-row-head">
-              <strong><?= h($category['categoria_nome']) ?></strong>
-              <p><?= (int)$category['items_count'] ?> <span data-admin-t="orders_items">items</span></p>
-            </div>
-            <span><?= h(format_eur((float)$category['total_value'])) ?></span>
-            <div class="admin-bar-track"><div style="width: <?= $width ?>%"></div></div>
           </div>
         <?php endforeach; ?>
       </div>

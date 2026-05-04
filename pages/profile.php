@@ -138,7 +138,7 @@ include '../includes/header.php';
       <?php endif; ?>
 
       <div class="two-column-layout">
-        <div class="card surface-card">
+        <div class="card surface-card no-motion">
           <div class="card-body">
             <h3 class="section-card-title" data-t="profile_edit">Editar perfil</h3>
             <form method="post" enctype="multipart/form-data" class="stack-form">
@@ -271,7 +271,7 @@ include '../includes/header.php';
                 <tbody>
                   <?php foreach ($releases as $release): ?>
                     <tr>
-                      <td>
+                      <td class="profile-table-actions">
                         <div class="admin-table-thumb">
                           <?php if (!empty($release['capa'])): ?>
                             <img src="<?= h(asset_url('img', $release['capa'])) ?>" alt="<?= h($release['titulo']) ?>">
@@ -357,7 +357,7 @@ include '../includes/header.php';
                       <td><?= h(format_eur((float)$product['precoAtual'])) ?></td>
                       <td><?= (int)$product['stock_total'] ?></td>
                       <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
-                      <td>
+                      <td class="profile-table-actions">
                         <a href="upload_merch.php?edit=<?= (int)$product['idProduto'] ?>" class="btn btn-ghost btn-sm" data-t="profile_action_edit">Editar</a>
                         <?php if ((int)($product['bloqueado_admin'] ?? 0) === 1): ?>
                           <span class="badge badge-light" data-t="profile_admin_blocked">Bloqueado pelo admin</span>

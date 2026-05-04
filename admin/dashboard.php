@@ -75,6 +75,39 @@ $orderStateCards = [
     ['label' => order_status_label('entregue'), 'value' => (int)($orderStates['entregue'] ?? 0)],
     ['label' => order_status_label('cancelada'), 'value' => (int)($orderStates['cancelada'] ?? 0)]
 ];
+$totalOrderStates = array_sum(array_column($orderStateCards, 'value'));
+$orderColors = ['#c9d0db', '#8b98aa', '#9dafaa', '#d7b676', '#d98596'];
+$orderStops = [];
+$orderCursor = 0.0;
+foreach ($orderStateCards as $index => $stateCard) {
+    $slice = $totalOrderStates > 0 ? ((int)$stateCard['value'] / $totalOrderStates) * 100 : 0;
+    $next = min(100, $orderCursor + $slice);
+    if ($next > $orderCursor) {
+        $orderStops[] = $orderColors[$index] . ' ' . round($orderCursor, 2) . '% ' . round($next, 2) . '%';
+    }
+    $orderCursor = $next;
+}
+$orderDonutStyle = $orderStops
+    ? 'background: conic-gradient(' . implode(', ', $orderStops) . ', rgba(255,255,255,.10) ' . round($orderCursor, 2) . '% 100%);'
+    : 'background: conic-gradient(#c9d0db 0 20%, #8b98aa 20% 40%, #9dafaa 40% 60%, #d7b676 60% 80%, #d98596 80% 100%);';
+
+$chartPoints = [];
+$chartAreaPoints = [];
+$chartWidth = 620;
+$chartHeight = 220;
+$chartPadding = 28;
+$chartCount = max(1, count($monthlyPerformance) - 1);
+foreach ($monthlyPerformance as $index => $entry) {
+    $x = $chartPadding + ($chartCount > 0 ? ($index / $chartCount) * ($chartWidth - ($chartPadding * 2)) : 0);
+    $ratio = $maxMonthlyRevenue > 0 ? ((float)$entry['total_revenue'] / $maxMonthlyRevenue) : 0;
+    $y = ($chartHeight - $chartPadding) - ($ratio * ($chartHeight - ($chartPadding * 2)));
+    $chartPoints[] = round($x, 1) . ',' . round($y, 1);
+}
+if ($chartPoints) {
+    $firstX = explode(',', $chartPoints[0])[0];
+    $lastX = explode(',', $chartPoints[count($chartPoints) - 1])[0];
+    $chartAreaPoints = array_merge([$firstX . ',' . ($chartHeight - $chartPadding)], $chartPoints, [$lastX . ',' . ($chartHeight - $chartPadding)]);
+}
 
 $pendingProducts = db_all(
     $conn,
@@ -118,222 +151,132 @@ $recentOrders = db_all(
 include 'admin_header.php';
 ?>
 
-<section class="admin-dashboard-hero">
-  <div>
-    <span class="admin-kicker" data-admin-t="dash_kicker">Greenerry Control</span>
-    <h2 data-admin-t="dash_title">Painel</h2>
-    <p data-admin-t="dash_hero_title">Tudo o que importa, num so painel.</p>
-  </div>
-  <div class="admin-export-panel">
-    <span data-admin-t="reports_export_label">Relatorio executivo</span>
-    <strong data-admin-t="reports_export_title">Excel profissional</strong>
-    <p data-admin-t="reports_export_desc">Resumo, receita mensal, artistas, categorias e encomendas recentes.</p>
-    <a href="reports.php?export=excel" class="btn btn-dark btn-sm" data-admin-t="reports_export_excel">Exportar Excel</a>
-  </div>
-</section>
-
-<section class="admin-summary-grid">
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_paid_revenue">Receita paga</span>
-    <strong><?= h(format_eur((float)($finance['total_revenue'] ?? 0))) ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_attention">Por rever</span>
-    <strong><?= $attentionTotal ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_paid_orders">Encomendas pagas</span>
-    <strong><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_platform_commission">Comissao da plataforma</span>
-    <strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_artist_base">Base para artistas</span>
-    <strong><?= h(format_eur((float)($finance['total_artist_base'] ?? 0))) ?></strong>
-  </div>
-  <div class="admin-summary-card admin-finance-stat">
-    <span data-admin-t="stat_average_order">Ticket medio</span>
-    <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
-  </div>
-</section>
-
-<section class="admin-command-grid">
-  <a href="products.php" class="admin-command-card">
-    <span data-admin-t="nav_products">Produtos</span>
-    <strong><?= (int)$stats['produtos_pendentes'] ?></strong>
-    <small data-admin-t="dash_need_review">precisam de revisao</small>
-  </a>
-  <a href="releases.php" class="admin-command-card">
-    <span data-admin-t="nav_releases">Lancamentos</span>
-    <strong><?= (int)$stats['releases_pendentes'] ?></strong>
-    <small data-admin-t="dash_need_review">precisam de revisao</small>
-  </a>
-  <a href="messages.php" class="admin-command-card">
-    <span data-admin-t="nav_messages">Mensagens</span>
-    <strong><?= (int)$stats['mensagens_abertas'] ?></strong>
-    <small data-admin-t="dash_need_reply">por responder</small>
-  </a>
-  <a href="orders.php" class="admin-command-card">
-    <span data-admin-t="nav_orders">Encomendas</span>
-    <strong><?= (int)$stats['encomendas'] ?></strong>
-    <small data-admin-t="dash_total_registered">registadas</small>
-  </a>
-</section>
-
-<div class="admin-insight-grid">
-  <section class="acard-box admin-analytics-card">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_order_states">Estado das encomendas</h4>
+<section class="admin-dashboard-v4">
+  <header class="dash-v4-top">
+    <div>
+      <span class="admin-kicker" data-admin-t="dash_kicker">Greenerry Control</span>
+      <h2 data-admin-t="dash_title">Dashboard</h2>
+      <p data-admin-t="dash_intro">Revenue, approvals, support, and orders in one clean command view.</p>
     </div>
-    <div class="admin-status-grid">
-      <?php foreach ($orderStateCards as $stateCard): ?>
-        <div class="admin-status-chip">
-          <strong><?= (int)$stateCard['value'] ?></strong>
-          <span><?= h($stateCard['label']) ?></span>
+    <div class="dash-v4-actions">
+      <a href="reports.php" class="btn btn-ghost btn-sm" data-admin-t="nav_reports">Reports</a>
+      <a href="reports.php?export=excel" class="btn btn-dark btn-sm" data-admin-t="reports_export_excel">Exportar Excel</a>
+    </div>
+  </header>
+
+  <div class="dash-v4-kpis">
+    <article><span data-admin-t="stat_paid_revenue">Receita paga</span><strong><?= h(format_eur((float)($finance['total_revenue'] ?? 0))) ?></strong><small><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?> <span data-admin-t="dash_paid_orders_note">paid orders</span></small></article>
+    <article><span data-admin-t="stat_attention">Por rever</span><strong><?= $attentionTotal ?></strong><small data-admin-t="dash_review_queue_note">Products, releases, messages, resets</small></article>
+    <article><span data-admin-t="stat_platform_commission">Comissao da plataforma</span><strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong><small data-admin-t="dash_platform_margin_note">Platform margin</small></article>
+    <article><span data-admin-t="stat_average_order">Ticket medio</span><strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong><small data-admin-t="dash_average_order_note">Average paid order</small></article>
+  </div>
+
+  <div class="dash-v4-grid">
+    <section class="dash-v4-card dash-v4-main-chart">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_revenue_trend">Revenue trend</span>
+          <h3><?= h(format_eur((float)($finance['total_revenue'] ?? 0))) ?></h3>
         </div>
-      <?php endforeach; ?>
-    </div>
-  </section>
+        <span class="admin-card-note" data-admin-t="box_last_six_months">Ultimos 6 meses</span>
+      </div>
+      <?php if (!$monthlyPerformance): ?>
+        <p data-admin-t="empty_monthly">Sem atividade suficiente para desenhar a evolucao mensal.</p>
+      <?php else: ?>
+        <svg class="dash-v4-line-chart" viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" role="img" aria-label="Revenue trend chart">
+          <defs>
+            <linearGradient id="dashRevenueGlow" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#c9d0db" stop-opacity=".42"/>
+              <stop offset="100%" stop-color="#c9d0db" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g class="chart-grid-lines">
+            <line x1="28" y1="48" x2="592" y2="48"/>
+            <line x1="28" y1="92" x2="592" y2="92"/>
+            <line x1="28" y1="136" x2="592" y2="136"/>
+            <line x1="28" y1="180" x2="592" y2="180"/>
+          </g>
+          <?php if ($chartAreaPoints): ?>
+            <polygon points="<?= h(implode(' ', $chartAreaPoints)) ?>" fill="url(#dashRevenueGlow)"/>
+            <polyline points="<?= h(implode(' ', $chartPoints)) ?>" fill="none" stroke="#c9d0db" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <?php foreach ($chartPoints as $point): ?>
+              <?php [$cx, $cy] = explode(',', $point); ?>
+              <circle cx="<?= h($cx) ?>" cy="<?= h($cy) ?>" r="5"/>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </svg>
+        <div class="dash-v4-months">
+          <?php foreach ($monthlyPerformance as $entry): ?>
+            <span><?= h($entry['period_label']) ?></span>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </section>
 
-  <section class="acard-box admin-analytics-card">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_recent_performance">Performance recente</h4>
-      <span class="admin-card-note" data-admin-t="box_last_six_months">Ultimos 6 meses</span>
-    </div>
-    <?php if (!$monthlyPerformance): ?>
-      <p data-admin-t="empty_monthly">Sem atividade suficiente para desenhar a evolucao mensal.</p>
-    <?php else: ?>
-      <div class="admin-chart">
+    <section class="dash-v4-card dash-v4-donut-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="nav_orders">Orders</span>
+          <h3><?= (int)$totalOrderStates ?></h3>
+        </div>
+      </div>
+      <div class="dash-v4-donut" style="<?= h($orderDonutStyle) ?>">
+        <div><strong><?= (int)$totalOrderStates ?></strong><span data-admin-t="orders_total">total</span></div>
+      </div>
+      <div class="dash-v4-legend">
+        <?php foreach ($orderStateCards as $index => $stateCard): ?>
+          <?php $percent = $totalOrderStates > 0 ? (int)round(((int)$stateCard['value'] / $totalOrderStates) * 100) : 0; ?>
+          <div><i style="background: <?= h($orderColors[$index]) ?>"></i><span><?= h($stateCard['label']) ?></span><strong><?= $percent ?>%</strong></div>
+        <?php endforeach; ?>
+      </div>
+    </section>
+
+    <section class="dash-v4-card dash-v4-bars-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_monthly_performance">Monthly performance</span>
+          <h3 data-admin-t="stat_paid_revenue">Paid revenue</h3>
+        </div>
+      </div>
+      <div class="dash-v4-bars">
         <?php foreach ($monthlyPerformance as $entry): ?>
-          <?php
-          $revenue = (float)$entry['total_revenue'];
-          $height = $maxMonthlyRevenue > 0 ? max(18, (int)round(($revenue / $maxMonthlyRevenue) * 140)) : 18;
-          ?>
-          <div class="admin-chart-col">
-            <span class="admin-chart-value"><?= h(format_eur($revenue)) ?></span>
-            <div class="admin-chart-bar-wrap">
-              <div class="admin-chart-bar" style="height: <?= $height ?>px"></div>
-            </div>
+          <?php $height = $maxMonthlyRevenue > 0 ? max(14, (int)round(((float)$entry['total_revenue'] / $maxMonthlyRevenue) * 100)) : 14; ?>
+          <div>
+            <span><?= h(format_eur((float)$entry['total_revenue'])) ?></span>
+            <i style="height: <?= $height ?>%"></i>
             <strong><?= h($entry['period_label']) ?></strong>
-            <span><?= (int)$entry['total_orders'] ?> encomendas</span>
           </div>
         <?php endforeach; ?>
       </div>
-    <?php endif; ?>
-  </section>
+    </section>
 
-  <section class="acard-box admin-analytics-card">
-    <div class="acard-box-head">
-      <h4 data-admin-t="dash_recent_orders">Encomendas recentes</h4>
-      <a href="orders.php" class="btn btn-ghost btn-sm" data-admin-t="btn_view_all">Ver tudo</a>
-    </div>
-    <?php if (!$recentOrders): ?>
-      <p data-admin-t="orders_empty">Sem encomendas registadas.</p>
-    <?php else: ?>
-      <div class="simple-list">
+    <section class="dash-v4-card dash-v4-table-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_latest_orders">Latest orders</span>
+          <h3 data-admin-t="dash_recent_orders">Encomendas recentes</h3>
+        </div>
+        <a href="orders.php" class="btn btn-ghost btn-sm" data-admin-t="btn_view_all">Ver tudo</a>
+      </div>
+      <div class="dash-v4-rows">
         <?php foreach ($recentOrders as $order): ?>
-          <div class="simple-list-item">
-            <div>
-              <strong>#<?= (int)$order['idEncomenda'] ?> - <?= h($order['cliente_nome']) ?></strong>
-              <p><?= h(order_status_label((string)$order['estado_encomenda'])) ?> / <?= h(payment_status_label((string)$order['estado_pagamento'])) ?></p>
-            </div>
-            <span><?= h(format_eur((float)$order['total_final'])) ?></span>
-          </div>
+          <a href="orders.php">
+            <span>#<?= (int)$order['idEncomenda'] ?></span>
+            <strong><?= h($order['cliente_nome']) ?></strong>
+            <em><?= h(payment_status_label((string)$order['estado_pagamento'])) ?></em>
+            <b><?= h(format_eur((float)$order['total_final'])) ?></b>
+          </a>
         <?php endforeach; ?>
       </div>
-    <?php endif; ?>
-  </section>
-</div>
+    </section>
+  </div>
 
-<div class="dashboard-grid">
-  <section class="acard-box">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_products_review">Produtos por aprovar</h4>
-      <a href="products.php" class="btn btn-ghost btn-sm" data-admin-t="btn_view_all">Ver tudo</a>
-    </div>
-    <?php if (!$pendingProducts): ?>
-      <p data-admin-t="empty_pending_products">Sem produtos pendentes.</p>
-    <?php else: ?>
-      <div class="simple-list">
-        <?php foreach ($pendingProducts as $item): ?>
-          <div class="simple-list-item">
-            <div>
-              <strong><?= h($item['nomeProduto']) ?></strong>
-              <p><?= h($item['artista']) ?></p>
-            </div>
-            <span><?= number_format((float)$item['precoAtual'], 2, ',', '.') ?> EUR</span>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
+  <section class="dash-v4-queue">
+    <a href="products.php"><span data-admin-t="nav_products">Produtos</span><strong><?= (int)$stats['produtos_pendentes'] ?></strong><small data-admin-t="dash_need_review">precisam de revisao</small></a>
+    <a href="releases.php"><span data-admin-t="nav_releases">Lancamentos</span><strong><?= (int)$stats['releases_pendentes'] ?></strong><small data-admin-t="dash_need_review">precisam de revisao</small></a>
+    <a href="messages.php"><span data-admin-t="nav_messages">Mensagens</span><strong><?= (int)$stats['mensagens_abertas'] ?></strong><small data-admin-t="dash_need_reply">por responder</small></a>
+    <a href="password_requests.php"><span data-admin-t="nav_password">Password reset</span><strong><?= (int)$stats['resets_pendentes'] ?></strong><small data-admin-t="dash_open_requests">open requests</small></a>
   </section>
-
-  <section class="acard-box">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_releases_review">Lancamentos por aprovar</h4>
-      <a href="releases.php" class="btn btn-ghost btn-sm" data-admin-t="btn_view_all">Ver tudo</a>
-    </div>
-    <?php if (!$pendingReleases): ?>
-      <p data-admin-t="empty_pending_releases">Sem lancamentos pendentes.</p>
-    <?php else: ?>
-      <div class="simple-list">
-        <?php foreach ($pendingReleases as $item): ?>
-          <div class="simple-list-item">
-            <div>
-              <strong><?= h($item['titulo']) ?></strong>
-              <p><?= h($item['artista']) ?> - <?= h($item['tipo']) ?></p>
-            </div>
-            <span>#<?= (int)$item['idRelease'] ?></span>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </section>
-
-  <section class="acard-box">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_open_messages">Mensagens em aberto</h4>
-      <a href="messages.php" class="btn btn-ghost btn-sm" data-admin-t="btn_reply">Responder</a>
-    </div>
-    <?php if (!$openMessages): ?>
-      <p data-admin-t="empty_open_messages">Sem mensagens em aberto.</p>
-    <?php else: ?>
-      <div class="simple-list">
-        <?php foreach ($openMessages as $item): ?>
-          <div class="simple-list-item">
-            <div>
-              <strong><?= h($item['assunto']) ?></strong>
-              <p><?= h($item['cliente_nome']) ?></p>
-            </div>
-            <span><?= date('d/m/Y', strtotime($item['created_at'])) ?></span>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </section>
-
-  <section class="acard-box">
-    <div class="acard-box-head">
-      <h4 data-admin-t="box_catalog_health">Catalogo</h4>
-      <a href="categories.php" class="btn btn-ghost btn-sm" data-admin-t="nav_categories">Categorias</a>
-    </div>
-    <div class="simple-list">
-      <div class="simple-list-item">
-        <strong data-admin-t="card_active_clients">Clientes ativos</strong>
-        <span><?= (int)$stats['clientes'] ?></span>
-      </div>
-      <div class="simple-list-item">
-        <strong data-admin-t="card_orders">Encomendas</strong>
-        <span><?= (int)$stats['encomendas'] ?></span>
-      </div>
-      <div class="simple-list-item">
-        <strong data-admin-t="card_active_categories">Categorias ativas</strong>
-        <span><?= (int)$stats['categorias'] ?></span>
-      </div>
-    </div>
-  </section>
-</div>
+</section>
 
 <?php include 'admin_footer.php'; ?>

@@ -172,7 +172,7 @@ function _registerMotion(root = document) {
 
   _motionGroups(root).forEach((group) => {
     root.querySelectorAll(group.selector).forEach((element, index) => {
-      if (element.hasAttribute('data-motion')) return;
+      if (element.hasAttribute('data-motion') || element.classList.contains('no-motion')) return;
 
       element.setAttribute('data-motion', group.type);
       element.style.setProperty('--motion-delay', `${index * group.step}ms`);

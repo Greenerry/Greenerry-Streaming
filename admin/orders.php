@@ -80,7 +80,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="orders_kicker">Fulfillment</span>
     <h2 data-admin-t="orders_title">Encomendas</h2>
+    <p data-admin-t="orders_intro">Controla estados, pagamentos e encomendas recentes sem confusao.</p>
   </div>
 </div>
 
@@ -109,57 +111,62 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="orders_recent">Encomendas recentes</h4>
+    <span class="badge badge-light"><?= count($orders) ?></span>
   </div>
 
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th data-admin-t="orders_customer">Cliente</th>
-          <th data-admin-t="orders_items">Items</th>
-          <th data-admin-t="orders_total_value">Total</th>
-          <th data-admin-t="orders_order_state">Estado</th>
-          <th data-admin-t="orders_payment_state">Pagamento</th>
-          <th data-admin-t="orders_action">Acao</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($orders as $order): ?>
-          <?php $locked = (string)$order['estado_encomenda'] === 'cancelada'; ?>
+  <?php if (!$orders): ?>
+    <p data-admin-t="orders_empty">Sem encomendas registadas.</p>
+  <?php else: ?>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>#<?= (int)$order['idEncomenda'] ?></td>
-            <td><strong><?= h($order['cliente_nome']) ?></strong><br><span><?= h($order['email']) ?></span></td>
-            <td><?= (int)$order['total_items'] ?></td>
-            <td><?= h(format_eur((float)$order['total_final'])) ?></td>
-            <td><span class="badge <?= h(state_badge_class((string)$order['estado_encomenda'])) ?>"><?= h(order_status_label((string)$order['estado_encomenda'])) ?></span></td>
-            <td><span class="badge <?= h(state_badge_class((string)$order['estado_pagamento'])) ?>"><?= h(payment_status_label((string)$order['estado_pagamento'])) ?></span></td>
-            <td>
-              <?php if ($locked): ?>
-                <span class="admin-card-note" data-admin-t="orders_locked">Bloqueada</span>
-              <?php else: ?>
-                <form method="post" class="admin-table-form">
-                  <?= csrf_input() ?>
-                  <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                  <select name="estado_encomenda" class="finput">
-                    <?php foreach ($orderStates as $state): ?>
-                      <option value="<?= h($state) ?>" <?= $state === (string)$order['estado_encomenda'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                  <select name="estado_pagamento" class="finput">
-                    <?php foreach ($paymentStates as $state): ?>
-                      <option value="<?= h($state) ?>" <?= $state === (string)$order['estado_pagamento'] ? 'selected' : '' ?>><?= h(payment_status_label($state)) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                  <button type="submit" class="btn btn-ghost btn-sm" data-admin-t="categories_save">Guardar</button>
-                </form>
-              <?php endif; ?>
-            </td>
+            <th>ID</th>
+            <th data-admin-t="orders_customer">Cliente</th>
+            <th data-admin-t="orders_items">Items</th>
+            <th data-admin-t="orders_total_value">Total</th>
+            <th data-admin-t="orders_order_state">Estado</th>
+            <th data-admin-t="orders_payment_state">Pagamento</th>
+            <th data-admin-t="orders_action">Acao</th>
           </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <?php foreach ($orders as $order): ?>
+            <?php $locked = (string)$order['estado_encomenda'] === 'cancelada'; ?>
+            <tr>
+              <td>#<?= (int)$order['idEncomenda'] ?></td>
+              <td><strong><?= h($order['cliente_nome']) ?></strong><br><span><?= h($order['email']) ?></span></td>
+              <td><?= (int)$order['total_items'] ?></td>
+              <td><?= h(format_eur((float)$order['total_final'])) ?></td>
+              <td><span class="badge <?= h(state_badge_class((string)$order['estado_encomenda'])) ?>"><?= h(order_status_label((string)$order['estado_encomenda'])) ?></span></td>
+              <td><span class="badge <?= h(state_badge_class((string)$order['estado_pagamento'])) ?>"><?= h(payment_status_label((string)$order['estado_pagamento'])) ?></span></td>
+              <td>
+                <?php if ($locked): ?>
+                  <span class="admin-card-note" data-admin-t="orders_locked">Bloqueada</span>
+                <?php else: ?>
+                  <form method="post" class="admin-table-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
+                    <select name="estado_encomenda" class="finput">
+                      <?php foreach ($orderStates as $state): ?>
+                        <option value="<?= h($state) ?>" <?= $state === (string)$order['estado_encomenda'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <select name="estado_pagamento" class="finput">
+                      <?php foreach ($paymentStates as $state): ?>
+                        <option value="<?= h($state) ?>" <?= $state === (string)$order['estado_pagamento'] ? 'selected' : '' ?>><?= h(payment_status_label($state)) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="btn btn-ghost btn-sm" data-admin-t="categories_save">Guardar</button>
+                  </form>
+                <?php endif; ?>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
 </section>
 </div>
 

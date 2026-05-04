@@ -17,6 +17,7 @@
     "nav_revenue": "Rendimento",
     "nav_admin": "Administracao",
     "nav_go_admin": "Ir para admin",
+    "nav_admin_login": "Admin",
     "nav_logout": "Sair",
     "nav_login": "Entrar",
     "nav_register": "Registar",
@@ -190,6 +191,11 @@
     "revenue_commission": "Comissao da plataforma",
     "revenue_recent": "Movimentos recentes",
     "revenue_empty": "Ainda nao tens vendas registadas.",
+    "revenue_chart_label": "Grafico",
+    "revenue_monthly_chart": "Rendimento mensal",
+    "revenue_products_label": "Produtos",
+    "revenue_products_chart": "Top produtos",
+    "box_last_six_months": "Ultimos 6 meses",
     "upload_merch_label": "Merch",
     "upload_merch_title": "Novo produto.",
     "upload_merch_name": "Nome do produto",
@@ -294,7 +300,7 @@
     "foot_platform": "Plataforma",
     "foot_contact": "Contacto",
     "foot_store": "Loja",
-    "foot_copy": "(c) 2026 Greenerry. Projeto criado para apresentacao PAP."
+    "foot_copy": ""
   },
   "en": {
     "nav_discover": "Discover",
@@ -314,6 +320,7 @@
     "nav_revenue": "Revenue",
     "nav_admin": "Administration",
     "nav_go_admin": "Go to admin",
+    "nav_admin_login": "Admin",
     "nav_logout": "Sign out",
     "nav_login": "Login",
     "nav_register": "Register",
@@ -487,6 +494,11 @@
     "revenue_commission": "Platform commission",
     "revenue_recent": "Recent activity",
     "revenue_empty": "You do not have recorded sales yet.",
+    "revenue_chart_label": "Chart",
+    "revenue_monthly_chart": "Monthly revenue",
+    "revenue_products_label": "Products",
+    "revenue_products_chart": "Top products",
+    "box_last_six_months": "Last 6 months",
     "upload_merch_label": "Merch",
     "upload_merch_title": "New product.",
     "upload_merch_name": "Product name",
@@ -591,6 +603,6 @@
     "foot_platform": "Platform",
     "foot_contact": "Contact",
     "foot_store": "Store",
-    "foot_copy": "(c) 2026 Greenerry. Built for PAP presentation."
+    "foot_copy": ""
   }
 }

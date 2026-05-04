@@ -60,7 +60,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="password_kicker">Recovery flow</span>
     <h2 data-admin-t="password_title">Pedidos de recuperacao</h2>
+    <p data-admin-t="password_intro">Acompanha pedidos de reset e deixa notas internas claras.</p>
   </div>
 </div>
 
@@ -86,6 +88,7 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="password_requests_all">Pedidos registados</h4>
+    <span class="badge badge-light"><?= count($requests) ?></span>
   </div>
 
   <?php if (!$requests): ?>

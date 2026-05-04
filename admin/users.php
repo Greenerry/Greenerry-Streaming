@@ -65,7 +65,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="users_kicker">Accounts</span>
     <h2 data-admin-t="users_title">Utilizadores</h2>
+    <p data-admin-t="users_intro">Ve atividade, artistas e estado das contas de cliente.</p>
   </div>
 </div>
 
@@ -94,49 +96,54 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="users_all">Todos os utilizadores</h4>
+    <span class="badge badge-light"><?= count($users) ?></span>
   </div>
 
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th data-admin-t="users_name">Nome</th>
-          <th>Email</th>
-          <th data-admin-t="nav_products">Produtos</th>
-          <th data-admin-t="nav_releases">Lancamentos</th>
-          <th data-admin-t="card_orders">Encomendas</th>
-          <th data-admin-t="categories_state">Estado</th>
-          <th data-admin-t="orders_action">Acao</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($users as $user): ?>
+  <?php if (!$users): ?>
+    <p data-admin-t="users_empty">Sem utilizadores registados.</p>
+  <?php else: ?>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>#<?= (int)$user['idCliente'] ?></td>
-            <td><strong><?= h($user['nome']) ?></strong><br><span><?= h($user['slug'] ?? '') ?></span></td>
-            <td><?= h($user['email']) ?></td>
-            <td><?= (int)$user['total_products'] ?></td>
-            <td><?= (int)$user['total_releases'] ?></td>
-            <td><?= (int)$user['total_orders'] ?></td>
-            <td><span class="badge <?= h(state_badge_class((string)$user['estado'])) ?>"><?= h(order_status_label((string)$user['estado'])) ?></span></td>
-            <td>
-              <form method="post" class="admin-table-form">
-                <?= csrf_input() ?>
-                <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
-                <select name="estado" class="finput">
-                  <?php foreach ($allowedStates as $state): ?>
-                    <option value="<?= h($state) ?>" <?= $state === (string)$user['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
-                  <?php endforeach; ?>
-                </select>
-                <button type="submit" class="btn btn-ghost btn-sm" data-admin-t="categories_save">Guardar</button>
-              </form>
-            </td>
+            <th>ID</th>
+            <th data-admin-t="users_name">Nome</th>
+            <th>Email</th>
+            <th data-admin-t="nav_products">Produtos</th>
+            <th data-admin-t="nav_releases">Lancamentos</th>
+            <th data-admin-t="card_orders">Encomendas</th>
+            <th data-admin-t="categories_state">Estado</th>
+            <th data-admin-t="orders_action">Acao</th>
           </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <?php foreach ($users as $user): ?>
+            <tr>
+              <td>#<?= (int)$user['idCliente'] ?></td>
+              <td><strong><?= h($user['nome']) ?></strong><br><span><?= h($user['slug'] ?? '') ?></span></td>
+              <td><?= h($user['email']) ?></td>
+              <td><?= (int)$user['total_products'] ?></td>
+              <td><?= (int)$user['total_releases'] ?></td>
+              <td><?= (int)$user['total_orders'] ?></td>
+              <td><span class="badge <?= h(state_badge_class((string)$user['estado'])) ?>"><?= h(order_status_label((string)$user['estado'])) ?></span></td>
+              <td>
+                <form method="post" class="admin-table-form admin-table-form--single">
+                  <?= csrf_input() ?>
+                  <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
+                  <select name="estado" class="finput">
+                    <?php foreach ($allowedStates as $state): ?>
+                      <option value="<?= h($state) ?>" <?= $state === (string)$user['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <button type="submit" class="btn btn-ghost btn-sm" data-admin-t="categories_save">Guardar</button>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
 </section>
 </div>
 

@@ -29,6 +29,45 @@ $sales = db_all(
      LIMIT 25"
 );
 
+$monthlyRevenue = db_all(
+    $conn,
+    "SELECT
+        DATE_FORMAT(e.created_at, '%Y-%m') AS period_key,
+        DATE_FORMAT(e.created_at, '%m/%Y') AS period_label,
+        COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.valor_artista ELSE 0 END), 0) AS artist_value,
+        COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.comissao_valor ELSE 0 END), 0) AS commission,
+        COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.quantidade ELSE 0 END), 0) AS items_count
+     FROM encomenda_item ei
+     JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
+     WHERE ei.idArtista = {$uid}
+       AND e.created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+     GROUP BY DATE_FORMAT(e.created_at, '%Y-%m'), DATE_FORMAT(e.created_at, '%m/%Y')
+     ORDER BY period_key ASC"
+);
+
+$productRevenue = db_all(
+    $conn,
+    "SELECT
+        ei.nome_produto,
+        COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.valor_artista ELSE 0 END), 0) AS artist_value,
+        COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.quantidade ELSE 0 END), 0) AS items_count
+     FROM encomenda_item ei
+     WHERE ei.idArtista = {$uid}
+     GROUP BY ei.nome_produto
+     ORDER BY artist_value DESC
+     LIMIT 6"
+);
+
+$maxMonthly = 0.0;
+foreach ($monthlyRevenue as $month) {
+    $maxMonthly = max($maxMonthly, (float)$month['artist_value']);
+}
+
+$maxProduct = 0.0;
+foreach ($productRevenue as $product) {
+    $maxProduct = max($maxProduct, (float)$product['artist_value']);
+}
+
 include '../includes/header.php';
 ?>
 
@@ -58,6 +97,60 @@ include '../includes/header.php';
         <div class="stat-lbl" data-t="revenue_commission">Comissao da plataforma</div>
       </div>
     </div>
+
+    <section class="revenue-dashboard">
+      <article class="revenue-chart-card">
+        <div class="revenue-chart-head">
+          <div>
+            <span class="slabel" data-t="revenue_chart_label">Grafico</span>
+            <h3 data-t="revenue_monthly_chart">Rendimento mensal</h3>
+          </div>
+          <span class="badge badge-light" data-t="box_last_six_months">Ultimos 6 meses</span>
+        </div>
+
+        <?php if (!$monthlyRevenue): ?>
+          <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+        <?php else: ?>
+          <div class="revenue-bars">
+            <?php foreach ($monthlyRevenue as $month): ?>
+              <?php
+              $value = (float)$month['artist_value'];
+              $height = $maxMonthly > 0 ? max(18, (int)round(($value / $maxMonthly) * 170)) : 18;
+              ?>
+              <div class="revenue-bar-col">
+                <span class="revenue-bar-value"><?= h(format_eur($value)) ?></span>
+                <div class="revenue-bar-track"><i class="revenue-bar" style="height: <?= $height ?>px"></i></div>
+                <strong><?= h($month['period_label']) ?></strong>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </article>
+
+      <article class="revenue-chart-card">
+        <div class="revenue-chart-head">
+          <div>
+            <span class="slabel" data-t="revenue_products_label">Produtos</span>
+            <h3 data-t="revenue_products_chart">Top produtos</h3>
+          </div>
+        </div>
+
+        <?php if (!$productRevenue): ?>
+          <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+        <?php else: ?>
+          <div class="revenue-split">
+            <?php foreach ($productRevenue as $product): ?>
+              <?php $width = $maxProduct > 0 ? max(8, (int)round(((float)$product['artist_value'] / $maxProduct) * 100)) : 8; ?>
+              <div class="revenue-split-row">
+                <strong><?= h($product['nome_produto']) ?></strong>
+                <span><?= h(format_eur((float)$product['artist_value'])) ?></span>
+                <div class="revenue-split-track"><i style="width: <?= $width ?>%"></i></div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+      </article>
+    </section>
 
     <div class="card surface-card mt8">
       <div class="card-body">

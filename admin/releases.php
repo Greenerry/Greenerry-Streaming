@@ -104,7 +104,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="releases_kicker">Music review</span>
     <h2 data-admin-t="releases_title">Lancamentos</h2>
+    <p data-admin-t="releases_intro">Aprova releases, ouve faixas e gere estados musicais.</p>
   </div>
 </div>
 
@@ -194,97 +196,169 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="releases_all">Todos os lancamentos</h4>
+    <span class="badge badge-light"><?= count($allReleases) ?></span>
   </div>
 
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th data-admin-t="products_image">Capa</th>
-          <th>Titulo</th>
-          <th>Artista</th>
-          <th>Tipo</th>
-          <th>Faixas</th>
-          <th class="col-audio" data-admin-t="releases_audio">Audio</th>
-          <th>Estado</th>
-          <th>Acao</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($allReleases as $release): ?>
+  <?php if (!$allReleases): ?>
+    <p data-admin-t="releases_empty_all">Ainda nao existem lancamentos registados.</p>
+  <?php else: ?>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>#<?= (int)$release['idRelease'] ?></td>
-            <td class="col-audio">
-              <div class="admin-table-thumb">
-                <?php if (!empty($release['capa'])): ?>
-                  <img src="../assets/img/<?= h($release['capa']) ?>" alt="">
-                <?php else: ?>
-                  <span data-admin-t="products_no_image">Sem imagem</span>
-                <?php endif; ?>
-              </div>
-            </td>
-            <td>
-              <strong><?= h($release['titulo']) ?></strong>
-              <?php if (!empty($release['motivo_rejeicao'])): ?>
-                <br><span class="color-text3"><?= h($release['motivo_rejeicao']) ?></span>
-              <?php endif; ?>
-            </td>
-            <td><?= h($release['artista']) ?></td>
-            <td><?= h($release['tipo']) ?></td>
-            <td><?= (int)$release['total_faixas'] ?></td>
-            <td>
-              <?php if (!empty($releaseTracks[(int)$release['idRelease']])): ?>
-                <details class="admin-audio-item admin-audio-item--table">
-                  <summary>
-                    <span data-admin-t="releases_tracks">Faixas</span>
-                    <span data-admin-t="releases_listen">Ouvir</span>
-                  </summary>
-                  <div class="admin-audio-list">
-                    <?php foreach ($releaseTracks[(int)$release['idRelease']] as $track): ?>
-                      <div class="admin-audio-row">
-                        <strong><?= (int)$track['numero_faixa'] ?>. <?= h($track['titulo']) ?></strong>
-                        <?php if (!empty($track['ficheiro_audio'])): ?>
-                          <div class="admin-mini-player" data-audio-src="<?= h(asset_url('audio', $track['ficheiro_audio'])) ?>">
-                            <button type="button" class="admin-mini-play" aria-label="Play">></button>
-                            <span class="admin-mini-time">0:00</span>
-                            <div class="admin-mini-track"><div></div></div>
-                          </div>
-                        <?php endif; ?>
-                      </div>
-                    <?php endforeach; ?>
-                  </div>
-                </details>
-              <?php else: ?>
-                <span class="color-text3" data-admin-t="releases_no_tracks">Sem faixas</span>
-              <?php endif; ?>
-            </td>
-            <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
-            <td>
-              <form method="post">
-                <?= csrf_input() ?>
-                <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
-                <?php if ($release['estado'] === 'aprovado' && (int)$release['ativo'] === 1): ?>
-                  <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
-                <?php elseif ($release['estado'] !== 'pendente' && $release['estado'] !== 'rejeitado'): ?>
-                  <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
-                <?php elseif ($release['estado'] === 'rejeitado'): ?>
-                  <span class="color-text3" data-admin-t="state_rejected">Rejeitado</span>
-                <?php else: ?>
-                  <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
-                <?php endif; ?>
-              </form>
-            </td>
+            <th>ID</th>
+            <th data-admin-t="products_image">Capa</th>
+            <th>Titulo</th>
+            <th>Artista</th>
+            <th>Tipo</th>
+            <th>Faixas</th>
+            <th class="col-audio" data-admin-t="releases_audio">Audio</th>
+            <th>Estado</th>
+            <th>Acao</th>
           </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <?php foreach ($allReleases as $release): ?>
+            <tr>
+              <td>#<?= (int)$release['idRelease'] ?></td>
+              <td class="col-audio">
+                <div class="admin-table-thumb">
+                  <?php if (!empty($release['capa'])): ?>
+                    <img src="../assets/img/<?= h($release['capa']) ?>" alt="">
+                  <?php else: ?>
+                    <span data-admin-t="products_no_image">Sem imagem</span>
+                  <?php endif; ?>
+                </div>
+              </td>
+              <td>
+                <strong><?= h($release['titulo']) ?></strong>
+                <?php if (!empty($release['motivo_rejeicao'])): ?>
+                  <br><span class="color-text3"><?= h($release['motivo_rejeicao']) ?></span>
+                <?php endif; ?>
+              </td>
+              <td><?= h($release['artista']) ?></td>
+              <td><?= h($release['tipo']) ?></td>
+              <td><?= (int)$release['total_faixas'] ?></td>
+              <td class="admin-audio-cell">
+                <?php if (!empty($releaseTracks[(int)$release['idRelease']])): ?>
+                  <div class="admin-audio-item admin-audio-item--table">
+                    <button type="button" class="admin-audio-toggle" aria-expanded="false">
+                      <span data-admin-t="releases_tracks">Faixas</span>
+                      <span data-admin-t="releases_listen">Ouvir</span>
+                    </button>
+                    <div class="admin-audio-menu" hidden>
+                      <?php foreach ($releaseTracks[(int)$release['idRelease']] as $track): ?>
+                        <div class="admin-audio-row">
+                          <strong><?= (int)$track['numero_faixa'] ?>. <?= h($track['titulo']) ?></strong>
+                          <?php if (!empty($track['ficheiro_audio'])): ?>
+                            <div class="admin-mini-player" data-audio-src="<?= h(asset_url('audio', $track['ficheiro_audio'])) ?>">
+                              <button type="button" class="admin-mini-play" aria-label="Play">></button>
+                              <span class="admin-mini-time">0:00</span>
+                              <div class="admin-mini-track"><div></div></div>
+                            </div>
+                          <?php endif; ?>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                <?php else: ?>
+                  <span class="color-text3" data-admin-t="releases_no_tracks">Sem faixas</span>
+                <?php endif; ?>
+              </td>
+              <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
+              <td>
+                <form method="post">
+                  <?= csrf_input() ?>
+                  <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
+                  <?php if ($release['estado'] === 'aprovado' && (int)$release['ativo'] === 1): ?>
+                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
+                  <?php elseif ($release['estado'] !== 'pendente' && $release['estado'] !== 'rejeitado'): ?>
+                    <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
+                  <?php elseif ($release['estado'] === 'rejeitado'): ?>
+                    <span class="color-text3" data-admin-t="state_rejected">Rejeitado</span>
+                  <?php else: ?>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
+                  <?php endif; ?>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
 </section>
 </div>
 
 <script>
 (() => {
+  const floatingAudioItems = Array.from(document.querySelectorAll('.admin-audio-item--table'));
+  let activeAudioItem = null;
+
+  function positionAudioMenu(item) {
+    const menu = item?._floatingMenu;
+    if (!menu || menu.hidden) return;
+    const rect = item.getBoundingClientRect();
+    const gap = 8;
+    const menuWidth = Math.min(340, window.innerWidth - 32);
+    const left = Math.min(Math.max(16, rect.left), window.innerWidth - menuWidth - 16);
+    menu.style.width = `${menuWidth}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${rect.bottom + gap}px`;
+  }
+
+  function closeAudioMenu(item) {
+    if (!item) return;
+    const menu = item._floatingMenu;
+    const button = item.querySelector('.admin-audio-toggle');
+    if (menu) {
+      menu.hidden = true;
+      menu.classList.remove('is-floating');
+      menu.removeAttribute('style');
+      if (menu.parentElement !== item) item.appendChild(menu);
+    }
+    button?.setAttribute('aria-expanded', 'false');
+    item.classList.remove('is-open');
+    if (activeAudioItem === item) activeAudioItem = null;
+  }
+
+  floatingAudioItems.forEach((item) => {
+    const button = item.querySelector('.admin-audio-toggle');
+    const menu = item.querySelector('.admin-audio-menu');
+    if (!menu) return;
+    item._floatingMenu = menu;
+
+    button?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (activeAudioItem === item && !menu.hidden) {
+        closeAudioMenu(item);
+        return;
+      }
+
+      if (activeAudioItem && activeAudioItem !== item) {
+        closeAudioMenu(activeAudioItem);
+      }
+
+      activeAudioItem = item;
+      item.classList.add('is-open');
+      button.setAttribute('aria-expanded', 'true');
+      menu.hidden = false;
+      menu.classList.add('is-floating');
+      (item.closest('.admin-shell') || document.body).appendChild(menu);
+      positionAudioMenu(item);
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!activeAudioItem) return;
+    const menu = activeAudioItem._floatingMenu;
+    if (activeAudioItem.contains(event.target) || menu?.contains(event.target)) return;
+    closeAudioMenu(activeAudioItem);
+  });
+
+  window.addEventListener('scroll', () => positionAudioMenu(activeAudioItem), true);
+  window.addEventListener('resize', () => positionAudioMenu(activeAudioItem));
+
   const players = Array.from(document.querySelectorAll('.admin-mini-player'));
   let activeAudio = null;
   let activePlayer = null;

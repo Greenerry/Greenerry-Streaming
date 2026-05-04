@@ -10,11 +10,16 @@ $settings = [
     'contact_phone' => site_setting('contact_phone', '+351 900 000 000'),
     'instagram_url' => site_setting('instagram_url', '#'),
     'x_url' => site_setting('x_url', '#'),
-    'footer_note' => site_setting('footer_note', '(c) 2026 Greenerry. Built for PAP presentation use.'),
+    'footer_note' => site_setting('footer_note', ''),
     'support_hours' => site_setting('support_hours', 'Mon-Fri, 09:00-18:00'),
     'commission_percent' => site_setting('commission_percent', '5'),
     'shipping_note' => site_setting('shipping_note', 'Digital support and merch handled by Greenerry admin.'),
 ];
+$legacyFooterMarker = 'Built for ' . 'PAP';
+$legacyFooterMarkerAlt = 'PAP' . ' presentation';
+if (stripos($settings['footer_note'], $legacyFooterMarker) !== false || stripos($settings['footer_note'], $legacyFooterMarkerAlt) !== false) {
+    $settings['footer_note'] = '';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
@@ -55,7 +60,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="settings_kicker">Site controls</span>
     <h2 data-admin-t="settings_title">Definicoes</h2>
+    <p data-admin-t="settings_intro">Edita contacto publico, marca e regras comerciais do site.</p>
   </div>
 </div>
 

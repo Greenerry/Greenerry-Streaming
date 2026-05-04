@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
+<section class="content-shell upload-music-page">
   <div class="wrap-sm">
     <div class="submission-hero submission-hero--music hero-card--single">
       <div class="submission-hero-copy">

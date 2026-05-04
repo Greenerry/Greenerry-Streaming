@@ -4,7 +4,9 @@ redirect_if_authenticated();
 
 $err = '';
 $emailValue = '';
-$loginTypeValue = $_POST['login_type'] ?? 'cliente';
+$requestedType = $_GET['type'] ?? '';
+$loginTypeValue = $_POST['login_type'] ?? ($requestedType === 'admin' ? 'admin' : 'cliente');
+$isAdminLogin = $loginTypeValue === 'admin';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $emailValue = trim($_POST['email'] ?? '');
@@ -60,8 +62,8 @@ include '../includes/header.php';
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
-        <span class="slabel" data-t="login_label">Acesso</span>
-        <h2 data-t="login_title">Aceder a conta</h2>
+        <span class="slabel" data-t="<?= $isAdminLogin ? 'nav_admin' : 'login_label' ?>"><?= $isAdminLogin ? 'Administracao' : 'Acesso' ?></span>
+        <h2 data-t="<?= $isAdminLogin ? 'login_admin_type' : 'login_title' ?>"><?= $isAdminLogin ? 'Administracao' : 'Aceder a conta' ?></h2>
       </div>
 
       <?php if ($err): ?>
@@ -70,16 +72,7 @@ include '../includes/header.php';
 
       <form method="post" class="auth-form" novalidate>
         <?= csrf_input() ?>
-        <div class="segmented-field">
-          <label class="segmented-option">
-            <input type="radio" name="login_type" value="cliente" <?= $loginTypeValue === 'cliente' ? 'checked' : '' ?>>
-            <span data-t="login_user_type">Utilizador / Artista</span>
-          </label>
-          <label class="segmented-option">
-            <input type="radio" name="login_type" value="admin" <?= $loginTypeValue === 'admin' ? 'checked' : '' ?>>
-            <span data-t="login_admin_type">Administracao</span>
-          </label>
-        </div>
+        <input type="hidden" name="login_type" value="<?= $isAdminLogin ? 'admin' : 'cliente' ?>">
 
         <div class="fg">
           <label class="flabel" for="email">Email</label>
@@ -91,17 +84,25 @@ include '../includes/header.php';
           <input id="senha" type="password" name="senha" class="finput" required minlength="8" autocomplete="current-password">
         </div>
 
-        <div class="auth-actions">
-          <a href="forgot_password.php" class="auth-link" data-t="login_forgot">Esqueceste-te da palavra-passe?</a>
-        </div>
+        <?php if (!$isAdminLogin): ?>
+          <div class="auth-actions">
+            <a href="forgot_password.php" class="auth-link" data-t="login_forgot">Esqueceste-te da palavra-passe?</a>
+          </div>
+        <?php endif; ?>
 
         <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="login_submit">Entrar</button>
       </form>
 
-      <p class="auth-foot-note">
-        <span data-t="login_no_account">Ainda nao tens conta?</span>
-        <a href="registar.php" data-t="login_create_account">Criar conta</a>
-      </p>
+      <?php if ($isAdminLogin): ?>
+        <p class="auth-foot-note">
+          <a href="login.php" data-t="login_user_type">Utilizador / Artista</a>
+        </p>
+      <?php else: ?>
+        <p class="auth-foot-note">
+          <span data-t="login_no_account">Ainda nao tens conta?</span>
+          <a href="registar.php" data-t="login_create_account">Criar conta</a>
+        </p>
+      <?php endif; ?>
     </div>
   </div>
 </section>

@@ -73,7 +73,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="products_kicker">Catalog review</span>
     <h2 data-admin-t="products_title">Produtos</h2>
+    <p data-admin-t="products_intro">Aprova, bloqueia e acompanha todo o merch da Greenerry.</p>
   </div>
 </div>
 
@@ -144,63 +146,68 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="products_all">Todos os produtos</h4>
+    <span class="badge badge-light"><?= count($allProducts) ?></span>
   </div>
 
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th data-admin-t="products_image">Imagem</th>
-          <th>Produto</th>
-          <th>Artista</th>
-          <th>Categoria</th>
-          <th>Preco</th>
-          <th>Estado</th>
-          <th>Acao</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($allProducts as $product): ?>
+  <?php if (!$allProducts): ?>
+    <p data-admin-t="products_empty_all">Ainda nao existem produtos registados.</p>
+  <?php else: ?>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>#<?= (int)$product['idProduto'] ?></td>
-            <td>
-              <div class="admin-table-thumb">
-                <?php if (!empty($product['imagem'])): ?>
-                  <img src="../assets/img/<?= h($product['imagem']) ?>" alt="">
-                <?php else: ?>
-                  <span data-admin-t="products_no_image">Sem imagem</span>
-                <?php endif; ?>
-              </div>
-            </td>
-            <td>
-              <strong><?= h($product['nomeProduto']) ?></strong>
-              <?php if (!empty($product['motivo_rejeicao'])): ?>
-                <br><span class="color-text3"><?= h($product['motivo_rejeicao']) ?></span>
-              <?php endif; ?>
-            </td>
-            <td><?= h($product['artista']) ?></td>
-            <td><?= h($product['nomeCategoria']) ?></td>
-            <td><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</td>
-            <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
-            <td>
-              <form method="post">
-                <?= csrf_input() ?>
-                <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
-                <?php if ($product['estado'] === 'aprovado' && (int)$product['ativo'] === 1): ?>
-                  <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
-                <?php elseif ($product['estado'] !== 'pendente'): ?>
-                  <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
-                <?php else: ?>
-                  <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
-                <?php endif; ?>
-              </form>
-            </td>
+            <th>ID</th>
+            <th data-admin-t="products_image">Imagem</th>
+            <th>Produto</th>
+            <th>Artista</th>
+            <th>Categoria</th>
+            <th>Preco</th>
+            <th>Estado</th>
+            <th>Acao</th>
           </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <?php foreach ($allProducts as $product): ?>
+            <tr>
+              <td>#<?= (int)$product['idProduto'] ?></td>
+              <td>
+                <div class="admin-table-thumb">
+                  <?php if (!empty($product['imagem'])): ?>
+                    <img src="../assets/img/<?= h($product['imagem']) ?>" alt="">
+                  <?php else: ?>
+                    <span data-admin-t="products_no_image">Sem imagem</span>
+                  <?php endif; ?>
+                </div>
+              </td>
+              <td>
+                <strong><?= h($product['nomeProduto']) ?></strong>
+                <?php if (!empty($product['motivo_rejeicao'])): ?>
+                  <br><span class="color-text3"><?= h($product['motivo_rejeicao']) ?></span>
+                <?php endif; ?>
+              </td>
+              <td><?= h($product['artista']) ?></td>
+              <td><?= h($product['nomeCategoria']) ?></td>
+              <td><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</td>
+              <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
+              <td>
+                <form method="post">
+                  <?= csrf_input() ?>
+                  <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
+                  <?php if ($product['estado'] === 'aprovado' && (int)$product['ativo'] === 1): ?>
+                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
+                  <?php elseif ($product['estado'] !== 'pendente'): ?>
+                    <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
+                  <?php else: ?>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
+                  <?php endif; ?>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
 </section>
 </div>
 

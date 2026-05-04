@@ -56,7 +56,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="messages_kicker">Support desk</span>
     <h2 data-admin-t="messages_title">Mensagens</h2>
+    <p data-admin-t="messages_intro">Responde aos clientes e fecha conversas de suporte.</p>
   </div>
 </div>
 
@@ -81,6 +83,7 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="messages_inbox">Inbox</h4>
+    <span class="badge badge-light"><?= count($messages) ?></span>
   </div>
 
   <?php if (!$messages): ?>

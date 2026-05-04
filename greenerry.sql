@@ -44,7 +44,7 @@ INSERT INTO site_config (setting_key, setting_value) VALUES
 ('contact_phone', '+351 900 000 000'),
 ('instagram_url', '#'),
 ('x_url', '#'),
-('footer_note', '(c) 2026 Greenerry. Built for PAP presentation use.'),
+('footer_note', ''),
 ('support_hours', 'Mon-Fri, 09:00-18:00'),
 ('commission_percent', '5'),
 ('shipping_note', 'Digital support and merch handled by Greenerry admin.');

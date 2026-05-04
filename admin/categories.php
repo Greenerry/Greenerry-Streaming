@@ -124,7 +124,9 @@ include 'admin_header.php';
 
 <div class="admin-top">
   <div>
+    <span class="admin-page-kicker" data-admin-t="categories_kicker">Catalog structure</span>
     <h2 data-admin-t="categories_title">Categorias</h2>
+    <p data-admin-t="categories_intro">Organiza categorias, tamanhos e estados usados no merch.</p>
   </div>
 </div>
 
@@ -260,63 +262,67 @@ include 'admin_header.php';
     <span class="badge badge-light"><?= count($categories) ?></span>
   </div>
 
-  <div class="admin-card-list">
-    <?php foreach ($categories as $category): ?>
-      <article class="admin-review-card">
-        <form method="post" class="stack-form">
-          <?= csrf_input() ?>
-          <input type="hidden" name="action" value="update">
-          <input type="hidden" name="category_id" value="<?= (int)$category['idCategoria'] ?>">
+  <?php if (!$categories): ?>
+    <p data-admin-t="categories_empty">Ainda nao existem categorias.</p>
+  <?php else: ?>
+    <div class="admin-card-list">
+      <?php foreach ($categories as $category): ?>
+        <article class="admin-review-card">
+          <form method="post" class="stack-form admin-category-edit-form">
+            <?= csrf_input() ?>
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="category_id" value="<?= (int)$category['idCategoria'] ?>">
 
-          <div class="admin-category-row">
-            <div class="fg">
-              <label class="flabel" data-admin-t="categories_name">Nome</label>
-              <input type="text" name="nomeCategoria" class="finput" value="<?= h($category['nomeCategoria']) ?>" required maxlength="100">
+            <div class="admin-category-row">
+              <div class="fg">
+                <label class="flabel" data-admin-t="categories_name">Nome</label>
+                <input type="text" name="nomeCategoria" class="finput" value="<?= h($category['nomeCategoria']) ?>" required maxlength="100">
+              </div>
+
+              <div class="fg">
+                <label class="flabel" data-admin-t="categories_state">Estado</label>
+                <select name="estado" class="finput">
+                  <option value="ativo" <?= $category['estado'] === 'ativo' ? 'selected' : '' ?> data-admin-t="state_active">Ativo</option>
+                  <option value="inativo" <?= $category['estado'] === 'inativo' ? 'selected' : '' ?> data-admin-t="state_inactive">Inativo</option>
+                </select>
+              </div>
+
+              <div class="fg">
+                <label class="flabel" data-admin-t="categories_sizing">Tamanhos</label>
+                <label class="admin-size-button">
+                  <input type="checkbox" name="usa_tamanhos" value="1" <?= (int)$category['usa_tamanhos'] === 1 ? 'checked' : '' ?>>
+                  <span data-admin-t="categories_uses_sizes">Usa tamanhos</span>
+                </label>
+              </div>
             </div>
 
-            <div class="fg">
-              <label class="flabel" data-admin-t="categories_state">Estado</label>
-              <select name="estado" class="finput">
-                <option value="ativo" <?= $category['estado'] === 'ativo' ? 'selected' : '' ?> data-admin-t="state_active">Ativo</option>
-                <option value="inativo" <?= $category['estado'] === 'inativo' ? 'selected' : '' ?> data-admin-t="state_inactive">Inativo</option>
-              </select>
+            <div class="fg admin-category-description-field">
+              <label class="flabel" data-admin-t="categories_description">Descricao</label>
+              <textarea name="descricaoCategoria" class="finput" rows="3"><?= h($category['descricaoCategoria'] ?? '') ?></textarea>
             </div>
 
-            <div class="fg">
-              <label class="flabel" data-admin-t="categories_sizing">Tamanhos</label>
-              <label class="admin-size-button">
-                <input type="checkbox" name="usa_tamanhos" value="1" <?= (int)$category['usa_tamanhos'] === 1 ? 'checked' : '' ?>>
-                <span data-admin-t="categories_uses_sizes">Usa tamanhos</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="fg">
-            <label class="flabel" data-admin-t="categories_description">Descricao</label>
-            <textarea name="descricaoCategoria" class="finput" rows="3"><?= h($category['descricaoCategoria'] ?? '') ?></textarea>
-          </div>
-
-          <div class="admin-category-meta">
-            <span class="badge <?= h(state_badge_class($category['estado'])) ?>"><?= h(order_status_label($category['estado'])) ?></span>
-            <span>
-              <?= (int)$category['total_produtos'] ?>
-              <span data-admin-t="categories_products_count">produtos</span>
-            </span>
-            <?php if ((int)$category['produtos_pendentes'] > 0): ?>
+            <div class="admin-category-meta">
+              <span class="badge <?= h(state_badge_class($category['estado'])) ?>"><?= h(order_status_label($category['estado'])) ?></span>
               <span>
-                <?= (int)$category['produtos_pendentes'] ?>
-                <span data-admin-t="categories_pending_count">pendentes</span>
+                <?= (int)$category['total_produtos'] ?>
+                <span data-admin-t="categories_products_count">produtos</span>
               </span>
-            <?php endif; ?>
-          </div>
+              <?php if ((int)$category['produtos_pendentes'] > 0): ?>
+                <span>
+                  <?= (int)$category['produtos_pendentes'] ?>
+                  <span data-admin-t="categories_pending_count">pendentes</span>
+                </span>
+              <?php endif; ?>
+            </div>
 
-          <div class="admin-action-buttons">
-            <button type="submit" class="btn btn-dark btn-sm" data-admin-t="categories_save">Guardar</button>
-          </div>
-        </form>
-      </article>
-    <?php endforeach; ?>
-  </div>
+            <div class="admin-action-buttons">
+              <button type="submit" class="btn btn-dark btn-sm" data-admin-t="categories_save">Guardar</button>
+            </div>
+          </form>
+        </article>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 </section>
 </div>
 

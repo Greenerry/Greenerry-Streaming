@@ -4,6 +4,7 @@ require_admin_login();
 
 $page = basename($_SERVER['PHP_SELF']);
 $adminName = trim((string)($_SESSION['admin_name'] ?? 'Admin'));
+$todayLabel = date('l, F j');
 ?>
 <!DOCTYPE html>
 <html lang="<?= h(current_lang()) ?>">
@@ -17,7 +18,8 @@ $adminName = trim((string)($_SESSION['admin_name'] ?? 'Admin'));
   <script>
     document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
   </script>
-  <link rel="stylesheet" href="../assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= h($_base) ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
+  <link rel="stylesheet" href="<?= h($_base) ?>/assets/css/admin.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin.css') ?>">
 </head>
 <body>
 <script>
@@ -42,15 +44,17 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
 
     <div class="admin-profile-chip">
       <div class="admin-profile-top">
-        <span class="admin-profile-kicker" data-admin-t="chip_kicker">Admin</span>
+        <span class="admin-profile-kicker"><?= h($todayLabel) ?></span>
         <div class="lang admin-lang" id="admin-lang">
           <button type="button" data-l="pt">PT</button>
           <button type="button" data-l="en">EN</button>
         </div>
       </div>
+      <span class="admin-profile-kicker" data-admin-t="chip_kicker">Admin</span>
       <strong><?= h($adminName) ?></strong>
     </div>
 
+    <nav class="admin-nav-card" aria-label="Admin">
     <div class="sec">
       <span class="lbl" data-admin-t="nav_summary">Resumo</span>
       <a href="dashboard.php" class="<?= $page === 'dashboard.php' ? 'on' : '' ?>">
@@ -106,9 +110,10 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         <span data-admin-t="nav_settings">Definicoes</span>
       </a>
     </div>
+    </nav>
 
-    <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);">
-      <a href="../pages/logout.php" style="color:var(--text3)!important;">
+    <div class="admin-sidebar-logout">
+      <a href="../pages/logout.php">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span data-admin-t="nav_logout">Sair</span>
       </a>
