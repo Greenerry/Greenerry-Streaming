@@ -238,9 +238,9 @@ include '../includes/header.php';
             <div class="fg">
               <label class="flabel" for="tipo" data-t="upload_music_type">Tipo</label>
               <select id="tipo" name="tipo" class="finput">
-                <option value="Single" <?= ($editRelease['tipo'] ?? 'Single') === 'Single' ? 'selected' : '' ?>>Single</option>
-                <option value="EP" <?= ($editRelease['tipo'] ?? '') === 'EP' ? 'selected' : '' ?>>EP</option>
-                <option value="Album" <?= ($editRelease['tipo'] ?? '') === 'Album' ? 'selected' : '' ?>>Album</option>
+                <option value="Single" data-release-type="Single" <?= ($editRelease['tipo'] ?? 'Single') === 'Single' ? 'selected' : '' ?>><?= h(release_type_label('Single')) ?></option>
+                <option value="EP" data-release-type="EP" <?= ($editRelease['tipo'] ?? '') === 'EP' ? 'selected' : '' ?>><?= h(release_type_label('EP')) ?></option>
+                <option value="Album" data-release-type="Album" <?= ($editRelease['tipo'] ?? '') === 'Album' ? 'selected' : '' ?>><?= h(release_type_label('Album')) ?></option>
               </select>
             </div>
             <div class="fg">
@@ -324,7 +324,8 @@ const existingTracks = <?= json_encode(array_map(static function ($track) {
     return [
         'id' => (int)$track['idFaixa'],
         'title' => (string)$track['titulo'],
-        'audio' => (string)$track['ficheiro_audio']
+        'audio' => (string)$track['ficheiro_audio'],
+        'audioUrl' => asset_url('audio', $track['ficheiro_audio'])
     ];
 }, $editTracks), JSON_UNESCAPED_UNICODE) ?>;
 const editingRelease = <?= $editRelease ? 'true' : 'false' ?>;
@@ -404,6 +405,9 @@ function addTrackRow(index, track = null) {
   `;
   trackList.appendChild(row);
   bindDropZone(row.querySelector('.upload-zone'));
+  if (track?.audioUrl) {
+    showExistingAudioPreview(row.querySelector('.audio-upload-preview'), track);
+  }
   applyUploadMusicLanguage();
   return row;
 }
@@ -522,6 +526,18 @@ function bindAudioPreview(preview) {
   bar?.addEventListener('pointercancel', () => {
     bar.dataset.seeking = '0';
   });
+}
+
+function showExistingAudioPreview(preview, track) {
+  if (!preview || !track?.audioUrl) return;
+  bindAudioPreview(preview);
+  preview.classList.remove('is-hidden');
+  preview.querySelector('span').textContent = track.audio || '';
+  preview.querySelector('audio').src = track.audioUrl;
+  preview.querySelector('.audio-preview-current').textContent = '0:00';
+  preview.querySelector('.audio-preview-duration').textContent = '0:00';
+  preview.querySelector('.audio-preview-bar div').style.width = '0%';
+  preview.querySelector('.audio-preview-play').textContent = uploadText('upload_music_play');
 }
 
 function updateAudioPreview(input) {
@@ -686,6 +702,9 @@ releaseForm?.addEventListener('submit', (event) => {
 
 syncReleaseMode();
 bindAudioPreview(singleAudioPreview);
+if (editingRelease && typeSelect.value === 'Single' && existingTracks[0]?.audioUrl) {
+  showExistingAudioPreview(singleAudioPreview, existingTracks[0]);
+}
 applyUploadMusicLanguage();
 window.addEventListener('greenerry:langchange', applyUploadMusicLanguage);
 </script>

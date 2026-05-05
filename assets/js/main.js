@@ -109,6 +109,8 @@ function setLang(nextLang) {
     if (T[nextLang]?.[el.dataset.tp]) el.placeholder = T[nextLang][el.dataset.tp];
   });
 
+  applyDynamicLabels(nextLang);
+
   document.querySelectorAll('.lang button').forEach((button) => {
     button.classList.toggle('on', button.dataset.l === nextLang);
   });
@@ -118,7 +120,49 @@ function setLang(nextLang) {
   }));
 }
 
+function applyDynamicLabels(activeLang = lang) {
+  const statusMap = {
+    aprovado: 'status_approved',
+    aprovada: 'status_approved',
+    rejeitado: 'status_rejected',
+    rejeitada: 'status_rejected',
+    inativo: 'status_inactive',
+    inativa: 'status_inactive',
+    ativo: 'status_active',
+    ativa: 'status_active',
+    pendente: 'status_pending',
+    em_preparacao: 'status_preparing',
+    enviado: 'status_sent',
+    enviada: 'status_sent',
+    entregue: 'status_delivered',
+    cancelado: 'status_cancelled',
+    cancelada: 'status_cancelled',
+    pago: 'payment_paid',
+    falhado: 'payment_failed',
+    reembolsado: 'payment_refunded'
+  };
+  const typeMap = {
+    Single: 'release_type_single',
+    EP: 'release_type_ep',
+    Album: 'release_type_album'
+  };
+
+  document.querySelectorAll('[data-status-label]').forEach((element) => {
+    const key = statusMap[element.dataset.statusLabel || ''];
+    if (key && T[activeLang]?.[key]) element.textContent = T[activeLang][key];
+  });
+
+  document.querySelectorAll('[data-release-type]').forEach((element) => {
+    const key = typeMap[element.dataset.releaseType || ''];
+    if (key && T[activeLang]?.[key]) element.textContent = T[activeLang][key];
+  });
+}
+
 window.GreenerrySetLang = setLang;
+window.addEventListener('greenerry:langchange', () => {
+  if (document.getElementById('favs-grid')) renderFavs();
+  if (document.getElementById('following-grid')) renderFollowing();
+});
 
 /* Motion */
 const _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -378,19 +422,215 @@ function _updateFavIcon() {
 }
 
 /* Favourites page */
+const FAVS_PER_PAGE = 10;
+const FOLLOWING_PER_PAGE = 5;
+let _favsCache = [];
+let _favSearchBound = false;
+let _followingSearchBound = false;
+
+function _pageNumberFromUrl(key) {
+  const value = Number(new URLSearchParams(window.location.search).get(key) || 1);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1;
+}
+
+function _libraryPageUrl(key, page) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, page);
+  return url.pathname + url.search + url.hash;
+}
+
+function _tr(key, fallback) {
+  return T[lang]?.[key] || fallback;
+}
+
+function _escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[char]);
+}
+
+function _renderFavPager(total, currentPage) {
+  const pager = document.getElementById('favs-pager');
+  if (!pager) return;
+
+  const totalPages = Math.max(1, Math.ceil(total / FAVS_PER_PAGE));
+  if (totalPages <= 1) {
+    pager.innerHTML = '';
+    return;
+  }
+
+  const previous = currentPage > 1
+    ? `<a class="btn btn-ghost btn-sm" href="${_libraryPageUrl('fav_page', currentPage - 1)}">${_tr('pagination_previous', 'Anterior')}</a>`
+    : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_previous', 'Anterior')}</span>`;
+  const next = currentPage < totalPages
+    ? `<a class="btn btn-ghost btn-sm" href="${_libraryPageUrl('fav_page', currentPage + 1)}">${_tr('pagination_next', 'Seguinte')}</a>`
+    : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_next', 'Seguinte')}</span>`;
+
+  pager.innerHTML = `${previous}
+    <span class="pager-status">${_tr('pagination_page', 'Pagina')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
+    ${next}`;
+}
+
+function _favSearchQuery() {
+  return (document.getElementById('favs-search')?.value || '').trim().toLowerCase();
+}
+
+function _bindFavSearch(grid) {
+  const input = document.getElementById('favs-search');
+  if (!input || _favSearchBound) return;
+
+  input.value = new URLSearchParams(window.location.search).get('fav_q') || '';
+  _favSearchBound = true;
+  input.addEventListener('input', () => {
+    const url = new URL(window.location.href);
+    const query = input.value.trim();
+    if (query) url.searchParams.set('fav_q', query);
+    else url.searchParams.delete('fav_q');
+    url.searchParams.set('fav_page', '1');
+    history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    _displayFavGrid(_favsCache, grid);
+  });
+}
+
+function _renderFollowingPager(totalPages, currentPage) {
+  const pager = document.getElementById('following-pager');
+  if (!pager) return;
+
+  if (totalPages <= 1) {
+    pager.innerHTML = '';
+    return;
+  }
+
+  const previous = currentPage > 1
+    ? `<a class="btn btn-ghost btn-sm" href="${_libraryPageUrl('following_page', currentPage - 1)}">${_tr('pagination_previous', 'Anterior')}</a>`
+    : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_previous', 'Anterior')}</span>`;
+  const next = currentPage < totalPages
+    ? `<a class="btn btn-ghost btn-sm" href="${_libraryPageUrl('following_page', currentPage + 1)}">${_tr('pagination_next', 'Seguinte')}</a>`
+    : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_next', 'Seguinte')}</span>`;
+
+  pager.innerHTML = `${previous}
+    <span class="pager-status">${_tr('pagination_page', 'Pagina')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
+    ${next}`;
+}
+
+function _followingQuery() {
+  return (document.getElementById('following-search')?.value || '').trim();
+}
+
+function _bindFollowingSearch() {
+  const input = document.getElementById('following-search');
+  if (!input || _followingSearchBound) return;
+
+  input.value = new URLSearchParams(window.location.search).get('following_q') || '';
+  _followingSearchBound = true;
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const url = new URL(window.location.href);
+      const query = input.value.trim();
+      if (query) url.searchParams.set('following_q', query);
+      else url.searchParams.delete('following_q');
+      url.searchParams.set('following_page', '1');
+      history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+      renderFollowing();
+    }, 260);
+  });
+}
+
+function renderFollowing() {
+  const grid = document.getElementById('following-grid');
+  if (!grid) return;
+  _bindFollowingSearch();
+
+  const empty = document.getElementById('following-empty');
+  const searchEmpty = document.getElementById('following-search-empty');
+  const query = _followingQuery();
+  const page = _pageNumberFromUrl('following_page');
+  const url = new URL((window.SITE_BASE || '') + '/api/following.php', window.location.origin);
+  url.searchParams.set('page', page);
+  url.searchParams.set('perPage', FOLLOWING_PER_PAGE);
+  if (query) url.searchParams.set('q', query);
+
+  fetch(url.toString())
+    .then((response) => response.json())
+    .then((result) => {
+      const artists = Array.isArray(result.artists) ? result.artists : [];
+      const currentPage = Number(result.page || 1);
+      const totalPages = Number(result.totalPages || 1);
+
+      if (_pageNumberFromUrl('following_page') !== currentPage) {
+        history.replaceState(history.state, '', _libraryPageUrl('following_page', currentPage));
+      }
+
+      if (!artists.length) {
+        grid.innerHTML = '';
+        if (empty) empty.classList.toggle('is-hidden', !!query);
+        if (searchEmpty) searchEmpty.classList.toggle('is-hidden', !query);
+        _renderFollowingPager(1, 1);
+        return;
+      }
+
+      empty?.classList.add('is-hidden');
+      searchEmpty?.classList.add('is-hidden');
+      grid.innerHTML = artists.map((artist) => {
+        const name = _escapeHtml(artist.nome || '');
+        const bio = _escapeHtml(artist.bio || '');
+        const banner = _imgPath(artist.banner || '');
+        const photo = _imgPath(artist.foto || '');
+        const style = banner
+          ? ` style="background-image:
+              linear-gradient(180deg, rgba(7,9,13,.1), rgba(7,9,13,.18) 24%, rgba(7,9,13,.52) 72%, rgba(7,9,13,.76) 100%),
+              linear-gradient(90deg, rgba(7,9,13,.34), rgba(7,9,13,.08) 58%, rgba(7,9,13,.3)),
+              url('${_escapeHtml(banner)}');"`
+          : '';
+
+        return `<a href="artist.php?id=${Number(artist.idCliente || 0)}" class="artist-panel"${style}>
+          <div class="artist-panel-body">
+            <div class="avatar artist-panel-avatar">
+              ${photo ? `<img src="${_escapeHtml(photo)}" alt="${name}">` : ''}
+            </div>
+            <div>
+              <h3>${name}</h3>
+              ${bio ? `<p>${bio}</p>` : ''}
+            </div>
+            <div class="artist-panel-stats">
+              <span>${Number(artist.total_releases || 0)} releases</span>
+              <span>${Number(artist.total_faixas || 0)} faixas</span>
+            </div>
+          </div>
+        </a>`;
+      }).join('');
+
+      _renderFollowingPager(totalPages, currentPage);
+      _registerMotion(grid);
+    })
+    .catch((error) => {
+      if (window.DEBUG_GREENERRY) console.warn('Load following error:', error);
+    });
+}
+
 function renderFavs() {
   const grid = document.getElementById('favs-grid');
   const empty = document.getElementById('favs-empty');
   if (!grid) return;
+  _bindFavSearch(grid);
 
   if (!_isLoggedIn()) {
     const favs = favGet();
     if (!favs.length) {
       if (empty) empty.style.display = 'block';
+      document.getElementById('favs-search-empty')?.classList.add('is-hidden');
       grid.innerHTML = '';
+      _renderFavPager(0, 1);
       return;
     }
 
+    _favsCache = favs;
     if (empty) empty.style.display = 'none';
     _displayFavGrid(favs, grid);
     return;
@@ -411,10 +651,13 @@ function renderFavs() {
 
       if (!favs.length) {
         if (empty) empty.style.display = 'block';
+        document.getElementById('favs-search-empty')?.classList.add('is-hidden');
         grid.innerHTML = '';
+        _renderFavPager(0, 1);
         return;
       }
 
+      _favsCache = favs;
       if (empty) empty.style.display = 'none';
       _displayFavGrid(favs, grid);
     })
@@ -423,17 +666,45 @@ function renderFavs() {
       const favs = favGet();
       if (!favs.length) {
         if (empty) empty.style.display = 'block';
+        document.getElementById('favs-search-empty')?.classList.add('is-hidden');
         grid.innerHTML = '';
+        _renderFavPager(0, 1);
         return;
       }
 
+      _favsCache = favs;
       if (empty) empty.style.display = 'none';
       _displayFavGrid(favs, grid);
     });
 }
 
 function _displayFavGrid(favs, grid) {
-  grid.innerHTML = favs.map((fav) => {
+  const searchEmpty = document.getElementById('favs-search-empty');
+  const query = _favSearchQuery();
+  const filteredFavs = query
+    ? favs.filter((fav) => {
+        const track = _norm(fav);
+        return `${track.title || ''} ${track.artist || ''}`.toLowerCase().includes(query);
+      })
+    : favs;
+
+  if (!filteredFavs.length) {
+    grid.innerHTML = '';
+    if (searchEmpty) searchEmpty.classList.toggle('is-hidden', !query);
+    _renderFavPager(0, 1);
+    updateFavBadge();
+    return;
+  }
+
+  if (searchEmpty) searchEmpty.classList.add('is-hidden');
+  const totalPages = Math.max(1, Math.ceil(filteredFavs.length / FAVS_PER_PAGE));
+  let currentPage = Math.min(_pageNumberFromUrl('fav_page'), totalPages);
+  if (_pageNumberFromUrl('fav_page') !== currentPage) {
+    history.replaceState(history.state, '', _libraryPageUrl('fav_page', currentPage));
+  }
+
+  const visibleFavs = filteredFavs.slice((currentPage - 1) * FAVS_PER_PAGE, currentPage * FAVS_PER_PAGE);
+  grid.innerHTML = visibleFavs.map((fav) => {
     const track = _norm(fav);
     const cover = _imgPath(track.cover);
     const title = (track.title || '').replace(/'/g, "\\'");
@@ -459,6 +730,7 @@ function _displayFavGrid(favs, grid) {
     </div>`;
   }).join('');
 
+  _renderFavPager(filteredFavs.length, currentPage);
   updateFavBadge();
   _registerMotion(grid);
 }
@@ -1088,6 +1360,10 @@ function _initPageContent() {
   if (document.getElementById('favs-grid')) {
     renderFavs();
     updateFavBadge();
+  }
+
+  if (document.getElementById('following-grid')) {
+    renderFollowing();
   }
 
   const tabs = document.querySelectorAll('.tab[data-tab]');

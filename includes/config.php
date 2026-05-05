@@ -158,6 +158,9 @@ function tr(string $key, array $replace = []): string
             'status.done' => 'Concluido',
             'status.refused' => 'Recusado',
             'status.blocked' => 'Bloqueado',
+            'release_type.single' => 'Single',
+            'release_type.ep' => 'EP',
+            'release_type.album' => 'Album',
             'payment.pending' => 'Pendente',
             'payment.paid' => 'Pago',
             'payment.failed' => 'Falhado',
@@ -233,7 +236,10 @@ function tr(string $key, array $replace = []): string
             'error.track_required' => 'Adiciona pelo menos uma faixa ao lancamento.',
             'success.release_sent' => 'Lancamento enviado para aprovacao do admin.',
             'success.release_updated' => 'Lancamento atualizado e enviado para revisao.',
+            'success.release_deleted' => 'Lancamento eliminado com sucesso.',
             'error.release_save' => 'Nao foi possivel guardar o lancamento.',
+            'error.release_delete' => 'Nao foi possivel eliminar o lancamento.',
+            'confirm.release_delete' => 'Eliminar este lancamento? Isto tambem remove os ficheiros de audio e a capa.',
             'error.product_name_required' => 'O nome do produto e obrigatorio.',
             'error.price_positive' => 'O preco tem de ser superior a zero.',
             'error.category_required' => 'Seleciona uma categoria.',
@@ -299,6 +305,9 @@ function tr(string $key, array $replace = []): string
             'status.done' => 'Completed',
             'status.refused' => 'Refused',
             'status.blocked' => 'Blocked',
+            'release_type.single' => 'Single',
+            'release_type.ep' => 'EP',
+            'release_type.album' => 'Album',
             'payment.pending' => 'Pending',
             'payment.paid' => 'Paid',
             'payment.failed' => 'Failed',
@@ -374,7 +383,10 @@ function tr(string $key, array $replace = []): string
             'error.track_required' => 'Add at least one track to the release.',
             'success.release_sent' => 'Release sent for admin approval.',
             'success.release_updated' => 'Release updated and sent for review.',
+            'success.release_deleted' => 'Release deleted successfully.',
             'error.release_save' => 'Could not save the release.',
+            'error.release_delete' => 'Could not delete the release.',
+            'confirm.release_delete' => 'Delete this release? This also removes the audio files and cover.',
             'error.product_name_required' => 'Product name is required.',
             'error.price_positive' => 'Price must be greater than zero.',
             'error.category_required' => 'Select a category.',
@@ -478,6 +490,20 @@ function order_status_label(string $status): string
             return tr('status.blocked');
         default:
             return ucfirst(str_replace('_', ' ', $status));
+    }
+}
+
+function release_type_label(string $type): string
+{
+    switch ($type) {
+        case 'Single':
+            return tr('release_type.single');
+        case 'EP':
+            return tr('release_type.ep');
+        case 'Album':
+            return tr('release_type.album');
+        default:
+            return $type;
     }
 }
 

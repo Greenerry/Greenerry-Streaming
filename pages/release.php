@@ -57,7 +57,7 @@ include '../includes/header.php';
         <?php endif; ?>
       </div>
       <div class="release-detail-copy">
-        <span class="slabel"><?= h($release['tipo']) ?></span>
+        <span class="slabel" data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></span>
         <h1><?= h($release['titulo']) ?></h1>
         <a href="artist.php?id=<?= (int)$release['artistId'] ?>" class="release-artist-link">
           <?php if ($artistFoto): ?>

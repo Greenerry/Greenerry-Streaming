@@ -135,10 +135,10 @@
 
 .admin-profile-chip {
   display: grid;
-  gap: 8px;
-  min-height: 112px;
+  gap: 9px;
+  min-height: 0;
   margin: 0;
-  padding: 15px;
+  padding: 12px;
   overflow: hidden;
 }
 
@@ -151,12 +151,17 @@
 
 .admin-profile-chip strong {
   color: var(--admin-text);
-  font-size: 1rem;
+  display: block;
+  margin-top: 2px;
+  font-size: .96rem;
   font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-lang {
-  display: inline-flex;
+  display: flex;
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--admin-line);
@@ -165,8 +170,9 @@
 }
 
 .admin-lang button {
-  min-width: 34px;
-  height: 28px;
+  flex: 1;
+  min-width: 0;
+  height: 27px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -182,8 +188,8 @@
 
 .admin-nav-card {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
 }
 
 .admin-sl .sec {
@@ -202,11 +208,11 @@
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  min-height: 40px;
-  padding: 10px 10px;
+  min-height: 36px;
+  padding: 8px 9px;
   border-radius: 12px;
   color: var(--admin-soft);
-  font-size: .9rem;
+  font-size: .86rem;
   font-weight: 800;
 }
 

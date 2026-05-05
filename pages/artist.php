@@ -208,7 +208,7 @@ include '../includes/header.php';
             <?php endif; ?>
           </div>
           <div class="meta">
-            <span class="badge badge-dark"><?= h($release['tipo']) ?></span>
+            <span class="badge badge-dark" data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></span>
             <h4><?= h($release['titulo']) ?></h4>
             <div class="sub"><?= (int)$release['total_faixas'] ?> <span data-t="release_tracks_count">faixas</span></div>
           </div>

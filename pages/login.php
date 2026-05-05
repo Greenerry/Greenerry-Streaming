@@ -58,12 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include '../includes/header.php';
 ?>
 
-<section class="auth-shell auth-shell--narrow">
+<section class="auth-shell auth-shell--narrow auth-shell--centered">
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
         <span class="slabel" data-t="<?= $isAdminLogin ? 'nav_admin' : 'login_label' ?>"><?= $isAdminLogin ? 'Administracao' : 'Acesso' ?></span>
         <h2 data-t="<?= $isAdminLogin ? 'login_admin_type' : 'login_title' ?>"><?= $isAdminLogin ? 'Administracao' : 'Aceder a conta' ?></h2>
+        <p data-t="<?= $isAdminLogin ? 'login_admin_card_intro' : 'login_card_intro' ?>"><?= $isAdminLogin ? 'Usa o acesso reservado da equipa Greenerry.' : 'Bem-vindo de volta. Entra com os teus dados.' ?></p>
       </div>
 
       <?php if ($err): ?>
@@ -94,11 +95,11 @@ include '../includes/header.php';
       </form>
 
       <?php if ($isAdminLogin): ?>
-        <p class="auth-foot-note">
+        <p class="auth-foot-note auth-foot-note--center">
           <a href="login.php" data-t="login_user_type">Utilizador / Artista</a>
         </p>
       <?php else: ?>
-        <p class="auth-foot-note">
+        <p class="auth-foot-note auth-foot-note--center">
           <span data-t="login_no_account">Ainda nao tens conta?</span>
           <a href="registar.php" data-t="login_create_account">Criar conta</a>
         </p>

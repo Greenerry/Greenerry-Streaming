@@ -192,7 +192,7 @@ include '../includes/header.php';
                   <p><?= date('d/m/Y', strtotime($order['created_at'])) ?> • <?= h($order['morada']) ?>, <?= h($order['cidade']) ?> <?= h($order['codigo_postal']) ?></p>
                 </div>
                 <div class="order-status-side">
-                  <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
+                  <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
                   <strong><?= h(format_eur((float)$order['total_final'])) ?></strong>
                 </div>
               </div>
@@ -210,7 +210,7 @@ include '../includes/header.php';
                       </p>
                     </div>
                     <div class="order-line-side">
-                      <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
+                      <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>" data-status-label="<?= h($item['estado_item']) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
                       <span><?= h(format_eur($item['estado_item'] === 'cancelado' ? 0.0 : (float)$item['valor_artista'])) ?></span>
                     </div>
                   </div>

@@ -306,7 +306,7 @@ include '../includes/header.php';
                 <article class="message-thread-item">
                   <div class="message-thread-head">
                     <strong><?= h($product['nomeProduto']) ?></strong>
-                    <span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span>
+                    <span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-status-label="<?= h($product['estado']) ?>"><?= h(order_status_label($product['estado'])) ?></span>
                   </div>
                   <p class="message-thread-meta"><?= h($product['nomeCategoria']) ?> - <?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</p>
                   <?php if (!empty($product['motivo_rejeicao'])): ?>

@@ -130,7 +130,7 @@ include '../includes/header.php';
             <div class="home-hero-spotlight-copy">
               <span class="home-hero-spotlight-kicker" data-t="home_spotlight_label">Now in focus</span>
               <strong><?= h($heroSpotlight['release_titulo']) ?></strong>
-              <p><?= h($heroSpotlight['artist_nome']) ?> - <?= h($heroSpotlight['tipo']) ?></p>
+              <p><?= h($heroSpotlight['artist_nome']) ?> - <?= h(release_type_label($heroSpotlight['tipo'])) ?></p>
             </div>
           </a>
         <?php endif; ?>
@@ -184,7 +184,7 @@ include '../includes/header.php';
             </div>
           </div>
           <div class="meta">
-            <span class="badge badge-dark"><?= h($release['tipo']) ?></span>
+            <span class="badge badge-dark" data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></span>
             <h4><?= h($release['release_titulo']) ?></h4>
             <div class="sub"><?= h($release['artist_nome']) ?></div>
             <div class="sub"><?= (int)$release['total_faixas'] ?> <span data-t="release_tracks_count">faixas</span></div>

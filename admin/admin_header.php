@@ -34,24 +34,22 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
   <aside class="admin-sl" id="admin-sidebar">
     <a href="dashboard.php" class="brand">Greenerry Admin</a>
 
-    <div class="admin-sidebar-tools">
-      <span data-admin-t="theme_label">Tema</span>
-      <button type="button" class="theme-toggle theme-toggle--admin" id="theme-toggle" aria-label="Theme" title="Theme">
-        <svg class="theme-toggle-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-        <svg class="theme-toggle-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
-      </button>
-    </div>
-
     <div class="admin-profile-chip">
       <div class="admin-profile-top">
         <span class="admin-profile-kicker"><?= h($todayLabel) ?></span>
-        <div class="lang admin-lang" id="admin-lang">
-          <button type="button" data-l="pt">PT</button>
-          <button type="button" data-l="en">EN</button>
-        </div>
+        <button type="button" class="theme-toggle theme-toggle--admin" id="theme-toggle" aria-label="Theme" title="Theme">
+          <svg class="theme-toggle-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="theme-toggle-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+        </button>
       </div>
-      <span class="admin-profile-kicker" data-admin-t="chip_kicker">Admin</span>
-      <strong><?= h($adminName) ?></strong>
+      <div class="admin-profile-main">
+        <span class="admin-profile-kicker" data-admin-t="chip_kicker">Admin</span>
+        <strong><?= h($adminName) ?></strong>
+      </div>
+      <div class="lang admin-lang" id="admin-lang">
+        <button type="button" data-l="pt">PT</button>
+        <button type="button" data-l="en">EN</button>
+      </div>
     </div>
 
     <nav class="admin-nav-card" aria-label="Admin">

@@ -56,12 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include '../includes/header.php';
 ?>
 
-<section class="auth-shell auth-shell--narrow">
+<section class="auth-shell auth-shell--narrow auth-shell--centered">
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
         <span class="slabel" data-t="register_label">Registo</span>
         <h2 data-t="register_title">Criar conta</h2>
+        <p data-t="register_card_intro">Comeca com uma conta de listener. Depois podes publicar musica e merch pelo teu perfil.</p>
       </div>
 
       <?php if ($err): ?>
@@ -98,7 +99,7 @@ include '../includes/header.php';
         <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="register_submit">Criar conta</button>
       </form>
 
-      <p class="auth-foot-note">
+      <p class="auth-foot-note auth-foot-note--center">
         <span data-t="register_have_account">Ja tens conta?</span>
         <a href="login.php" data-t="register_login">Entrar</a>
       </p>

@@ -5,9 +5,58 @@ require_user_login();
 $uid = current_user_id();
 $ok = '';
 $err = '';
+$activeTab = 'edit';
 $user = db_one($conn, "SELECT * FROM cliente WHERE idCliente = {$uid} LIMIT 1");
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
+    $activeTab = 'music';
+    $releaseId = (int)($_POST['release_id'] ?? 0);
+    $err = verify_csrf_request() ?? '';
+
+    if (!$err && $releaseId <= 0) {
+        $err = tr('error.release_delete');
+    }
+
+    if (!$err) {
+        $releaseToDelete = db_one($conn, "SELECT idRelease, capa FROM release_musical WHERE idRelease = {$releaseId} AND idCliente = {$uid} LIMIT 1");
+        if (!$releaseToDelete) {
+            $err = tr('error.release_delete');
+        } else {
+            $tracksToDelete = db_all($conn, "SELECT idFaixa, ficheiro_audio FROM faixa WHERE idRelease = {$releaseId}");
+            $coverToDelete = (string)($releaseToDelete['capa'] ?? '');
+            $trackIdsToDelete = array_map(static fn($track) => (int)($track['idFaixa'] ?? 0), $tracksToDelete);
+            $trackIdsSql = implode(',', array_filter($trackIdsToDelete));
+            $audioFilesToDelete = array_values(array_unique(array_filter(array_map(
+                static fn($track) => (string)($track['ficheiro_audio'] ?? ''),
+                $tracksToDelete
+            ))));
+
+            mysqli_begin_transaction($conn);
+            try {
+                if ($trackIdsSql !== '' && !mysqli_query($conn, "DELETE FROM favorito_musica WHERE idFaixa IN ({$trackIdsSql})")) {
+                    throw new RuntimeException('release favourites delete failed');
+                }
+                if (!mysqli_query($conn, "DELETE FROM faixa WHERE idRelease = {$releaseId}")) {
+                    throw new RuntimeException('release tracks delete failed');
+                }
+                if (!mysqli_query($conn, "DELETE FROM release_musical WHERE idRelease = {$releaseId} AND idCliente = {$uid}")) {
+                    throw new RuntimeException('release delete failed');
+                }
+                mysqli_commit($conn);
+
+                delete_asset_file('img', $coverToDelete);
+                foreach ($audioFilesToDelete as $audioFile) {
+                    delete_asset_file('audio', $audioFile);
+                }
+
+                $ok = tr('success.release_deleted');
+            } catch (Throwable $e) {
+                mysqli_rollback($conn);
+                $err = tr('error.release_delete');
+            }
+        }
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $nome = trim($_POST['nome'] ?? '');
     $telefone = trim($_POST['telefone'] ?? '');
     $bio = trim($_POST['bio'] ?? '');
@@ -123,20 +172,20 @@ include '../includes/header.php';
 <section class="content-shell">
   <div class="wrap">
     <div class="tabs">
-      <button class="tab on" data-tab="edit" data-t="profile_tab_profile">Perfil</button>
-      <button class="tab" data-tab="orders" data-t="profile_tab_orders">Compras</button>
-      <button class="tab" data-tab="music" data-t="profile_tab_releases">Lancamentos</button>
-      <button class="tab" data-tab="merch" data-t="profile_tab_merch">Merch</button>
+      <button class="tab <?= $activeTab === 'edit' ? 'on' : '' ?>" data-tab="edit" data-t="profile_tab_profile">Perfil</button>
+      <button class="tab <?= $activeTab === 'orders' ? 'on' : '' ?>" data-tab="orders" data-t="profile_tab_orders">Compras</button>
+      <button class="tab <?= $activeTab === 'music' ? 'on' : '' ?>" data-tab="music" data-t="profile_tab_releases">Lancamentos</button>
+      <button class="tab <?= $activeTab === 'merch' ? 'on' : '' ?>" data-tab="merch" data-t="profile_tab_merch">Merch</button>
     </div>
 
-    <div id="tab-edit">
-      <?php if ($err): ?>
-        <div class="alert alert-err"><?= h($err) ?></div>
-      <?php endif; ?>
-      <?php if ($ok): ?>
-        <div class="alert alert-ok"><?= h($ok) ?></div>
-      <?php endif; ?>
+    <?php if ($err): ?>
+      <div class="alert alert-err"><?= h($err) ?></div>
+    <?php endif; ?>
+    <?php if ($ok): ?>
+      <div class="alert alert-ok"><?= h($ok) ?></div>
+    <?php endif; ?>
 
+    <div id="tab-edit" class="<?= $activeTab === 'edit' ? '' : 'is-hidden' ?>">
       <div class="two-column-layout">
         <div class="card surface-card no-motion">
           <div class="card-body">
@@ -186,7 +235,7 @@ include '../includes/header.php';
               <div class="simple-list-item">
                 <div>
                   <strong data-t="profile_summary_status">Estado</strong>
-                  <p><?= h(order_status_label($user['estado'])) ?></p>
+                  <p data-status-label="<?= h($user['estado']) ?>"><?= h(order_status_label($user['estado'])) ?></p>
                 </div>
               </div>
               <div class="simple-list-item">
@@ -207,7 +256,7 @@ include '../includes/header.php';
       </div>
     </div>
 
-    <div id="tab-orders" class="is-hidden">
+    <div id="tab-orders" class="<?= $activeTab === 'orders' ? '' : 'is-hidden' ?>">
       <div class="card surface-card">
         <div class="card-body">
           <h3 class="section-card-title" data-t="profile_orders">As minhas compras</h3>
@@ -231,8 +280,8 @@ include '../includes/header.php';
                     <tr>
                       <td><strong>#<?= (int)$order['idEncomenda'] ?></strong></td>
                       <td><?= date('d/m/Y', strtotime($order['created_at'])) ?></td>
-                      <td><span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span></td>
-                      <td><span class="badge <?= h(state_badge_class($order['estado_pagamento'])) ?>"><?= h(payment_status_label($order['estado_pagamento'])) ?></span></td>
+                      <td><span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span></td>
+                      <td><span class="badge <?= h(state_badge_class($order['estado_pagamento'])) ?>" data-status-label="<?= h($order['estado_pagamento']) ?>"><?= h(payment_status_label($order['estado_pagamento'])) ?></span></td>
                       <td><?= h(format_eur((float)$order['total_final'])) ?></td>
                       <td><a href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>" class="btn btn-ghost btn-sm" target="_blank" data-t="profile_receipt">Recibo</a></td>
                     </tr>
@@ -245,7 +294,7 @@ include '../includes/header.php';
       </div>
     </div>
 
-    <div id="tab-music" class="is-hidden">
+    <div id="tab-music" class="<?= $activeTab === 'music' ? '' : 'is-hidden' ?>">
       <div class="card surface-card">
         <div class="card-body">
           <div class="between mb6">
@@ -271,7 +320,7 @@ include '../includes/header.php';
                 <tbody>
                   <?php foreach ($releases as $release): ?>
                     <tr>
-                      <td class="profile-table-actions">
+                      <td>
                         <div class="admin-table-thumb">
                           <?php if (!empty($release['capa'])): ?>
                             <img src="<?= h(asset_url('img', $release['capa'])) ?>" alt="<?= h($release['titulo']) ?>">
@@ -286,20 +335,27 @@ include '../includes/header.php';
                           <br><span class="color-text3"><?= h($release['motivo_rejeicao']) ?></span>
                         <?php endif; ?>
                       </td>
-                      <td><?= h($release['tipo']) ?></td>
+                      <td data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></td>
                       <td><?= (int)$release['total_faixas'] ?></td>
-                      <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
+                      <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>" data-status-label="<?= h($release['estado']) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
                       <td>
-                        <a href="upload_music.php?edit=<?= (int)$release['idRelease'] ?>" class="btn btn-ghost btn-sm" data-t="profile_action_edit">Editar</a>
-                        <?php if ((int)($release['bloqueado_admin'] ?? 0) === 1): ?>
-                          <span class="badge badge-light" data-t="profile_admin_blocked">Bloqueado pelo admin</span>
-                        <?php elseif (in_array($release['estado'], ['aprovado', 'inativo'], true)): ?>
-                          <button type="button" class="btn btn-ghost btn-sm js-toggle-item" data-type="music" data-id="<?= (int)$release['idRelease'] ?>" data-t="<?= (int)$release['ativo'] === 1 ? 'profile_action_deactivate' : 'profile_action_activate' ?>">
-                            <?= (int)$release['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
-                          </button>
-                        <?php else: ?>
-                          <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
-                        <?php endif; ?>
+                        <div class="profile-table-actions">
+                          <a href="upload_music.php?edit=<?= (int)$release['idRelease'] ?>" class="btn btn-ghost btn-sm" data-t="profile_action_edit">Editar</a>
+                          <?php if ((int)($release['bloqueado_admin'] ?? 0) === 1): ?>
+                            <span class="badge badge-light" data-t="profile_admin_blocked">Bloqueado pelo admin</span>
+                          <?php elseif (in_array($release['estado'], ['aprovado', 'inativo'], true)): ?>
+                            <button type="button" class="btn btn-ghost btn-sm js-toggle-item" data-type="music" data-id="<?= (int)$release['idRelease'] ?>" data-t="<?= (int)$release['ativo'] === 1 ? 'profile_action_deactivate' : 'profile_action_activate' ?>">
+                              <?= (int)$release['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
+                            </button>
+                          <?php else: ?>
+                            <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
+                          <?php endif; ?>
+                          <form method="post" class="inline-delete-form js-delete-release-form" data-confirm="<?= h(tr('confirm.release_delete')) ?>">
+                            <?= csrf_input() ?>
+                            <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
+                            <button type="submit" name="delete_release" value="1" class="btn btn-danger btn-sm" data-t="profile_action_delete_release">Eliminar</button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -311,7 +367,7 @@ include '../includes/header.php';
       </div>
     </div>
 
-    <div id="tab-merch" class="is-hidden">
+    <div id="tab-merch" class="<?= $activeTab === 'merch' ? '' : 'is-hidden' ?>">
       <div class="card surface-card">
         <div class="card-body">
           <div class="between mb6">
@@ -356,18 +412,20 @@ include '../includes/header.php';
                       <td><?= !empty($product['nomeCategoria']) ? h($product['nomeCategoria']) : '<span data-t="profile_no_category">Sem categoria</span>' ?></td>
                       <td><?= h(format_eur((float)$product['precoAtual'])) ?></td>
                       <td><?= (int)$product['stock_total'] ?></td>
-                      <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
-                      <td class="profile-table-actions">
-                        <a href="upload_merch.php?edit=<?= (int)$product['idProduto'] ?>" class="btn btn-ghost btn-sm" data-t="profile_action_edit">Editar</a>
-                        <?php if ((int)($product['bloqueado_admin'] ?? 0) === 1): ?>
-                          <span class="badge badge-light" data-t="profile_admin_blocked">Bloqueado pelo admin</span>
-                        <?php elseif (in_array($product['estado'], ['aprovado', 'inativo'], true)): ?>
-                          <button type="button" class="btn btn-ghost btn-sm js-toggle-item" data-type="merch" data-id="<?= (int)$product['idProduto'] ?>" data-t="<?= (int)$product['ativo'] === 1 ? 'profile_action_deactivate' : 'profile_action_activate' ?>">
-                            <?= (int)$product['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
-                          </button>
-                        <?php else: ?>
-                          <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
-                        <?php endif; ?>
+                      <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-status-label="<?= h($product['estado']) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
+                      <td>
+                        <div class="profile-table-actions">
+                          <a href="upload_merch.php?edit=<?= (int)$product['idProduto'] ?>" class="btn btn-ghost btn-sm" data-t="profile_action_edit">Editar</a>
+                          <?php if ((int)($product['bloqueado_admin'] ?? 0) === 1): ?>
+                            <span class="badge badge-light" data-t="profile_admin_blocked">Bloqueado pelo admin</span>
+                          <?php elseif (in_array($product['estado'], ['aprovado', 'inativo'], true)): ?>
+                            <button type="button" class="btn btn-ghost btn-sm js-toggle-item" data-type="merch" data-id="<?= (int)$product['idProduto'] ?>" data-t="<?= (int)$product['ativo'] === 1 ? 'profile_action_deactivate' : 'profile_action_activate' ?>">
+                              <?= (int)$product['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
+                            </button>
+                          <?php else: ?>
+                            <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
+                          <?php endif; ?>
+                        </div>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -415,6 +473,14 @@ document.querySelectorAll('.js-toggle-item').forEach((button) => {
     }
 
     toast(result.error || <?= json_encode(tr('error.order_update'), JSON_UNESCAPED_UNICODE) ?>);
+  });
+});
+
+document.querySelectorAll('.js-delete-release-form').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (!confirm(form.dataset.confirm || 'Delete this release?')) {
+      event.preventDefault();
+    }
   });
 });
 </script>

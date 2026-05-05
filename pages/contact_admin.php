@@ -96,7 +96,7 @@ include '../includes/header.php';
                 <article class="message-thread-item">
                   <div class="message-thread-head">
                     <strong><?= h($message['assunto']) ?></strong>
-                    <span class="badge <?= $message['estado'] === 'respondida' ? 'badge-blue' : 'badge-light' ?>"><?= h(order_status_label($message['estado'])) ?></span>
+                    <span class="badge <?= $message['estado'] === 'respondida' ? 'badge-blue' : 'badge-light' ?>" data-status-label="<?= h($message['estado']) ?>"><?= h(order_status_label($message['estado'])) ?></span>
                   </div>
                   <p class="message-thread-meta"><?= date('d/m/Y H:i', strtotime($message['created_at'])) ?></p>
                   <p><?= nl2br(h($message['mensagem'])) ?></p>

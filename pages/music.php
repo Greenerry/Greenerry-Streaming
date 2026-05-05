@@ -106,9 +106,9 @@ include '../includes/header.php';
         <input type="text" name="q" class="finput" value="<?= h($search) ?>" data-tp="music_search_placeholder" placeholder="Search track, release, or artist">
         <select name="tipo" class="finput">
           <option value="" data-t="music_all_formats">All formats</option>
-          <option value="Single" <?= $type === 'Single' ? 'selected' : '' ?>>Single</option>
-          <option value="EP" <?= $type === 'EP' ? 'selected' : '' ?>>EP</option>
-          <option value="Album" <?= $type === 'Album' ? 'selected' : '' ?>>Album</option>
+          <option value="Single" data-release-type="Single" <?= $type === 'Single' ? 'selected' : '' ?>><?= h(release_type_label('Single')) ?></option>
+          <option value="EP" data-release-type="EP" <?= $type === 'EP' ? 'selected' : '' ?>><?= h(release_type_label('EP')) ?></option>
+          <option value="Album" data-release-type="Album" <?= $type === 'Album' ? 'selected' : '' ?>><?= h(release_type_label('Album')) ?></option>
         </select>
         <button type="submit" class="btn btn-dark" data-t="music_filter">Filter</button>
       </form>
@@ -151,7 +151,7 @@ include '../includes/header.php';
               </div>
             </div>
             <div class="meta">
-              <span class="badge badge-dark"><?= h($release['tipo']) ?></span>
+              <span class="badge badge-dark" data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></span>
               <h4><?= h($release['release_titulo']) ?></h4>
               <div class="sub"><?= h($release['artist_nome']) ?></div>
               <div class="sub"><?= (int)$release['total_faixas'] ?> <span data-t="release_tracks_count">faixas</span></div>
