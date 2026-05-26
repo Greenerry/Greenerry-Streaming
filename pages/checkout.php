@@ -6,6 +6,29 @@ $uid = current_user_id();
 $err = '';
 $ok = '';
 $orderId = 0;
+// Country-specific rules keep checkout validation aligned between PHP and the browser.
+$checkoutCountries = [
+    'Portugal' => ['key' => 'country_portugal', 'postal' => '/^\d{4}-\d{3}$/', 'html' => '\d{4}-\d{3}', 'placeholder' => '1000-001', 'phone' => '+351 912345678'],
+    'Spain' => ['key' => 'country_spain', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '28013', 'phone' => '+34 600 000 000'],
+    'France' => ['key' => 'country_france', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '75001', 'phone' => '+33 6 00 00 00 00'],
+    'Germany' => ['key' => 'country_germany', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '10115', 'phone' => '+49 151 23456789'],
+    'Italy' => ['key' => 'country_italy', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '00118', 'phone' => '+39 312 345 6789'],
+    'Netherlands' => ['key' => 'country_netherlands', 'postal' => '/^\d{4}\s?[A-Z]{2}$/i', 'html' => '\d{4}\s?[A-Za-z]{2}', 'placeholder' => '1012 AB', 'phone' => '+31 6 12345678'],
+    'Belgium' => ['key' => 'country_belgium', 'postal' => '/^\d{4}$/', 'html' => '\d{4}', 'placeholder' => '1000', 'phone' => '+32 470 12 34 56'],
+    'Ireland' => ['key' => 'country_ireland', 'postal' => '/^[A-Z0-9]{3}\s?[A-Z0-9]{4}$/i', 'html' => '[A-Za-z0-9]{3}\s?[A-Za-z0-9]{4}', 'placeholder' => 'D02 X285', 'phone' => '+353 85 123 4567'],
+    'United Kingdom' => ['key' => 'country_united_kingdom', 'postal' => '/^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i', 'html' => '[A-Za-z]{1,2}\d[A-Za-z\d]?\s?\d[A-Za-z]{2}', 'placeholder' => 'SW1A 1AA', 'phone' => '+44 7700 900123'],
+    'United States' => ['key' => 'country_united_states', 'postal' => '/^\d{5}(-\d{4})?$/', 'html' => '\d{5}(-\d{4})?', 'placeholder' => '10001', 'phone' => '+1 202 555 0100'],
+    'Brazil' => ['key' => 'country_brazil', 'postal' => '/^\d{5}-?\d{3}$/', 'html' => '\d{5}-?\d{3}', 'placeholder' => '01001-000', 'phone' => '+55 11 91234-5678'],
+];
+$recipient = '';
+$address = '';
+$city = '';
+$postalCode = '';
+$country = 'Portugal';
+$phone = '';
+$nif = '';
+$paymentMethod = 'cartao';
+$notes = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $recipient = trim($_POST['nome_destinatario'] ?? '');
@@ -19,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $notes = trim($_POST['observacoes'] ?? '');
     $cart = json_decode($_POST['cart_json'] ?? '[]', true);
 
+    // The cart comes from localStorage, so the server validates every line again.
     $err = verify_csrf_request() ?? '';
 
     if (!$err && ($recipient === '' || mb_strlen($recipient) < 3)) {
@@ -29,14 +53,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $err = tr('error.short_address');
     } elseif (!$err && (($cityErr = validate_city($city)) !== null)) {
         $err = $cityErr;
-    } elseif (!$err && (($postalErr = validate_postal_code($postalCode)) !== null)) {
-        $err = $postalErr;
+    } elseif (!$err && !isset($checkoutCountries[$country])) {
+        $err = tr('error.invalid_country');
+    } elseif (!$err && !preg_match($checkoutCountries[$country]['postal'], $postalCode)) {
+        $err = tr('error.invalid_postal');
     } elseif (!$err && $phone === '') {
         $err = tr('error.invalid_phone');
-    } elseif (!$err && (($phoneErr = validate_phone($phone)) !== null)) {
+    } elseif (!$err && $country === 'Portugal' && (($phoneErr = validate_phone($phone)) !== null)) {
         $err = $phoneErr;
-    } elseif (!$err && (($nifErr = validate_nif($nif)) !== null)) {
+    } elseif (!$err && $country !== 'Portugal' && !preg_match('/^\+?[0-9\s().-]{7,20}$/', $phone)) {
+        $err = tr('error.invalid_phone');
+    } elseif (!$err && $country === 'Portugal' && (($nifErr = validate_nif($nif)) !== null)) {
         $err = $nifErr;
+    } elseif (!$err && $country !== 'Portugal' && $nif !== '' && !preg_match('/^[A-Za-z0-9 .-]{4,30}$/', $nif)) {
+        $err = tr('error.invalid_nif');
     } elseif (!$err && !in_array($paymentMethod, ['cartao', 'mbway', 'transferencia'], true)) {
         $err = tr('error.invalid_payment_method');
     } elseif (!$err && !$cart) {
@@ -49,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     $commissionTotal = 0.0;
 
     if (!$err) {
+        // Re-check availability, ownership, stock, and prices before creating the order.
         foreach ($cart as $item) {
             $productId = (int)($item['id'] ?? 0);
             $quantity = max(1, (int)($item['qty'] ?? 1));
@@ -59,16 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 break;
             }
 
-            $product = db_one(
+            $product = db_one_prepared(
                 $conn,
                 "SELECT p.*, c.nome AS artist_name, cat.nomeCategoria
                  FROM produto p
                  JOIN cliente c ON c.idCliente = p.idCliente
                  JOIN categoria cat ON cat.idCategoria = p.idCategoria
-                 WHERE p.idProduto = {$productId}
+                 WHERE p.idProduto = ?
                    AND p.estado = 'aprovado'
                    AND p.ativo = 1
-                 LIMIT 1"
+                   AND c.estado = 'ativo'
+                 LIMIT 1",
+                'i',
+                [$productId]
             );
 
             if (!$product) {
@@ -82,15 +116,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
             }
 
             if ((int)$product['usa_tamanhos'] === 1) {
-                $size = db_one(
+                $size = db_one_prepared(
                     $conn,
                     "SELECT pts.stock, t.etiqueta
                      FROM produto_tamanho_stock pts
                      JOIN tamanho t ON t.idTamanho = pts.idTamanho
-                     WHERE pts.idProduto = {$productId}
-                       AND pts.idTamanho = {$sizeId}
+                     WHERE pts.idProduto = ?
+                       AND pts.idTamanho = ?
                        AND pts.ativo = 1
-                     LIMIT 1"
+                     LIMIT 1",
+                    'ii',
+                    [$productId, $sizeId]
                 );
 
                 if (!$size) {
@@ -132,14 +168,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
     if (!$err && $orderLines) {
         $totalFinal = $subtotal + $ivaTotal;
 
+        // Order, items, address, payment, and stock updates must succeed together.
         mysqli_begin_transaction($conn);
 
         try {
-            $nifSafe = db_escape($conn, $nif);
-            $notesSafe = db_escape($conn, $notes);
-            $paymentSafe = db_escape($conn, $paymentMethod);
+            $paymentState = $paymentMethod === 'transferencia' ? 'pendente' : 'pago';
 
-            mysqli_query(
+            if (!db_prepared(
                 $conn,
                 "INSERT INTO encomenda (
                     idCliente,
@@ -153,27 +188,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                     nif,
                     observacoes
                 ) VALUES (
-                    {$uid},
-                    {$subtotal},
-                    {$ivaTotal},
-                    {$commissionTotal},
-                    {$totalFinal},
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
                     'pendente',
-                    'pago',
-                    '{$paymentSafe}',
-                    " . ($nif !== '' ? "'{$nifSafe}'" : "NULL") . ",
-                    " . ($notes !== '' ? "'{$notesSafe}'" : "NULL") . "
-                )"
-            );
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )",
+                'iddddssss',
+                [
+                    $uid,
+                    $subtotal,
+                    $ivaTotal,
+                    $commissionTotal,
+                    $totalFinal,
+                    $paymentState,
+                    $paymentMethod,
+                    $nif !== '' ? $nif : null,
+                    $notes !== '' ? $notes : null,
+                ]
+            )) {
+                throw new RuntimeException('order insert failed');
+            }
 
             $orderId = (int)mysqli_insert_id($conn);
 
             foreach ($orderLines as $line) {
                 $product = $line['product'];
-                $productName = db_escape($conn, $product['nomeProduto']);
-                $categoryName = db_escape($conn, $product['nomeCategoria']);
 
-                mysqli_query(
+                if (!db_prepared(
                     $conn,
                     "INSERT INTO encomenda_item (
                         idEncomenda,
@@ -193,51 +240,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                         valor_artista,
                         estado_item
                     ) VALUES (
-                        {$orderId},
-                        " . (int)$product['idProduto'] . ",
-                        " . (int)$product['idCliente'] . ",
-                        " . ($line['sizeId'] ? (int)$line['sizeId'] : 'NULL') . ",
-                        '{$productName}',
-                        '{$categoryName}',
-                        " . (int)$line['quantity'] . ",
-                        " . (float)$product['precoAtual'] . ",
-                        " . (float)$product['iva_percentual'] . ",
-                        {$line['lineIva']},
-                        " . (float)$product['comissao_percentual'] . ",
-                        {$line['lineCommission']},
-                        {$line['lineSubtotal']},
-                        {$line['lineTotal']},
-                        {$line['artistValue']},
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
                         'pendente'
-                    )"
-                );
+                    )",
+                    'iiiissidddddddd',
+                    [
+                        $orderId,
+                        (int)$product['idProduto'],
+                        (int)$product['idCliente'],
+                        $line['sizeId'] ? (int)$line['sizeId'] : null,
+                        (string)$product['nomeProduto'],
+                        (string)$product['nomeCategoria'],
+                        (int)$line['quantity'],
+                        (float)$product['precoAtual'],
+                        (float)$product['iva_percentual'],
+                        (float)$line['lineIva'],
+                        (float)$product['comissao_percentual'],
+                        (float)$line['lineCommission'],
+                        (float)$line['lineSubtotal'],
+                        (float)$line['lineTotal'],
+                        (float)$line['artistValue'],
+                    ]
+                )) {
+                    throw new RuntimeException('order item insert failed');
+                }
 
-                mysqli_query(
+                // Stock is decremented only after the order item was stored.
+                if (!db_prepared(
                     $conn,
                     "UPDATE produto
-                     SET stock_total = GREATEST(stock_total - " . (int)$line['quantity'] . ", 0)
-                     WHERE idProduto = " . (int)$product['idProduto']
-                );
+                     SET stock_total = GREATEST(stock_total - ?, 0)
+                     WHERE idProduto = ?",
+                    'ii',
+                    [(int)$line['quantity'], (int)$product['idProduto']]
+                )) {
+                    throw new RuntimeException('product stock update failed');
+                }
 
                 if ($line['sizeId']) {
-                    mysqli_query(
+                    if (!db_prepared(
                         $conn,
                         "UPDATE produto_tamanho_stock
-                         SET stock = GREATEST(stock - " . (int)$line['quantity'] . ", 0)
-                         WHERE idProduto = " . (int)$product['idProduto'] . "
-                           AND idTamanho = " . (int)$line['sizeId']
-                    );
+                         SET stock = GREATEST(stock - ?, 0)
+                         WHERE idProduto = ?
+                           AND idTamanho = ?",
+                        'iii',
+                        [(int)$line['quantity'], (int)$product['idProduto'], (int)$line['sizeId']]
+                    )) {
+                        throw new RuntimeException('size stock update failed');
+                    }
                 }
             }
 
-            $recipientSafe = db_escape($conn, $recipient);
-            $addressSafe = db_escape($conn, $address);
-            $citySafe = db_escape($conn, $city);
-            $postalSafe = db_escape($conn, $postalCode);
-            $countrySafe = db_escape($conn, $country === '' ? 'Portugal' : $country);
-            $phoneSafe = db_escape($conn, $phone);
-
-            mysqli_query(
+            if (!db_prepared(
                 $conn,
                 "INSERT INTO morada_encomenda (
                     idEncomenda,
@@ -248,17 +317,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                     pais,
                     telefone
                 ) VALUES (
-                    {$orderId},
-                    '{$recipientSafe}',
-                    '{$addressSafe}',
-                    '{$citySafe}',
-                    '{$postalSafe}',
-                    '{$countrySafe}',
-                    '{$phoneSafe}'
-                )"
-            );
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )",
+                'issssss',
+                [$orderId, $recipient, $address, $city, $postalCode, $country === '' ? 'Portugal' : $country, $phone]
+            )) {
+                throw new RuntimeException('order address insert failed');
+            }
 
-            mysqli_query(
+            if (!db_prepared(
                 $conn,
                 "INSERT INTO pagamento (
                     idEncomenda,
@@ -266,14 +339,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                     metodo_pagamento,
                     estado_pagamento
                 ) VALUES (
-                    {$orderId},
-                    {$totalFinal},
-                    '{$paymentSafe}',
-                    'pago'
-                )"
-            );
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )",
+                'idss',
+                [$orderId, $totalFinal, $paymentMethod, $paymentState]
+            )) {
+                throw new RuntimeException('payment insert failed');
+            }
 
             mysqli_commit($conn);
+            send_order_confirmation_email($conn, $orderId);
+            send_artist_sale_emails($conn, $orderId);
             $ok = tr('success.order_created');
         } catch (Throwable $e) {
             mysqli_rollback($conn);
@@ -302,7 +381,7 @@ include '../includes/header.php';
         <div class="card-body text-center">
           <span class="badge badge-blue" data-t="checkout_success_badge">Encomenda criada</span>
           <h3 class="mt4"><span data-t="checkout_order_number">Pedido</span> #<?= (int)$orderId ?></h3>
-          <p data-t="checkout_success_text">O recibo ja esta disponivel e o carrinho pode ser limpo em seguranca.</p>
+          <p data-t="checkout_success_text">O recibo já esta disponível e o carrinho pode ser limpo em segurança.</p>
           <div class="hero-actions" style="justify-content:center;margin-top:18px;">
             <a href="receipt.php?id=<?= (int)$orderId ?>" class="btn btn-dark" target="_blank" data-t="checkout_open_receipt">Abrir recibo</a>
             <a href="profile.php" class="btn btn-ghost" data-t="checkout_view_profile">Ver perfil</a>
@@ -331,53 +410,65 @@ include '../includes/header.php';
               <div class="frow">
                 <div class="fg">
                   <label class="flabel" for="nome_destinatario" data-t="checkout_recipient">Nome do destinatario</label>
-                  <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required maxlength="120" data-name-only>
+                  <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required minlength="3" maxlength="120" pattern="^[^\d]+$" data-name-only value="<?= h($recipient) ?>">
                 </div>
                 <div class="fg">
                   <label class="flabel" for="telefone" data-t="checkout_phone">Telefone</label>
-                  <input id="telefone" type="tel" name="telefone" class="finput" required maxlength="16" placeholder="+351 912345678">
+                  <input id="telefone" type="tel" name="telefone" class="finput" required maxlength="20" placeholder="<?= h($checkoutCountries[$country]['phone'] ?? '+351 912345678') ?>" value="<?= h($phone) ?>">
                 </div>
               </div>
 
               <div class="fg">
                 <label class="flabel" for="morada" data-t="checkout_address">Morada</label>
-                <input id="morada" type="text" name="morada" class="finput" required>
+                <input id="morada" type="text" name="morada" class="finput" required minlength="5" maxlength="180" value="<?= h($address) ?>">
               </div>
 
               <div class="frow">
                 <div class="fg">
                   <label class="flabel" for="cidade" data-t="checkout_city">Cidade</label>
-                  <input id="cidade" type="text" name="cidade" class="finput" required maxlength="120" data-name-only>
+                  <input id="cidade" type="text" name="cidade" class="finput" required maxlength="120" data-name-only value="<?= h($city) ?>">
                 </div>
                 <div class="fg">
-                  <label class="flabel" for="codigo_postal" data-t="checkout_postal">Codigo postal</label>
-                  <input id="codigo_postal" type="text" name="codigo_postal" class="finput" required maxlength="8" placeholder="1000-001">
+                  <label class="flabel" for="codigo_postal" data-t="checkout_postal">Código postal</label>
+                  <input id="codigo_postal" type="text" name="codigo_postal" class="finput" required maxlength="12" placeholder="<?= h($checkoutCountries[$country]['placeholder'] ?? '1000-001') ?>" value="<?= h($postalCode) ?>">
                 </div>
               </div>
 
               <div class="frow">
                 <div class="fg">
                   <label class="flabel" for="pais" data-t="checkout_country">Pais</label>
-                  <input id="pais" type="text" name="pais" class="finput" value="Portugal">
+                  <select id="pais" name="pais" class="finput" required>
+                    <?php foreach ($checkoutCountries as $countryName => $countryRules): ?>
+                      <option
+                        value="<?= h($countryName) ?>"
+                        data-t="<?= h($countryRules['key']) ?>"
+                        data-postal-placeholder="<?= h($countryRules['placeholder']) ?>"
+                        data-postal-pattern="<?= h($countryRules['html']) ?>"
+                        data-phone-placeholder="<?= h($countryRules['phone']) ?>"
+                        <?= $country === $countryName ? 'selected' : '' ?>
+                      ><?= h($countryName) ?></option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 <div class="fg">
-                  <label class="flabel" for="nif">NIF</label>
-                  <input id="nif" type="text" name="nif" class="finput" maxlength="9">
+                  <label class="flabel" for="nif" id="tax-label" data-t="checkout_tax_nif">NIF</label>
+                  <input id="nif" type="text" name="nif" class="finput" maxlength="30" value="<?= h($nif) ?>">
                 </div>
               </div>
 
               <div class="fg">
                 <label class="flabel" for="metodo" data-t="checkout_payment">Pagamento</label>
                 <select id="metodo" name="metodo" class="finput">
-                  <option value="cartao" data-t="checkout_card">Cartao</option>
-                  <option value="mbway">MB Way</option>
-                  <option value="transferencia" data-t="checkout_transfer">Transferencia</option>
+                  <option value="cartao" data-t="checkout_card" <?= $paymentMethod === 'cartao' ? 'selected' : '' ?>>Cartao</option>
+                  <option value="mbway" <?= $paymentMethod === 'mbway' ? 'selected' : '' ?>>MB Way</option>
+                  <option value="transferencia" data-t="checkout_transfer" <?= $paymentMethod === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
                 </select>
+                <p class="form-note" data-t="checkout_payment_demo_note">Pagamento demonstrativo: o método fica registado na encomenda, mas não há cobrança bancária real.</p>
               </div>
 
               <div class="fg">
                 <label class="flabel" for="observacoes" data-t="checkout_notes">Observacoes</label>
-                <textarea id="observacoes" name="observacoes" class="finput" data-tp="checkout_notes_placeholder" placeholder="Notas opcionais para a entrega ou pagamento."></textarea>
+                <textarea id="observacoes" name="observacoes" class="finput" data-tp="checkout_notes_placeholder" placeholder="Notas opcionais para a entrega ou pagamento."><?= h($notes) ?></textarea>
               </div>
 
               <button type="submit" name="place_order" class="btn btn-dark btn-full" data-t="checkout_confirm">Confirmar encomenda</button>
@@ -410,17 +501,40 @@ include '../includes/header.php';
 
       <script>
       document.addEventListener('DOMContentLoaded', () => {
+        // Hidden cart_json bridges the local cart UI to the PHP checkout handler.
         const cart = JSON.parse(localStorage.getItem('g_cart') || '[]');
         const items = document.getElementById('checkout-items');
         const subtotalEl = document.getElementById('checkout-subtotal');
         const ivaEl = document.getElementById('checkout-iva');
         const totalEl = document.getElementById('checkout-total');
         const cartJson = document.getElementById('cart_json');
+        const countrySelect = document.getElementById('pais');
+        const postalInput = document.getElementById('codigo_postal');
+        const phoneInput = document.getElementById('telefone');
+        const taxLabel = document.getElementById('tax-label');
 
         cartJson.value = JSON.stringify(cart);
 
+        const syncCountryFields = () => {
+          const option = countrySelect.options[countrySelect.selectedIndex];
+          postalInput.placeholder = option.dataset.postalPlaceholder || '';
+          postalInput.pattern = option.dataset.postalPattern || '';
+          phoneInput.placeholder = option.dataset.phonePlaceholder || '';
+          if (countrySelect.value === 'Portugal') {
+            taxLabel.dataset.t = 'checkout_tax_nif';
+            taxLabel.textContent = 'NIF';
+          } else {
+            taxLabel.dataset.t = 'checkout_tax_number';
+            taxLabel.textContent = document.documentElement.lang === 'en' ? 'Tax number' : 'Número fiscal';
+          }
+        };
+
+        countrySelect.addEventListener('change', syncCountryFields);
+        window.addEventListener('greenerry:langchange', syncCountryFields);
+        syncCountryFields();
+
         const renderEmptyCart = () => {
-          items.innerHTML = `<p>${document.documentElement.lang === 'en' ? 'The cart is empty.' : 'O carrinho esta vazio.'}</p>`;
+          items.innerHTML = `<p data-t="checkout_empty_cart">${document.documentElement.lang === 'en' ? 'The cart is empty.' : 'O carrinho esta vazio.'}</p>`;
         };
 
         if (!cart.length) {

@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/config.php';
-require_admin_login();
+require_admin_permission('releases');
 
 $adminId = current_admin_id();
 $feedback = '';
@@ -19,27 +19,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'aprovar') {
             mysqli_query($conn, "UPDATE release_musical SET estado = 'aprovado', motivo_rejeicao = NULL, idAdminAprovacao = {$adminId}, aprovado_em = NOW(), ativo = 1 WHERE idRelease = {$releaseId}");
             mysqli_query($conn, "UPDATE faixa SET estado = 'aprovada', ativo = 1 WHERE idRelease = {$releaseId}");
+            send_release_review_email($conn, $releaseId, $action);
+            notify_release_review($conn, $releaseId, $action);
             $feedback = tr('success.release_approved');
         } elseif ($action === 'rejeitar') {
             $tracksToDelete = db_all($conn, "SELECT ficheiro_audio FROM faixa WHERE idRelease = {$releaseId}");
-            foreach ($tracksToDelete as $trackToDelete) {
-                delete_asset_file('audio', $trackToDelete['ficheiro_audio'] ?? '');
-            }
+            $audioFilesToDelete = array_map(static fn($track) => (string)($track['ficheiro_audio'] ?? ''), $tracksToDelete);
 
             mysqli_query($conn, "UPDATE release_musical SET estado = 'rejeitado', motivo_rejeicao = '{$reasonSafe}', idAdminAprovacao = {$adminId}, aprovado_em = NOW(), ativo = 0 WHERE idRelease = {$releaseId}");
             mysqli_query($conn, "UPDATE faixa SET estado = 'rejeitada', ativo = 0, ficheiro_audio = '' WHERE idRelease = {$releaseId}");
+            delete_orphan_asset_files($conn, 'audio', $audioFilesToDelete);
+            cleanup_unused_uploaded_assets($conn);
+            send_release_review_email($conn, $releaseId, $action, $reason);
+            notify_release_review($conn, $releaseId, $action, $reason);
             $feedback = tr('success.release_rejected');
         } elseif ($action === 'inativar') {
             mysqli_query($conn, "UPDATE release_musical SET estado = 'inativo', ativo = 0, bloqueado_admin = 1 WHERE idRelease = {$releaseId}");
             mysqli_query($conn, "UPDATE faixa SET estado = 'inativa', ativo = 0 WHERE idRelease = {$releaseId}");
+            notify_release_review($conn, $releaseId, $action);
             $feedback = tr('success.release_deactivated');
         } elseif ($action === 'reativar' && $currentReleaseState !== 'rejeitado') {
             mysqli_query($conn, "UPDATE release_musical SET estado = 'aprovado', ativo = 1, bloqueado_admin = 0 WHERE idRelease = {$releaseId}");
             mysqli_query($conn, "UPDATE faixa SET estado = 'aprovada', ativo = 1 WHERE idRelease = {$releaseId}");
+            notify_release_review($conn, $releaseId, $action);
             $feedback = tr('success.release_reactivated');
         }
     }
 }
+
+$adminReleasesPerPage = 50;
+$adminReleasesPage = max(1, (int)($_GET['page'] ?? 1));
+$totalAdminReleases = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM release_musical")['total'] ?? 0);
+$adminReleasesTotalPages = max(1, (int)ceil($totalAdminReleases / $adminReleasesPerPage));
+$adminReleasesPage = min($adminReleasesPage, $adminReleasesTotalPages);
+$adminReleasesOffset = ($adminReleasesPage - 1) * $adminReleasesPerPage;
 
 $pending = db_all(
     $conn,
@@ -50,7 +63,8 @@ $pending = db_all(
      LEFT JOIN faixa f ON f.idRelease = r.idRelease
      WHERE r.estado = 'pendente'
      GROUP BY r.idRelease
-     ORDER BY r.created_at DESC"
+     ORDER BY r.criado_em DESC
+     LIMIT 30"
 );
 
 $allReleases = db_all(
@@ -61,7 +75,8 @@ $allReleases = db_all(
      JOIN cliente c ON c.idCliente = r.idCliente
      LEFT JOIN faixa f ON f.idRelease = r.idRelease
      GROUP BY r.idRelease
-     ORDER BY r.created_at DESC"
+     ORDER BY r.criado_em DESC
+     LIMIT {$adminReleasesPerPage} OFFSET {$adminReleasesOffset}"
 );
 
 $releaseTracks = [];
@@ -86,16 +101,16 @@ $releaseStats = [
     'inativos' => 0,
 ];
 
-foreach ($allReleases as $release) {
+foreach (db_all($conn, "SELECT estado, COUNT(*) AS total FROM release_musical GROUP BY estado") as $release) {
     $state = (string)($release['estado'] ?? '');
     if ($state === 'pendente') {
-        $releaseStats['pendentes']++;
+        $releaseStats['pendentes'] = (int)$release['total'];
     } elseif ($state === 'aprovado') {
-        $releaseStats['aprovados']++;
+        $releaseStats['aprovados'] = (int)$release['total'];
     } elseif ($state === 'rejeitado') {
-        $releaseStats['rejeitados']++;
+        $releaseStats['rejeitados'] = (int)$release['total'];
     } elseif ($state === 'inativo') {
-        $releaseStats['inativos']++;
+        $releaseStats['inativos'] = (int)$release['total'];
     }
 }
 
@@ -105,8 +120,14 @@ include 'admin_header.php';
 <div class="admin-top">
   <div>
     <span class="admin-page-kicker" data-admin-t="releases_kicker">Music review</span>
-    <h2 data-admin-t="releases_title">Lancamentos</h2>
+    <h2 data-admin-t="releases_title">Lançamentos</h2>
     <p data-admin-t="releases_intro">Aprova releases, ouve faixas e gere estados musicais.</p>
+  </div>
+  <div class="stats-grid admin-top-stats">
+    <button type="button" class="stat stat-button" data-admin-stat-filter="releases-search" data-filter-value="pendente"><div class="stat-val"><?= (int)$releaseStats['pendentes'] ?></div><div class="stat-lbl" data-admin-t="state_pending">Pendentes</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="releases-search" data-filter-value="aprovado"><div class="stat-val"><?= (int)$releaseStats['aprovados'] ?></div><div class="stat-lbl" data-admin-t="state_approved">Aprovados</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="releases-search" data-filter-value="rejeitado"><div class="stat-val"><?= (int)$releaseStats['rejeitados'] ?></div><div class="stat-lbl" data-admin-t="state_rejected">Rejeitados</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="releases-search" data-filter-value="inativo"><div class="stat-val"><?= (int)$releaseStats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></button>
   </div>
 </div>
 
@@ -114,33 +135,19 @@ include 'admin_header.php';
   <div class="alert alert-ok"><?= h($feedback) ?></div>
 <?php endif; ?>
 
-<div class="stats-grid">
-  <div class="stat"><div class="stat-val"><?= (int)$releaseStats['pendentes'] ?></div><div class="stat-lbl" data-admin-t="state_pending">Pendentes</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$releaseStats['aprovados'] ?></div><div class="stat-lbl" data-admin-t="state_approved">Aprovados</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$releaseStats['rejeitados'] ?></div><div class="stat-lbl" data-admin-t="state_rejected">Rejeitados</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$releaseStats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></div>
-</div>
-
-<div class="admin-search-row">
-  <label class="sbar">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="search" data-admin-search="releases-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
-  </label>
-</div>
-
 <div id="releases-search" data-admin-search-scope>
 <section class="acard-box">
   <div class="acard-box-head">
-    <h4 data-admin-t="releases_pending">Lancamentos pendentes</h4>
+    <h4 data-admin-t="releases_pending">Lançamentos pendentes</h4>
     <span class="badge badge-red"><?= count($pending) ?></span>
   </div>
 
   <?php if (!$pending): ?>
-    <p data-admin-t="releases_empty_pending">Sem lancamentos pendentes.</p>
+    <p data-admin-t="releases_empty_pending">Sem lançamentos pendentes.</p>
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($pending as $release): ?>
-        <article class="admin-review-card">
+        <article class="admin-review-card" data-review-type="release" data-review-id="<?= (int)$release['idRelease'] ?>" data-admin-state="<?= h($release['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
               <span class="badge badge-light"><?= h($release['tipo']) ?></span>
@@ -148,7 +155,7 @@ include 'admin_header.php';
               <p><span data-admin-t="label_artist">Artista</span>: <?= h($release['artista']) ?></p>
               <p><span data-admin-t="label_tracks">Faixas</span>: <?= (int)$release['total_faixas'] ?></p>
               <?php if (!empty($release['data_lancamento'])): ?>
-                <p><span data-admin-t="label_release_date">Lancamento</span>: <?= date('d/m/Y', strtotime($release['data_lancamento'])) ?></p>
+                <p><span data-admin-t="label_release_date">Lançamento</span>: <?= date('d/m/Y', strtotime($release['data_lancamento'])) ?></p>
               <?php endif; ?>
               <?php if (!empty($release['descricao'])): ?>
                 <p><?= h($release['descricao']) ?></p>
@@ -181,10 +188,10 @@ include 'admin_header.php';
           <form method="post" class="admin-review-actions">
             <?= csrf_input() ?>
             <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
-            <textarea name="reason" class="finput" placeholder="Motivo de rejeicao (recomendado se recusares o lancamento)." data-admin-tp="releases_reason_placeholder"></textarea>
+            <textarea name="reason" class="finput" placeholder="Motivo de rejeição (recomendado se recusares o lançamento)." data-admin-tp="releases_reason_placeholder"></textarea>
             <div class="admin-action-buttons">
               <button type="submit" name="action" value="aprovar" class="btn btn-dark btn-sm" data-admin-t="btn_approve">Aprovar</button>
-              <button type="submit" name="action" value="rejeitar" class="btn btn-danger btn-sm" data-admin-t="btn_reject">Rejeitar</button>
+              <button type="submit" name="action" value="rejeitar" class="btn btn-danger btn-sm" data-confirm="Rejeitar este lançamento?" data-admin-t="btn_reject">Rejeitar</button>
             </div>
           </form>
         </article>
@@ -195,12 +202,18 @@ include 'admin_header.php';
 
 <section class="acard-box">
   <div class="acard-box-head">
-    <h4 data-admin-t="releases_all">Todos os lancamentos</h4>
-    <span class="badge badge-light"><?= count($allReleases) ?></span>
+    <h4 data-admin-t="releases_all">Todos os lançamentos</h4>
+    <div class="admin-card-head-tools">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" data-admin-search="releases-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
+      </label>
+      <span class="badge badge-light"><?= (int)$totalAdminReleases ?></span>
+    </div>
   </div>
 
   <?php if (!$allReleases): ?>
-    <p data-admin-t="releases_empty_all">Ainda nao existem lancamentos registados.</p>
+    <p data-admin-t="releases_empty_all">Ainda não existem lançamentos registados.</p>
   <?php else: ?>
     <div class="tbl-wrap">
       <table>
@@ -208,7 +221,7 @@ include 'admin_header.php';
           <tr>
             <th>ID</th>
             <th data-admin-t="products_image">Capa</th>
-            <th>Titulo</th>
+            <th>Título</th>
             <th>Artista</th>
             <th>Tipo</th>
             <th>Faixas</th>
@@ -219,7 +232,7 @@ include 'admin_header.php';
         </thead>
         <tbody>
           <?php foreach ($allReleases as $release): ?>
-            <tr>
+            <tr data-review-type="release" data-review-id="<?= (int)$release['idRelease'] ?>" data-admin-state="<?= h($release['estado']) ?>">
               <td>#<?= (int)$release['idRelease'] ?></td>
               <td class="col-audio">
                 <div class="admin-table-thumb">
@@ -271,13 +284,13 @@ include 'admin_header.php';
                   <?= csrf_input() ?>
                   <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
                   <?php if ($release['estado'] === 'aprovado' && (int)$release['ativo'] === 1): ?>
-                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
+                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-confirm="Inativar este lançamento?" data-admin-t="btn_deactivate">Inativar</button>
                   <?php elseif ($release['estado'] !== 'pendente' && $release['estado'] !== 'rejeitado'): ?>
                     <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
                   <?php elseif ($release['estado'] === 'rejeitado'): ?>
                     <span class="color-text3" data-admin-t="state_rejected">Rejeitado</span>
                   <?php else: ?>
-                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisão</span>
                   <?php endif; ?>
                 </form>
               </td>
@@ -286,6 +299,13 @@ include 'admin_header.php';
         </tbody>
       </table>
     </div>
+    <?php if ($adminReleasesTotalPages > 1): ?>
+      <nav class="pager" aria-label="Pagination">
+        <?= $adminReleasesPage > 1 ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage - 1) . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status">Página <?= (int)$adminReleasesPage ?> de <?= (int)$adminReleasesTotalPages ?></span>
+        <?= $adminReleasesPage < $adminReleasesTotalPages ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage + 1) . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+      </nav>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 </div>

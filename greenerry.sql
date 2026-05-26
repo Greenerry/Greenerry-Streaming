@@ -22,32 +22,35 @@ CREATE TABLE admin (
     cargo VARCHAR(80) DEFAULT 'Administrador',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     ultimo_login DATETIME NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Palavra-passe provisoria para ambiente escolar.
--- Nesta versao ja fica guardada com hash para evitar texto simples.
+-- Admin inicial unico.
+-- Email: greenerry333@gmail.com
+-- Palavra-passe: Srijan123@
 INSERT INTO admin (idAdmin, nome, email, palavra_passe, cargo)
 VALUES
-(1, 'Admin Principal', 'admin@greenerry.com', '$2y$10$gBHujQ1KDiDGW5o0ERXQC.Tp4/zoy4KFu7jNAO3SMyJ.ctc0.GJl.', 'Administrador Principal');
+(1, 'Admin Principal', 'greenerry333@gmail.com', '$2y$10$RzXscm.n8HmnKofQ1i1MJ.uJ6tuTIZQuMOuFWWaLJ4DFHoqp04EKq', 'Administrador Principal');
 
-CREATE TABLE site_config (
-    setting_key VARCHAR(80) PRIMARY KEY,
-    setting_value TEXT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+CREATE TABLE configuracao_site (
+    chave_configuracao VARCHAR(80) PRIMARY KEY,
+    valor_configuracao TEXT NULL,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-INSERT INTO site_config (setting_key, setting_value) VALUES
+INSERT INTO configuracao_site (chave_configuracao, valor_configuracao) VALUES
 ('site_name', 'Greenerry'),
 ('contact_email', 'support@greenerry.test'),
 ('contact_phone', '+351 900 000 000'),
 ('instagram_url', '#'),
 ('x_url', '#'),
 ('footer_note', ''),
-('support_hours', 'Mon-Fri, 09:00-18:00'),
 ('commission_percent', '5'),
-('shipping_note', 'Digital support and merch handled by Greenerry admin.');
+('shipping_note', 'Digital support and merch handled by Greenerry admin.'),
+('featured_artist_id', '0'),
+('featured_release_id', '0'),
+('featured_product_id', '0');
 
 -- ============================================================
 -- 2. UTILIZADORES / ARTISTAS
@@ -65,26 +68,34 @@ CREATE TABLE cliente (
     slug VARCHAR(160) NULL UNIQUE,
     estado ENUM('ativo', 'inativo', 'bloqueado') NOT NULL DEFAULT 'ativo',
     ultimo_login DATETIME NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE pedido_reset_password (
-    idPedidoReset INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE verificacao_email (
+    idVerificacaoEmail INT AUTO_INCREMENT PRIMARY KEY,
     idCliente INT NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    motivo TEXT NULL,
-    estado ENUM('pendente', 'em_analise', 'concluido', 'recusado') NOT NULL DEFAULT 'pendente',
-    observacoes_admin TEXT NULL,
-    idAdmin INT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    resolved_at DATETIME NULL,
-    CONSTRAINT fk_pedido_reset_cliente
+    hash_token VARCHAR(255) NOT NULL UNIQUE,
+    expira_em DATETIME NOT NULL,
+    usado_em DATETIME NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_verificacao_email_cliente (idCliente),
+    CONSTRAINT fk_verificacao_email_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
-        ON DELETE CASCADE,
-    CONSTRAINT fk_pedido_reset_admin
-        FOREIGN KEY (idAdmin) REFERENCES admin(idAdmin)
-        ON DELETE SET NULL
+        ON DELETE CASCADE
+);
+
+CREATE TABLE recuperacao_password (
+    idRecuperacaoPassword INT AUTO_INCREMENT PRIMARY KEY,
+    idCliente INT NOT NULL,
+    hash_token VARCHAR(255) NOT NULL UNIQUE,
+    expira_em DATETIME NOT NULL,
+    usado_em DATETIME NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_recuperacao_password_cliente (idCliente),
+    CONSTRAINT fk_recuperacao_password_cliente
+        FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
+        ON DELETE CASCADE
 );
 
 -- ============================================================
@@ -98,8 +109,8 @@ CREATE TABLE categoria (
     usa_tamanhos TINYINT(1) NOT NULL DEFAULT 0,
     estado ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
     idAdminCriador INT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_categoria_admin
         FOREIGN KEY (idAdminCriador) REFERENCES admin(idAdmin)
         ON DELETE SET NULL
@@ -145,8 +156,8 @@ CREATE TABLE release_musical (
     motivo_rejeicao TEXT NULL,
     idAdminAprovacao INT NULL,
     aprovado_em DATETIME NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_release_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
         ON DELETE CASCADE,
@@ -164,8 +175,8 @@ CREATE TABLE faixa (
     duracao_segundos INT NULL,
     estado ENUM('pendente', 'aprovada', 'rejeitada', 'inativa') NOT NULL DEFAULT 'pendente',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT uq_faixa_release_numero UNIQUE (idRelease, numero_faixa),
     CONSTRAINT fk_faixa_release
         FOREIGN KEY (idRelease) REFERENCES release_musical(idRelease)
@@ -176,7 +187,7 @@ CREATE TABLE favorito_musica (
     idFavorito INT AUTO_INCREMENT PRIMARY KEY,
     idCliente INT NOT NULL,
     idFaixa INT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_favorito_musica UNIQUE (idCliente, idFaixa),
     CONSTRAINT fk_favorito_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
@@ -190,7 +201,7 @@ CREATE TABLE seguir_artista (
     idSeguirArtista INT AUTO_INCREMENT PRIMARY KEY,
     idSeguidor INT NOT NULL,
     idArtista INT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_seguir_artista UNIQUE (idSeguidor, idArtista),
     CONSTRAINT chk_seguir_artista_diff CHECK (idSeguidor <> idArtista),
     CONSTRAINT fk_seguir_artista_seguidor
@@ -217,15 +228,14 @@ CREATE TABLE produto (
     comissao_percentual DECIMAL(5,2) NOT NULL DEFAULT 5.00,
     stock_total INT NOT NULL DEFAULT 0,
     usa_tamanhos TINYINT(1) NOT NULL DEFAULT 0,
-    imagem VARCHAR(255) NULL,
     estado ENUM('pendente', 'aprovado', 'rejeitado', 'inativo') NOT NULL DEFAULT 'pendente',
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     bloqueado_admin TINYINT(1) NOT NULL DEFAULT 0,
     motivo_rejeicao TEXT NULL,
     idAdminAprovacao INT NULL,
     aprovado_em DATETIME NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_produto_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
         ON DELETE CASCADE,
@@ -235,6 +245,18 @@ CREATE TABLE produto (
     CONSTRAINT fk_produto_admin
         FOREIGN KEY (idAdminAprovacao) REFERENCES admin(idAdmin)
         ON DELETE SET NULL
+);
+
+CREATE TABLE produto_imagem (
+    idProdutoImagem INT AUTO_INCREMENT PRIMARY KEY,
+    idProduto INT NOT NULL,
+    ficheiro VARCHAR(255) NOT NULL,
+    ordem INT NOT NULL DEFAULT 0,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_produto_imagem_produto (idProduto, ordem),
+    CONSTRAINT fk_produto_imagem_produto
+        FOREIGN KEY (idProduto) REFERENCES produto(idProduto)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE produto_tamanho_stock (
@@ -268,8 +290,8 @@ CREATE TABLE encomenda (
     metodo_pagamento ENUM('cartao', 'mbway', 'transferencia') NOT NULL DEFAULT 'cartao',
     nif VARCHAR(20) NULL,
     observacoes TEXT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_encomenda_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
         ON DELETE RESTRICT
@@ -293,7 +315,7 @@ CREATE TABLE encomenda_item (
     total_linha DECIMAL(10,2) NOT NULL,
     valor_artista DECIMAL(10,2) NOT NULL,
     estado_item ENUM('pendente', 'em_preparacao', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_encomenda_item_encomenda
         FOREIGN KEY (idEncomenda) REFERENCES encomenda(idEncomenda)
         ON DELETE CASCADE,
@@ -327,7 +349,7 @@ CREATE TABLE pagamento (
     idEncomenda INT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
     metodo_pagamento ENUM('cartao', 'mbway', 'transferencia') NOT NULL,
-    estado_pagamento ENUM('pendente', 'pago', 'falhado', 'reembolsado') NOT NULL DEFAULT 'pago',
+    estado_pagamento ENUM('pendente', 'pago', 'falhado', 'reembolsado') NOT NULL DEFAULT 'pendente',
     referencia VARCHAR(120) NULL,
     data_pagamento DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_pagamento_encomenda
@@ -347,8 +369,8 @@ CREATE TABLE mensagem_admin (
     resposta_admin TEXT NULL,
     estado ENUM('aberta', 'respondida', 'fechada') NOT NULL DEFAULT 'aberta',
     idAdminResposta INT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    responded_at DATETIME NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    respondido_em DATETIME NULL,
     CONSTRAINT fk_mensagem_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
         ON DELETE CASCADE,
@@ -364,7 +386,7 @@ CREATE TABLE notificacao (
     mensagem TEXT NOT NULL,
     tipo ENUM('sistema', 'produto', 'musica', 'encomenda', 'mensagem', 'password') NOT NULL DEFAULT 'sistema',
     lida TINYINT(1) NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_notificacao_cliente
         FOREIGN KEY (idCliente) REFERENCES cliente(idCliente)
         ON DELETE CASCADE
@@ -377,12 +399,11 @@ CREATE TABLE notificacao (
 CREATE INDEX idx_cliente_estado ON cliente (estado);
 CREATE INDEX idx_release_estado_cliente ON release_musical (estado, idCliente);
 CREATE INDEX idx_faixa_release_estado ON faixa (idRelease, estado);
-CREATE INDEX idx_seguir_artista_seguidor ON seguir_artista (idSeguidor, created_at);
-CREATE INDEX idx_seguir_artista_artista ON seguir_artista (idArtista, created_at);
+CREATE INDEX idx_seguir_artista_seguidor ON seguir_artista (idSeguidor, criado_em);
+CREATE INDEX idx_seguir_artista_artista ON seguir_artista (idArtista, criado_em);
 CREATE INDEX idx_produto_estado_cliente ON produto (estado, idCliente);
 CREATE INDEX idx_encomenda_cliente_estado ON encomenda (idCliente, estado_encomenda);
 CREATE INDEX idx_encomenda_item_artista_estado ON encomenda_item (idArtista, estado_item);
-CREATE INDEX idx_mensagem_admin_estado ON mensagem_admin (estado, created_at);
-CREATE INDEX idx_pedido_reset_estado ON pedido_reset_password (estado, created_at);
+CREATE INDEX idx_mensagem_admin_estado ON mensagem_admin (estado, criado_em);
 CREATE INDEX idx_notificacao_cliente_lida ON notificacao (idCliente, lida);
 

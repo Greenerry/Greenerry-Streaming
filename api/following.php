@@ -8,30 +8,44 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+if (!active_user_session($conn)) {
+    end_user_session_only();
+    http_response_code(403);
+    echo json_encode(['error' => tr('error.account_inactive')], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $uid = current_user_id();
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = max(1, min(24, (int)($_GET['perPage'] ?? 5)));
 $search = trim((string)($_GET['q'] ?? ''));
-$searchSafe = db_escape($conn, $search);
-$searchSql = $search !== ''
-    ? "AND (c.nome LIKE '%{$searchSafe}%' OR c.bio LIKE '%{$searchSafe}%')"
-    : '';
+$searchSql = '';
+$types = 'i';
+$params = [$uid];
+if ($search !== '') {
+    $searchSql = 'AND (c.nome LIKE ? OR c.bio LIKE ?)';
+    $types .= 'ss';
+    $searchLike = '%' . $search . '%';
+    array_push($params, $searchLike, $searchLike);
+}
 
-$total = (int)(db_one(
+$total = (int)(db_one_prepared(
     $conn,
     "SELECT COUNT(*) AS total
      FROM seguir_artista sa
      JOIN cliente c ON c.idCliente = sa.idArtista
-     WHERE sa.idSeguidor = {$uid}
+     WHERE sa.idSeguidor = ?
        AND c.estado = 'ativo'
-       {$searchSql}"
+       {$searchSql}",
+    $types,
+    $params
 )['total'] ?? 0);
 
 $totalPages = max(1, (int)ceil($total / $perPage));
 $page = min($page, $totalPages);
 $offset = ($page - 1) * $perPage;
 
-$rows = db_all(
+$rows = db_all_prepared(
     $conn,
     "SELECT
         c.idCliente,
@@ -53,12 +67,14 @@ $rows = db_all(
        ON f.idRelease = r.idRelease
       AND f.estado = 'aprovada'
       AND f.ativo = 1
-     WHERE sa.idSeguidor = {$uid}
+     WHERE sa.idSeguidor = ?
        AND c.estado = 'ativo'
        {$searchSql}
-     GROUP BY c.idCliente, c.nome, c.bio, c.foto, c.banner, c.slug, sa.created_at
-     ORDER BY sa.created_at DESC
-     LIMIT {$perPage} OFFSET {$offset}"
+     GROUP BY c.idCliente, c.nome, c.bio, c.foto, c.banner, c.slug, sa.criado_em
+     ORDER BY sa.criado_em DESC
+     LIMIT {$perPage} OFFSET {$offset}",
+    $types,
+    $params
 );
 
 $artists = array_map(static function (array $row): array {

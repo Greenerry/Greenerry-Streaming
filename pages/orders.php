@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if (!$error && $orderId > 0 && in_array($action, ['prepare', 'ship', 'deliver', 'cancel'], true)) {
+        // Artists can only update the order lines that belong to their own merch.
         $ownedItems = db_all(
             $conn,
             "SELECT ei.*, p.usa_tamanhos
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
             }
 
+            // Item updates and the parent order state rollup must stay together.
             mysqli_begin_transaction($conn);
 
             try {
@@ -53,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
                     if ($action === 'cancel') {
+                        // Cancelled items return stock to both total and size-specific buckets.
                         mysqli_query(
                             $conn,
                             "UPDATE produto
@@ -72,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
+                // Recalculate the visible order state from all item states.
                 $summary = db_one(
                     $conn,
                     "SELECT
@@ -102,28 +106,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $paymentUpdate = $orderState === 'cancelada' ? ", estado_pagamento = 'reembolsado'" : '';
                 mysqli_query($conn, "UPDATE encomenda SET estado_encomenda = '{$orderState}'{$paymentUpdate} WHERE idEncomenda = {$orderId}");
+                $orderOwner = db_one($conn, "SELECT idCliente FROM encomenda WHERE idEncomenda = {$orderId} LIMIT 1");
+                if ($orderOwner) {
+                    create_notification(
+                        $conn,
+                        (int)$orderOwner['idCliente'],
+                        current_lang() === 'en' ? 'Order updated' : 'Encomenda atualizada',
+                        (current_lang() === 'en' ? 'Order #' : 'A encomenda #') . $orderId . (current_lang() === 'en' ? ' is now ' : ' está agora ') . order_status_label($orderState) . '.',
+                        'encomenda'
+                    );
+                }
                 mysqli_commit($conn);
 
-                $feedback = 'Estado da encomenda atualizado.';
+                $feedback = tr('success.order_artist_updated');
             } catch (Throwable $e) {
                 mysqli_rollback($conn);
                 $error = tr('error.order_update');
             }
         } else {
-            $error = current_lang() === 'en'
-                ? 'This order has no editable items left.'
-                : 'Esta encomenda ja nao tem itens editaveis.';
+            $error = tr('error.order_no_editable_items');
         }
     }
 }
 
+// Show only orders containing merch sold by the current artist.
 $orders = db_all(
     $conn,
     "SELECT
         e.idEncomenda,
-        e.created_at,
+        e.criado_em,
         e.estado_encomenda,
         e.total_final,
+        e.observacoes,
         c.nome AS cliente_nome,
         me.telefone,
         me.morada,
@@ -134,9 +148,24 @@ $orders = db_all(
      JOIN cliente c ON c.idCliente = e.idCliente
      LEFT JOIN morada_encomenda me ON me.idEncomenda = e.idEncomenda
      WHERE ei.idArtista = {$uid}
-     GROUP BY e.idEncomenda, e.created_at, e.estado_encomenda, e.total_final, c.nome, me.telefone, me.morada, me.cidade, me.codigo_postal
-     ORDER BY e.created_at DESC"
+     GROUP BY e.idEncomenda, e.criado_em, e.estado_encomenda, e.total_final, e.observacoes, c.nome, me.telefone, me.morada, me.cidade, me.codigo_postal
+     ORDER BY e.criado_em DESC"
 );
+
+$orderCounts = [
+    'all' => count($orders),
+    'pendente' => 0,
+    'em_preparacao' => 0,
+    'enviada' => 0,
+    'entregue' => 0,
+    'cancelada' => 0,
+];
+foreach ($orders as $orderRow) {
+    $state = (string)$orderRow['estado_encomenda'];
+    if (isset($orderCounts[$state])) {
+        $orderCounts[$state]++;
+    }
+}
 
 include '../includes/header.php';
 ?>
@@ -159,11 +188,44 @@ include '../includes/header.php';
     <?php if (!$orders): ?>
       <div class="card surface-card">
         <div class="card-body text-center">
-          <p data-t="orders_empty">Ainda nao existem encomendas para os teus produtos.</p>
+          <p data-t="orders_empty">Ainda não existem encomendas para os teus produtos.</p>
         </div>
       </div>
     <?php else: ?>
-      <div class="order-stack">
+      <div class="orders-filter-bar">
+        <label class="sbar orders-search">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="orders-search" data-tp="orders_search_placeholder" placeholder="Pesquisar pedidos">
+        </label>
+        <nav class="artist-filter-pills orders-filter-pills" aria-label="Order filters">
+          <button type="button" class="on" data-order-filter="all">
+            <span data-t="orders_filter_all">Todos</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['all'] ?></span>
+          </button>
+          <button type="button" data-order-filter="pendente">
+            <span data-t="orders_filter_pending">Por confirmar</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['pendente'] ?></span>
+          </button>
+          <button type="button" data-order-filter="em_preparacao">
+            <span data-t="orders_action_prepare">Em preparacao</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['em_preparacao'] ?></span>
+          </button>
+          <button type="button" data-order-filter="enviada">
+            <span data-t="orders_filter_shipped">Enviada</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['enviada'] ?></span>
+          </button>
+          <button type="button" data-order-filter="entregue">
+            <span data-t="orders_filter_delivered">Entregue</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['entregue'] ?></span>
+          </button>
+          <button type="button" data-order-filter="cancelada">
+            <span data-t="orders_filter_cancelled">Cancelada</span>
+            <span class="orders-filter-count"><?= (int)$orderCounts['cancelada'] ?></span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="order-stack" id="orders-list">
         <?php foreach ($orders as $order): ?>
           <?php
           $items = db_all(
@@ -183,31 +245,73 @@ include '../includes/header.php';
               }
           }
           ?>
-          <article class="card surface-card order-shell">
-            <div class="card-body">
-              <div class="between mb4 order-head">
-                <div>
-                  <span class="badge badge-dark">Encomenda #<?= (int)$order['idEncomenda'] ?></span>
-                  <h3 class="mt4"><?= h($order['cliente_nome']) ?></h3>
-                  <p><?= date('d/m/Y', strtotime($order['created_at'])) ?> • <?= h($order['morada']) ?>, <?= h($order['cidade']) ?> <?= h($order['codigo_postal']) ?></p>
+          <details
+            class="order-accordion card surface-card order-shell"
+            data-order-card
+            data-order-status="<?= h($order['estado_encomenda']) ?>"
+            data-order-search="<?= h(strtolower('#' . (int)$order['idEncomenda'] . ' ' . $order['cliente_nome'] . ' ' . $order['morada'] . ' ' . $order['cidade'] . ' ' . $order['codigo_postal'] . ' ' . ($order['telefone'] ?? '') . ' ' . ($order['observacoes'] ?? ''))) ?>"
+          >
+            <summary class="order-accordion-summary">
+              <div class="order-accordion-summary-main">
+                <span class="badge badge-dark"><span data-t="orders_order_label">Encomenda</span> #<?= (int)$order['idEncomenda'] ?></span>
+                <h3 class="order-accordion-title"><?= h($order['cliente_nome']) ?></h3>
+                <p class="order-accordion-meta"><?= date('d/m/Y', strtotime($order['criado_em'])) ?></p>
+              </div>
+              <div class="order-accordion-summary-side">
+                <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
+                <strong class="order-accordion-total"><?= h(format_eur((float)$order['total_final'])) ?></strong>
+                <span class="order-accordion-chevron" aria-hidden="true">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                </span>
+              </div>
+            </summary>
+
+            <div class="order-accordion-body">
+              <div class="order-delivery-card">
+                <div class="order-delivery-item">
+                  <span class="order-delivery-label" data-t="checkout_address">Morada</span>
+                  <p><?= h($order['morada']) ?></p>
                 </div>
-                <div class="order-status-side">
-                  <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
-                  <strong><?= h(format_eur((float)$order['total_final'])) ?></strong>
+                <?php if (!empty($order['telefone'])): ?>
+                  <div class="order-delivery-item">
+                    <span class="order-delivery-label" data-t="checkout_phone">Telefone</span>
+                    <p><a href="tel:<?= h(preg_replace('/\s+/', '', $order['telefone'])) ?>" class="auth-link"><?= h($order['telefone']) ?></a></p>
+                  </div>
+                <?php endif; ?>
+                <div class="order-delivery-item">
+                  <span class="order-delivery-label" data-t="checkout_city">Cidade</span>
+                  <p><?= h($order['cidade']) ?> <span class="order-delivery-postal"><?= h($order['codigo_postal']) ?></span></p>
                 </div>
               </div>
 
+              <?php if (!empty($order['observacoes'])): ?>
+                <div class="order-customer-note">
+                  <span class="slabel"><?= current_lang() === 'en' ? 'Customer instructions' : 'Instrucoes do cliente' ?></span>
+                  <p><?= nl2br(h($order['observacoes'])) ?></p>
+                </div>
+              <?php endif; ?>
+
               <div class="simple-list">
                 <?php foreach ($items as $item): ?>
+                  <?php $productImage = product_main_image($conn, (int)$item['idProduto']); ?>
                   <div class="simple-list-item">
-                    <div>
-                      <strong><?= h($item['nome_produto']) ?></strong>
-                      <p>
-                        <?= (int)$item['quantidade'] ?> unidade(s)
-                        <?php if (!empty($item['etiqueta'])): ?>
-                          • Tamanho <?= h($item['etiqueta']) ?>
+                    <div class="order-product-info">
+                      <div class="profile-thumb order-product-thumb">
+                        <?php if ($productImage !== ''): ?>
+                          <img src="<?= h(asset_url('img', $productImage)) ?>" alt="<?= h($item['nome_produto']) ?>">
+                        <?php else: ?>
+                          <span data-t="products_no_image">Sem imagem</span>
                         <?php endif; ?>
-                      </p>
+                      </div>
+                      <div>
+                        <strong><?= h($item['nome_produto']) ?></strong>
+                        <p>
+                          <?= h(count_label((int)$item['quantidade'], 'unit')) ?>
+                          <?php if (!empty($item['etiqueta'])): ?>
+                            &bull; <span data-t="product_size">Tamanho</span> <?= h($item['etiqueta']) ?>
+                          <?php endif; ?>
+                        </p>
+                      </div>
                     </div>
                     <div class="order-line-side">
                       <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>" data-status-label="<?= h($item['estado_item']) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
@@ -217,22 +321,31 @@ include '../includes/header.php';
                 <?php endforeach; ?>
               </div>
 
-              <?php if ($hasEditableItems && $order['estado_encomenda'] !== 'cancelada'): ?>
-                <form method="post" class="admin-action-buttons mt6">
-                  <?= csrf_input() ?>
-                  <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                  <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm">Em preparacao</button>
-                  <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm">Marcar enviada</button>
-                  <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm">Marcar entregue</button>
-                  <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm">Cancelar itens</button>
-                </form>
-              <?php else: ?>
-                <p class="color-text3 mt6" data-t="orders_cancelled_locked">Itens cancelados ficam bloqueados e nao podem ser alterados.</p>
-              <?php endif; ?>
+              <div class="order-actions-bar mt6">
+                <?php if ($hasEditableItems && $order['estado_encomenda'] !== 'cancelada'): ?>
+                  <form method="post" class="order-actions-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
+                    <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm" data-t="orders_action_prepare">Em preparacao</button>
+                    <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm" data-t="orders_action_ship">Marcar enviada</button>
+                    <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm" data-t="orders_action_deliver">Marcar entregue</button>
+                    <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm" data-t="orders_action_cancel">Cancelar itens</button>
+                  </form>
+                <?php else: ?>
+                  <p class="order-actions-note color-text3" data-t="orders_cancelled_locked">Itens cancelados ficam bloqueados e não podem ser alterados.</p>
+                <?php endif; ?>
+                <a
+                  href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>"
+                  class="btn btn-ghost btn-sm order-receipt-btn"
+                  target="_blank"
+                  rel="noopener"
+                ><?= h(tr('orders.view_receipt')) ?></a>
+              </div>
             </div>
-          </article>
+          </details>
         <?php endforeach; ?>
       </div>
+      <p class="empty-copy is-hidden" id="orders-filter-empty" data-t="orders_filter_empty">Nenhuma encomenda corresponde ao filtro.</p>
     <?php endif; ?>
   </div>
 </section>

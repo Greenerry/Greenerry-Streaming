@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/config.php';
-require_admin_login();
+require_admin_permission('users');
 
 $feedback = '';
 $error = '';
@@ -36,7 +36,7 @@ $users = db_all(
      LEFT JOIN release_musical r ON r.idCliente = c.idCliente
      LEFT JOIN encomenda e ON e.idCliente = c.idCliente
      GROUP BY c.idCliente
-     ORDER BY c.created_at DESC
+     ORDER BY c.criado_em DESC
      LIMIT 120"
 );
 
@@ -69,6 +69,12 @@ include 'admin_header.php';
     <h2 data-admin-t="users_title">Utilizadores</h2>
     <p data-admin-t="users_intro">Ve atividade, artistas e estado das contas de cliente.</p>
   </div>
+  <div class="stats-grid admin-top-stats">
+    <button type="button" class="stat stat-button" data-admin-stat-filter="users-search" data-filter-value="ativo"><div class="stat-val"><?= (int)$stats['ativos'] ?></div><div class="stat-lbl" data-admin-t="users_active">Ativos</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="users-search" data-filter-value="artista"><div class="stat-val"><?= (int)$stats['artistas'] ?></div><div class="stat-lbl" data-admin-t="users_artists">Artistas</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="users-search" data-filter-value="inativo"><div class="stat-val"><?= (int)$stats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="users-search" data-filter-value="bloqueado"><div class="stat-val"><?= (int)$stats['bloqueados'] ?></div><div class="stat-lbl" data-admin-t="state_blocked">Bloqueados</div></button>
+  </div>
 </div>
 
 <?php if ($feedback): ?>
@@ -78,25 +84,17 @@ include 'admin_header.php';
   <div class="alert alert-err"><?= h($error) ?></div>
 <?php endif; ?>
 
-<div class="stats-grid">
-  <div class="stat"><div class="stat-val"><?= (int)$stats['ativos'] ?></div><div class="stat-lbl" data-admin-t="users_active">Ativos</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['artistas'] ?></div><div class="stat-lbl" data-admin-t="users_artists">Artistas</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$stats['bloqueados'] ?></div><div class="stat-lbl" data-admin-t="state_blocked">Bloqueados</div></div>
-</div>
-
-<div class="admin-search-row">
-  <label class="sbar">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="search" data-admin-search="users-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
-  </label>
-</div>
-
 <div id="users-search" data-admin-search-scope>
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="users_all">Todos os utilizadores</h4>
-    <span class="badge badge-light"><?= count($users) ?></span>
+    <div class="admin-card-head-tools">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" data-admin-search="users-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
+      </label>
+      <span class="badge badge-light"><?= count($users) ?></span>
+    </div>
   </div>
 
   <?php if (!$users): ?>
@@ -110,7 +108,7 @@ include 'admin_header.php';
             <th data-admin-t="users_name">Nome</th>
             <th>Email</th>
             <th data-admin-t="nav_products">Produtos</th>
-            <th data-admin-t="nav_releases">Lancamentos</th>
+            <th data-admin-t="nav_releases">Lançamentos</th>
             <th data-admin-t="card_orders">Encomendas</th>
             <th data-admin-t="categories_state">Estado</th>
             <th data-admin-t="orders_action">Acao</th>
@@ -118,7 +116,8 @@ include 'admin_header.php';
         </thead>
         <tbody>
           <?php foreach ($users as $user): ?>
-            <tr>
+            <?php $isArtist = (int)$user['total_products'] > 0 || (int)$user['total_releases'] > 0; ?>
+            <tr data-admin-state="<?= h((string)$user['estado'] . ($isArtist ? ' artista' : '')) ?>">
               <td>#<?= (int)$user['idCliente'] ?></td>
               <td><strong><?= h($user['nome']) ?></strong><br><span><?= h($user['slug'] ?? '') ?></span></td>
               <td><?= h($user['email']) ?></td>

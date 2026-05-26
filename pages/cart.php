@@ -118,13 +118,13 @@ include '../includes/header.php';
 
       return `
         <article class="cart-item-card">
-          <div class="cart-item-media">
+          <a href="produto.php?id=${Number(item.id || 0)}" class="cart-item-media">
             ${item.img ? `<img src="${SITE_BASE}/assets/img/${item.img}" alt="">` : `<span>${merchText}</span>`}
-          </div>
+          </a>
           <div class="cart-item-copy">
             <div class="cart-item-top">
               <div>
-                <h3>${item.name || 'Produto'}</h3>
+                <a href="produto.php?id=${Number(item.id || 0)}" class="cart-item-title"><h3>${item.name || 'Produto'}</h3></a>
                 <p>${formatMoney(price)} ${perUnitText}</p>
               </div>
               <strong>${formatMoney(lineTotal)}</strong>

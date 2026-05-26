@@ -3,7 +3,34 @@ require_once '../includes/config.php';
 require_user_login();
 
 $uid = current_user_id();
+$range = (string)($_GET['range'] ?? '6m');
+$allowedRanges = ['7d', '30d', '6m', '1y', 'all'];
+if (!in_array($range, $allowedRanges, true)) {
+    $range = '6m';
+}
+$rangeSqlMap = [
+    '7d' => 'DATE_SUB(CURDATE(), INTERVAL 7 DAY)',
+    '30d' => 'DATE_SUB(CURDATE(), INTERVAL 30 DAY)',
+    '6m' => 'DATE_SUB(CURDATE(), INTERVAL 5 MONTH)',
+    '1y' => 'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)',
+    'all' => "'1970-01-01'",
+];
+$rangeLabels = [
+    '7d' => ['key' => 'revenue_range_7d', 'label' => '7 dias'],
+    '30d' => ['key' => 'revenue_range_30d', 'label' => '30 dias'],
+    '6m' => ['key' => 'revenue_range_6m', 'label' => '6 meses'],
+    '1y' => ['key' => 'revenue_range_1y', 'label' => '1 ano'],
+    'all' => ['key' => 'revenue_range_all', 'label' => 'Tudo'],
+];
+$dateFromSql = $rangeSqlMap[$range];
+$periodKeySql = in_array($range, ['7d', '30d'], true)
+    ? "DATE_FORMAT(e.criado_em, '%Y-%m-%d')"
+    : "DATE_FORMAT(e.criado_em, '%Y-%m')";
+$periodLabelSql = in_array($range, ['7d', '30d'], true)
+    ? "DATE_FORMAT(e.criado_em, '%d/%m')"
+    : "DATE_FORMAT(e.criado_em, '%m/%Y')";
 
+// Artist earnings are calculated from delivered order items inside the selected date range.
 $summary = db_one(
     $conn,
     "SELECT
@@ -12,20 +39,23 @@ $summary = db_one(
         SUM(ei.valor_artista) AS total_artist_value,
         SUM(ei.comissao_valor) AS total_commission
      FROM encomenda_item ei
+     JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
      WHERE ei.idArtista = {$uid}
-       AND ei.estado_item = 'entregue'"
+       AND ei.estado_item = 'entregue'
+       AND e.criado_em >= {$dateFromSql}"
 ) ?: [];
 
 $sales = db_all(
     $conn,
     "SELECT
         ei.*,
-        e.created_at,
+        e.criado_em,
         e.estado_encomenda
      FROM encomenda_item ei
      JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
      WHERE ei.idArtista = {$uid}
-     ORDER BY e.created_at DESC, ei.idEncomendaItem DESC
+       AND e.criado_em >= {$dateFromSql}
+     ORDER BY e.criado_em DESC, ei.idEncomendaItem DESC
      LIMIT 25"
 );
 
@@ -39,14 +69,16 @@ $paidOrderStats = db_one(
      WHERE ei.idArtista = {$uid}
        AND e.estado_pagamento = 'pago'
        AND e.estado_encomenda != 'cancelada'
-       AND ei.estado_item != 'cancelado'"
+       AND ei.estado_item != 'cancelado'
+       AND e.criado_em >= {$dateFromSql}"
 ) ?: [];
 
+// The chart uses days for short ranges and months for longer ranges.
 $monthlyRevenue = db_all(
     $conn,
     "SELECT
-        DATE_FORMAT(e.created_at, '%Y-%m') AS period_key,
-        DATE_FORMAT(e.created_at, '%m/%Y') AS period_label,
+        {$periodKeySql} AS period_key,
+        {$periodLabelSql} AS period_label,
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.valor_artista ELSE 0 END), 0) AS artist_value,
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.total_linha ELSE 0 END), 0) AS total_revenue,
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.comissao_valor ELSE 0 END), 0) AS commission,
@@ -54,8 +86,8 @@ $monthlyRevenue = db_all(
      FROM encomenda_item ei
      JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
      WHERE ei.idArtista = {$uid}
-       AND e.created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-     GROUP BY DATE_FORMAT(e.created_at, '%Y-%m'), DATE_FORMAT(e.created_at, '%m/%Y')
+       AND e.criado_em >= {$dateFromSql}
+     GROUP BY {$periodKeySql}, {$periodLabelSql}
      ORDER BY period_key ASC"
 );
 
@@ -79,7 +111,9 @@ $productRevenue = db_all(
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.valor_artista ELSE 0 END), 0) AS artist_value,
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.quantidade ELSE 0 END), 0) AS items_count
      FROM encomenda_item ei
+     JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
      WHERE ei.idArtista = {$uid}
+       AND e.criado_em >= {$dateFromSql}
      GROUP BY ei.nome_produto
      ORDER BY artist_value DESC
      LIMIT 6"
@@ -148,6 +182,11 @@ include '../includes/header.php';
           <h2 data-t="revenue_title">Resumo das vendas</h2>
           <p data-t="revenue_intro">Os ganhos sao calculados a partir do valor artistico registado em cada item da encomenda.</p>
         </div>
+        <nav class="client-revenue-range" aria-label="Revenue range">
+          <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
+            <a href="revenue.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
+          <?php endforeach; ?>
+        </nav>
       </header>
 
       <div class="client-revenue-kpis">
@@ -162,7 +201,7 @@ include '../includes/header.php';
           <small><?= (int)($paidOrderStats['paid_orders'] ?? 0) ?> <span data-t="revenue_paid_orders">encomendas pagas</span></small>
         </article>
         <article>
-          <span data-t="revenue_commission">Comissao da plataforma</span>
+          <span data-t="revenue_commission">Comissão da plataforma</span>
           <strong><?= h(format_eur((float)($summary['total_commission'] ?? 0))) ?></strong>
           <small data-t="revenue_commission_note">sobre itens entregues</small>
         </article>
@@ -180,11 +219,11 @@ include '../includes/header.php';
               <span class="slabel" data-t="revenue_chart_label">Grafico</span>
               <h3><?= h(format_eur((float)($summary['total_artist_value'] ?? 0))) ?></h3>
             </div>
-            <span class="badge badge-light" data-t="box_last_six_months">Ultimos 6 meses</span>
+            <span class="badge badge-light" data-t="<?= h($rangeLabels[$range]['key']) ?>"><?= h($rangeLabels[$range]['label']) ?></span>
           </div>
 
           <?php if (!$monthlyRevenue): ?>
-            <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+            <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
           <?php else: ?>
             <svg class="client-revenue-line-chart" viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" role="img" aria-label="Monthly revenue trend">
               <defs>
@@ -242,7 +281,7 @@ include '../includes/header.php';
             </div>
           </div>
           <?php if (!$monthlyRevenue): ?>
-            <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+            <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
           <?php else: ?>
             <div class="client-revenue-bars">
               <?php foreach ($monthlyRevenue as $entry): ?>
@@ -265,7 +304,7 @@ include '../includes/header.php';
             </div>
           </div>
           <?php if (!$productRevenue): ?>
-            <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+            <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
           <?php else: ?>
             <div class="client-revenue-product-list">
               <?php foreach ($productRevenue as $product): ?>
@@ -292,7 +331,7 @@ include '../includes/header.php';
           </div>
         </div>
         <?php if (!$sales): ?>
-          <p data-t="revenue_empty">Ainda nao tens vendas registadas.</p>
+          <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
         <?php else: ?>
           <div class="tbl-wrap">
             <table>
@@ -303,7 +342,7 @@ include '../includes/header.php';
                   <th data-t="revenue_table_qty">Qtd</th>
                   <th data-t="revenue_table_status">Estado</th>
                   <th data-t="revenue_table_artist_value">Valor artista</th>
-                  <th data-t="revenue_table_commission">Comissao</th>
+                  <th data-t="revenue_table_commission">Comissão</th>
                   <th data-t="revenue_table_date">Data</th>
                 </tr>
               </thead>
@@ -316,7 +355,7 @@ include '../includes/header.php';
                     <td><span class="badge <?= h(state_badge_class($sale['estado_item'])) ?>" data-status-label="<?= h($sale['estado_item']) ?>"><?= h(order_status_label($sale['estado_item'])) ?></span></td>
                     <td><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['valor_artista'])) ?></td>
                     <td><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['comissao_valor'])) ?></td>
-                    <td><?= date('d/m/Y', strtotime($sale['created_at'])) ?></td>
+                    <td><?= date('d/m/Y', strtotime($sale['criado_em'])) ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>

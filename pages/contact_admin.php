@@ -7,6 +7,8 @@ $ok = '';
 $assuntoValue = trim($_POST['assunto'] ?? '');
 $mensagemValue = trim($_POST['mensagem'] ?? '');
 $uid = current_user_id();
+$showAllMessages = (int)($_GET['all'] ?? 0) === 1;
+$messageLimit = 3;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $err = verify_csrf_request();
@@ -22,12 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$err) {
-        $assuntoSafe = db_escape($conn, $assuntoValue);
-        $mensagemSafe = db_escape($conn, $mensagemValue);
-        $sql = "INSERT INTO mensagem_admin (idCliente, assunto, mensagem, estado)
-                VALUES ({$uid}, '{$assuntoSafe}', '{$mensagemSafe}', 'aberta')";
-
-        if (mysqli_query($conn, $sql)) {
+        if (db_prepared(
+            $conn,
+            "INSERT INTO mensagem_admin (idCliente, assunto, mensagem, estado)
+             VALUES (?, ?, ?, 'aberta')",
+            'iss',
+            [$uid, $assuntoValue, $mensagemValue]
+        )) {
             $ok = tr('success.message_sent');
             $assuntoValue = '';
             $mensagemValue = '';
@@ -37,13 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$totalMessages = (int)(db_one(
+    $conn,
+    "SELECT COUNT(*) AS total FROM mensagem_admin WHERE idCliente = {$uid}"
+)['total'] ?? 0);
+
 $messages = db_all(
     $conn,
     "SELECT m.*, a.nome AS admin_nome
      FROM mensagem_admin m
      LEFT JOIN admin a ON a.idAdmin = m.idAdminResposta
      WHERE m.idCliente = {$uid}
-     ORDER BY m.created_at DESC"
+     ORDER BY m.criado_em DESC" . ($showAllMessages ? "" : " LIMIT {$messageLimit}")
 );
 
 include '../includes/header.php';
@@ -88,17 +96,27 @@ include '../includes/header.php';
       <div class="card surface-card surface-card--soft">
         <div class="card-body">
           <h3 class="section-card-title" data-t="contact_history">Historico</h3>
+          <?php if ($totalMessages > $messageLimit): ?>
+            <div class="message-history-tools">
+              <p>
+                <span data-t="contact_history_recent">A mostrar as mensagens mais recentes.</span>
+                <span><?= min($totalMessages, $showAllMessages ? $totalMessages : $messageLimit) ?>/<?= $totalMessages ?></span>
+              </p>
+              <a class="btn btn-ghost btn-sm" href="contact_admin.php<?= $showAllMessages ? '' : '?all=1' ?>" data-t="<?= $showAllMessages ? 'contact_show_recent' : 'contact_show_all' ?>">
+                <?= $showAllMessages ? 'Mostrar recentes' : 'Mostrar todas' ?>
+              </a>
+            </div>
+          <?php endif; ?>
           <?php if (!$messages): ?>
-            <p data-t="contact_empty">Ainda nao enviaste nenhuma mensagem.</p>
+            <p data-t="contact_empty">Ainda não enviaste nenhuma mensagem.</p>
           <?php else: ?>
             <div class="message-thread-list">
               <?php foreach ($messages as $message): ?>
                 <article class="message-thread-item">
                   <div class="message-thread-head">
                     <strong><?= h($message['assunto']) ?></strong>
-                    <span class="badge <?= $message['estado'] === 'respondida' ? 'badge-blue' : 'badge-light' ?>" data-status-label="<?= h($message['estado']) ?>"><?= h(order_status_label($message['estado'])) ?></span>
                   </div>
-                  <p class="message-thread-meta"><?= date('d/m/Y H:i', strtotime($message['created_at'])) ?></p>
+                  <p class="message-thread-meta"><?= date('d/m/Y H:i', strtotime($message['criado_em'])) ?></p>
                   <p><?= nl2br(h($message['mensagem'])) ?></p>
 
                   <?php if (!empty($message['resposta_admin'])): ?>

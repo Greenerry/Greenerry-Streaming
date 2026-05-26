@@ -5,11 +5,46 @@ if (!isset($conn)) {
 
 $page = basename($_SERVER['PHP_SELF']);
 $displayName = '';
+$pendingArtistOrders = 0;
+$unreadNotifications = 0;
+$recentNotifications = [];
+if (is_user_logged_in() && !active_user_session($conn)) {
+    end_user_session_only();
+}
+
 if (is_user_logged_in()) {
     $displayName = $currentUser['nome'] ?? ($_SESSION['user_name'] ?? '');
+    $unreadNotifications = (int)(db_one(
+        $conn,
+        "SELECT COUNT(*) AS total FROM notificacao WHERE idCliente = " . (int)current_user_id() . " AND lida = 0"
+    )['total'] ?? 0);
+    $recentNotifications = db_all(
+        $conn,
+        "SELECT idNotificacao, titulo, mensagem, tipo, lida, criado_em
+         FROM notificacao
+         WHERE idCliente = " . (int)current_user_id() . "
+         ORDER BY criado_em DESC
+         LIMIT 5"
+    );
+    $pendingArtistOrders = (int)(db_one(
+        $conn,
+        "SELECT COUNT(DISTINCT ei.idEncomenda) AS total
+         FROM encomenda_item ei
+         JOIN produto p ON p.idProduto = ei.idProduto
+         WHERE ei.idArtista = " . (int)current_user_id() . "
+           AND ei.estado_item = 'pendente'
+           AND p.idCliente = " . (int)current_user_id()
+    )['total'] ?? 0);
 } elseif (is_admin_logged_in()) {
     $displayName = $currentAdmin['nome'] ?? ($_SESSION['admin_name'] ?? '');
 }
+
+$showMaintenanceContent = false;
+$clientPagesDir = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '')));
+if (str_ends_with($clientPagesDir, '/pages') && page_under_maintenance($page) && !is_admin_logged_in()) {
+    $showMaintenanceContent = true;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="<?= h(current_lang()) ?>">
@@ -17,12 +52,12 @@ if (is_user_logged_in()) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Greenerry</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
   <script>
     document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=optional" rel="stylesheet">
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body data-user-id="<?= (int)$jsUserId ?>">
@@ -30,6 +65,7 @@ if (is_user_logged_in()) {
 window.SITE_BASE='<?= $_base ?>';
 window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
 </script>
+<div class="theme-wipe" id="theme-wipe" aria-hidden="true"></div>
 
 <div class="sl-overlay" id="sl-overlay"></div>
 
@@ -82,7 +118,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
           <span class="sl-lbl" data-t="nav_tools">Ferramentas</span>
           <a href="<?= $_base ?>/pages/upload_music.php" class="sl-link <?= $page === 'upload_music.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><polyline points="9 18 5 15 9 12"/></svg>
-            <span data-t="nav_upload_music">Publicar musica</span>
+            <span data-t="nav_upload_music">Publicar música</span>
           </a>
           <a href="<?= $_base ?>/pages/upload_merch.php" class="sl-link <?= $page === 'upload_merch.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><polyline points="16 10 12 6 8 10"/><line x1="12" y1="6" x2="12" y2="16"/></svg>
@@ -90,7 +126,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
           </a>
           <a href="<?= $_base ?>/pages/orders.php" class="sl-link <?= $page === 'orders.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 10h6"/><path d="M8 14h6"/><path d="M8 18h6"/></svg>
-            <span data-t="nav_orders">Pedidos</span>
+            <span data-t="nav_orders">Pedidos</span><span class="orders-badge" style="<?= $pendingArtistOrders > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistOrders ?></span>
           </a>
           <a href="<?= $_base ?>/pages/revenue.php" class="sl-link <?= $page === 'revenue.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -99,7 +135,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         </div>
       <?php elseif (is_admin_logged_in()): ?>
         <div class="sl-sec">
-          <span class="sl-lbl" data-t="nav_admin">Administracao</span>
+          <span class="sl-lbl" data-t="nav_admin">Administração</span>
           <a href="<?= $_base ?>/admin/dashboard.php" class="sl-link">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
             <span data-t="nav_go_admin">Ir para admin</span>
@@ -145,6 +181,47 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
             <svg class="theme-toggle-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
             <svg class="theme-toggle-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
           </button>
+          <?php if (is_user_logged_in()): ?>
+            <div class="nav-notifications" data-notifications-menu>
+              <button type="button" class="nav-icon-btn nav-notification-btn" aria-label="<?= h(current_lang() === 'en' ? 'Notifications' : 'Notificações') ?>" aria-expanded="false" data-notification-toggle>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <?php if ($unreadNotifications > 0): ?><span><?= (int)$unreadNotifications ?></span><?php endif; ?>
+              </button>
+              <div class="notification-popover" hidden>
+                <div class="notification-popover-head">
+                  <strong data-t="notifications_title">Notificações</strong>
+                  <a href="<?= $_base ?>/pages/notifications.php" data-t="notifications_view_all">Ver tudo</a>
+                </div>
+                <?php if (!$recentNotifications): ?>
+                  <p class="notification-empty" data-t="notifications_empty">Ainda não tens notificações.</p>
+                <?php else: ?>
+                  <div class="notification-mini-list">
+                    <?php foreach ($recentNotifications as $note): ?>
+                      <?php $noteContext = notification_context($conn, $note, (int)current_user_id()); ?>
+                      <?php $displayNote = notification_display_text($note); ?>
+                      <?php $displayNotePt = notification_display_text($note, 'pt'); ?>
+                      <?php $displayNoteEn = notification_display_text($note, 'en'); ?>
+                      <a href="<?= $_base ?>/pages/notifications.php?go=<?= (int)$note['idNotificacao'] ?>" class="notification-mini-item <?= (int)$note['lida'] === 0 ? 'is-unread' : '' ?>">
+                        <span class="notification-media notification-media--mini">
+                          <?php if ($noteContext['image'] !== ''): ?>
+                            <img src="<?= h($noteContext['image']) ?>" alt="">
+                          <?php else: ?>
+                            <?= notification_icon_svg((string)$note['tipo']) ?>
+                          <?php endif; ?>
+                        </span>
+                        <span class="notification-copy">
+                          <span class="notification-line">
+                            <strong data-lang-pt="<?= h($displayNotePt['title']) ?>" data-lang-en="<?= h($displayNoteEn['title']) ?>"><?= h($displayNote['title']) ?></strong>
+                            <span class="notification-type-pill" data-lang-pt="<?= h(notification_type_label((string)$note['tipo'], 'pt')) ?>" data-lang-en="<?= h(notification_type_label((string)$note['tipo'], 'en')) ?>"><?= h($noteContext['label']) ?></span>
+                          </span>
+                        </span>
+                      </a>
+                    <?php endforeach; ?>
+                  </div>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
           <?php if ($displayName): ?>
             <?php if (is_user_logged_in()): ?>
               <a href="<?= $_base ?>/pages/profile.php" class="nav-user-name"><?= h($displayName) ?></a>
@@ -161,3 +238,4 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
       </div>
     </nav>
     <div class="page-body pad-top">
+      <?php if ($showMaintenanceContent) { ob_start(); } ?>

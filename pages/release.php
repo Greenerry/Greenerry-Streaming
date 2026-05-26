@@ -42,11 +42,23 @@ $tracks = db_all(
 $cover = asset_url('img', $release['capa']);
 $artistFoto = asset_url('img', $release['artist_foto']);
 $releaseKey = $releaseId . '-' . (int)$release['artistId'];
+$releaseMediaCloud = [];
+foreach ([$cover, $artistFoto] as $image) {
+    if ($image !== '') {
+        $releaseMediaCloud[$image] = [
+            'src' => $image,
+            'label' => (string)$release['titulo'],
+            'type' => 'music',
+        ];
+    }
+}
+$releaseMediaCloud = array_values($releaseMediaCloud);
 
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
+<section class="content-shell content-shell--cloud content-shell--catalog-cloud">
+  <div class="section-media-cloud section-media-cloud--catalog" data-media-cloud='<?= h(json_encode($releaseMediaCloud, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>' aria-hidden="true"></div>
   <div class="wrap">
     <button type="button" class="btn btn-ghost btn-sm release-back-btn" data-t="release_back" onclick="if (history.length > 1) history.back(); else location.href='music.php';">Voltar</button>
 
@@ -69,13 +81,13 @@ include '../includes/header.php';
           <?php if (!empty($release['data_lancamento'])): ?>
             <span><?= date('d/m/Y', strtotime($release['data_lancamento'])) ?></span>
           <?php endif; ?>
-          <span><?= count($tracks) ?> <span data-t="release_tracks_count">faixas</span></span>
+          <span data-count-type="track" data-count-value="<?= count($tracks) ?>"><?= h(count_label(count($tracks), 'track')) ?></span>
         </div>
         <?php if (!empty($release['descricao'])): ?>
           <p><?= h($release['descricao']) ?></p>
         <?php endif; ?>
         <?php if ($tracks): ?>
-          <button type="button" class="btn btn-dark" onclick="playReleaseByKey('<?= h($releaseKey) ?>')" data-t="release_play_all">Tocar lancamento</button>
+          <button type="button" class="btn btn-dark" onclick="playReleaseByKey('<?= h($releaseKey) ?>')" data-t="release_play_all">Tocar lançamento</button>
         <?php endif; ?>
       </div>
     </div>
@@ -88,7 +100,7 @@ include '../includes/header.php';
     <?php if (!$tracks): ?>
       <div class="card surface-card">
         <div class="card-body text-center">
-          <p data-t="release_no_tracks">Nao existem faixas disponiveis.</p>
+          <p data-t="release_no_tracks">Não existem faixas disponíveis.</p>
         </div>
       </div>
     <?php else: ?>

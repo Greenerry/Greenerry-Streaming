@@ -10,9 +10,10 @@ $editRelease = null;
 $editTracks = [];
 
 if ($editId > 0) {
+    // Artists can only edit their own submissions, unless the admin has blocked them.
     $editRelease = db_one($conn, "SELECT * FROM release_musical WHERE idRelease = {$editId} AND idCliente = {$uid} LIMIT 1");
     if (!$editRelease || (int)($editRelease['bloqueado_admin'] ?? 0) === 1) {
-        header('Location: profile.php');
+        header('Location: profile.php?tab=music');
         exit;
     }
     $editTracks = db_all($conn, "SELECT * FROM faixa WHERE idRelease = {$editId} ORDER BY numero_faixa ASC");
@@ -31,21 +32,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = tr('error.release_title_required');
     } elseif (!$err && !in_array($type, ['Single', 'EP', 'Album'], true)) {
         $err = tr('error.release_type_invalid');
-    } elseif (!$err && $releaseDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $releaseDate)) {
+    } elseif (!$err && ($err = required_field($description, 'A descrição', 'Description'))) {
+    } elseif (!$err && ($err = required_field($releaseDate, 'A data de lançamento', 'Release date'))) {
+    } elseif (!$err && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $releaseDate)) {
         $err = tr('error.release_date_invalid');
     }
 
-    $cover = (string)($editRelease['capa'] ?? '');
+    $oldCover = (string)($editRelease['capa'] ?? '');
+    // Keep old files available unless the edit supplies replacements.
+    $oldAudioFiles = array_values(array_unique(array_filter(array_map(
+        static fn($track) => (string)($track['ficheiro_audio'] ?? ''),
+        $editTracks
+    ))));
+    $cover = $oldCover;
+    if (!$err && !$editRelease && empty($_FILES['capa']['name'])) {
+        $err = current_lang() === 'en' ? 'Cover image is required.' : 'A capa é obrigatória.';
+    }
     if (!$err && isset($_FILES['capa']) && $_FILES['capa']['error'] === UPLOAD_ERR_OK) {
         $err = validate_uploaded_image($_FILES['capa']);
-        $coverExt = strtolower(pathinfo($_FILES['capa']['name'], PATHINFO_EXTENSION));
         if (!$err) {
-            $cover = 'release_' . $uid . '_' . time() . '.' . $coverExt;
-            $imageDir = __DIR__ . '/../assets/img/';
-            if (!is_dir($imageDir)) {
-                mkdir($imageDir, 0775, true);
+            [$savedCover, $saveErr] = save_uploaded_file($_FILES['capa'], 'img', 'release_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], GREENERRY_MAX_IMAGE_BYTES);
+            $err = $saveErr ?? '';
+            if (!$err) {
+                $cover = $savedCover;
             }
-            move_uploaded_file($_FILES['capa']['tmp_name'], $imageDir . $cover);
         }
     }
 
@@ -57,30 +67,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($type === 'Single') {
+            // Single mode has one track row and one audio upload.
             $singleTitle = trim($_POST['single_track_title'] ?? $title);
             if ($singleTitle === '') {
-                $singleTitle = $title;
+                $err = current_lang() === 'en' ? 'Track title is required.' : 'O título da faixa é obrigatório.';
             }
-            if (!$editRelease && empty($_FILES['audio']['name'])) {
+            if (!$err && isset($_FILES['audio']['name']) && is_array($_FILES['audio']['name'])) {
+                $err = current_lang() === 'en' ? 'A single can only have one audio file.' : 'Um single só pode ter um ficheiro de áudio.';
+            } elseif (!$err && !$editRelease && empty($_FILES['audio']['name'])) {
                 $err = tr('error.audio_required');
-            } elseif (!empty($_FILES['audio']['name'])) {
+            } elseif (!$err && !empty($_FILES['audio']['name'])) {
                 $err = validate_uploaded_audio($_FILES['audio']);
-                $audioExt = strtolower(pathinfo($_FILES['audio']['name'], PATHINFO_EXTENSION));
                 if (!$err) {
-                    $audioName = 'track_' . $uid . '_' . time() . '_1.' . $audioExt;
-                    move_uploaded_file($_FILES['audio']['tmp_name'], $audioDir . $audioName);
+                    [$audioName, $saveErr] = save_uploaded_file($_FILES['audio'], 'audio', 'track_' . $uid . '_1', ['mp3', 'wav', 'ogg', 'flac', 'm4a'], GREENERRY_MAX_AUDIO_BYTES);
+                    $err = $saveErr ?? '';
+                }
+                if (!$err) {
                     $tracks[] = ['title' => $singleTitle, 'audio' => $audioName];
                 }
-            } elseif ($editRelease && $editTracks) {
-                $tracks[] = ['id' => (int)$editTracks[0]['idFaixa'], 'title' => $singleTitle, 'audio' => $editTracks[0]['ficheiro_audio']];
+            } elseif (!$err && $editRelease && $editTracks) {
+                if (empty($editTracks[0]['ficheiro_audio'])) {
+                    $err = tr('error.audio_required');
+                } else {
+                    $tracks[] = ['id' => (int)$editTracks[0]['idFaixa'], 'title' => $singleTitle, 'audio' => $editTracks[0]['ficheiro_audio']];
+                }
+            } elseif (!$err) {
+                $err = tr('error.audio_required');
             }
         } else {
+            // EP/Album mode accepts multiple independently titled tracks.
             $trackIds = $_POST['track_id'] ?? [];
             $audioNames = $_FILES['tracks_audio']['name'] ?? [];
             $audioTmp = $_FILES['tracks_audio']['tmp_name'] ?? [];
             $audioErrors = $_FILES['tracks_audio']['error'] ?? [];
+            if (count($trackTitles) > GREENERRY_MAX_RELEASE_TRACKS) {
+                $err = current_lang() === 'en'
+                    ? 'A release can have at most ' . GREENERRY_MAX_RELEASE_TRACKS . ' tracks.'
+                    : 'Um lançamento pode ter no máximo ' . GREENERRY_MAX_RELEASE_TRACKS . ' faixas.';
+            }
 
             foreach ($trackTitles as $index => $trackTitleRaw) {
+                if ($err) {
+                    break;
+                }
                 $trackTitle = trim($trackTitleRaw);
                 $trackId = (int)($trackIds[$index] ?? 0);
                 $existingTrack = null;
@@ -108,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                     }
 
-                    $audioExt = strtolower(pathinfo($sourceName, PATHINFO_EXTENSION));
                     if (validate_uploaded_audio([
                         'error' => $errorCode,
                         'size' => filesize($tmpName),
@@ -119,9 +147,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                     }
 
-                    $audioName = 'track_' . $uid . '_' . time() . '_' . ($index + 1) . '.' . $audioExt;
-                    move_uploaded_file($tmpName, $audioDir . $audioName);
-                } elseif ($existingTrack) {
+                    [$audioName, $saveErr] = save_uploaded_file([
+                        'error' => $errorCode,
+                        'size' => filesize($tmpName),
+                        'name' => $sourceName,
+                        'tmp_name' => $tmpName
+                    ], 'audio', 'track_' . $uid . '_' . ($index + 1), ['mp3', 'wav', 'ogg', 'flac', 'm4a'], GREENERRY_MAX_AUDIO_BYTES);
+                    if ($saveErr) {
+                        $err = $saveErr;
+                        break;
+                    }
+                } elseif ($existingTrack && !empty($existingTrack['ficheiro_audio'])) {
                     $audioName = $existingTrack['ficheiro_audio'];
                 } else {
                     $err = tr('error.track_incomplete');
@@ -151,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_begin_transaction($conn);
         try {
             if ($editRelease) {
+                // Resubmitting sends the release back to the admin queue.
                 mysqli_query(
                     $conn,
                     "UPDATE release_musical
@@ -189,6 +226,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             mysqli_commit($conn);
+            delete_orphan_asset_file($conn, 'img', $oldCover);
+            delete_orphan_asset_files($conn, 'audio', $oldAudioFiles);
+            cleanup_unused_uploaded_assets($conn);
             $ok = $editRelease
                 ? tr('success.release_updated')
                 : tr('success.release_sent');
@@ -211,7 +251,7 @@ include '../includes/header.php';
     <div class="submission-hero submission-hero--music hero-card--single">
       <div class="submission-hero-copy">
         <span class="slabel" data-t="upload_music_label">Submissao</span>
-        <h2><?= $editRelease ? '<span data-t="upload_music_edit_title">Editar lancamento.</span>' : '<span data-t="upload_music_title">Novo lancamento.</span>' ?></h2>
+        <h2><?= $editRelease ? '<span data-t="upload_music_edit_title">Editar lançamento.</span>' : '<span data-t="upload_music_title">Novo lançamento.</span>' ?></h2>
       </div>
     </div>
 
@@ -230,7 +270,7 @@ include '../includes/header.php';
             <input type="hidden" name="release_id" value="<?= (int)$editRelease['idRelease'] ?>">
           <?php endif; ?>
           <div class="fg">
-            <label class="flabel" for="titulo" data-t="upload_music_release_title">Titulo do lancamento</label>
+            <label class="flabel" for="titulo" data-t="upload_music_release_title">Título do lançamento</label>
             <input id="titulo" type="text" name="titulo" class="finput" required maxlength="180" value="<?= h($editRelease['titulo'] ?? '') ?>">
           </div>
 
@@ -244,14 +284,14 @@ include '../includes/header.php';
               </select>
             </div>
             <div class="fg">
-              <label class="flabel" for="data_lancamento" data-t="upload_music_date">Data de lancamento</label>
-              <input id="data_lancamento" type="date" name="data_lancamento" class="finput" value="<?= h($editRelease['data_lancamento'] ?? '') ?>">
+              <label class="flabel" for="data_lancamento" data-t="upload_music_date">Data de lançamento</label>
+              <input id="data_lancamento" type="date" name="data_lancamento" class="finput" required value="<?= h($editRelease['data_lancamento'] ?? '') ?>">
             </div>
           </div>
 
           <div class="fg">
-            <label class="flabel" for="descricao" data-t="upload_music_description">Descricao</label>
-            <textarea id="descricao" name="descricao" class="finput" maxlength="2000"><?= h($editRelease['descricao'] ?? '') ?></textarea>
+            <label class="flabel" for="descricao" data-t="upload_music_description">Descrição</label>
+            <textarea id="descricao" name="descricao" class="finput" required maxlength="2000"><?= h($editRelease['descricao'] ?? '') ?></textarea>
           </div>
 
           <div class="fg">
@@ -263,15 +303,16 @@ include '../includes/header.php';
               </div>
             <?php endif; ?>
             <div class="upload-zone upload-zone--compact">
-              <input id="capa" type="file" name="capa" class="finput" accept=".jpg,.jpeg,.png,.webp">
+              <input id="capa" type="file" name="capa" class="finput" accept=".jpg,.jpeg,.png,.webp" <?= $editRelease ? '' : 'required' ?>>
+              <div class="image-upload-preview image-upload-preview--cover" id="cover-image-preview" hidden></div>
               <p data-t="upload_music_cover_help">Imagem de capa em JPG, PNG ou WEBP.</p>
             </div>
           </div>
 
           <div id="single-fields" class="stack-form">
             <div class="fg">
-              <label class="flabel" for="single_track_title" data-t="upload_music_track_title">Titulo da faixa</label>
-              <input id="single_track_title" type="text" name="single_track_title" class="finput" maxlength="180" value="<?= h($editTracks[0]['titulo'] ?? '') ?>">
+              <label class="flabel" for="single_track_title" data-t="upload_music_track_title">Título da faixa</label>
+              <input id="single_track_title" type="text" name="single_track_title" class="finput" required maxlength="180" value="<?= h($editTracks[0]['titulo'] ?? '') ?>">
               <div id="single-audio-preview" class="audio-upload-preview is-hidden">
                 <span></span>
                 <div class="audio-preview-controls">
@@ -284,26 +325,26 @@ include '../includes/header.php';
               </div>
             </div>
             <div class="fg">
-              <label class="flabel" for="audio" data-t="upload_music_audio">Ficheiro de audio</label>
+              <label class="flabel" for="audio" data-t="upload_music_audio">Ficheiro de áudio</label>
               <div class="upload-zone upload-zone--compact">
-                <input id="audio" type="file" name="audio" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a" multiple>
-                <p data-t="upload_music_audio_help">Formatos suportados: MP3, WAV, OGG, FLAC e M4A. Podes arrastar um ou varios ficheiros.</p>
+                <input id="audio" type="file" name="audio" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a" <?= ($editRelease && !empty($editTracks[0]['ficheiro_audio'])) ? '' : 'required' ?>>
+                <p data-t="upload_music_audio_help">Formatos suportados: MP3, WAV, OGG, FLAC e M4A. Podes arrastar um ou vários ficheiros.</p>
               </div>
             </div>
           </div>
 
           <div id="multi-fields" class="stack-form is-hidden">
             <div id="multi-audio-drop" class="upload-zone upload-zone--compact upload-zone--batch" tabindex="0">
-              <strong data-t="upload_music_multi_drop_title">Arrasta varios ficheiros audio aqui</strong>
+              <strong data-t="upload_music_multi_drop_title">Arrasta vários ficheiros áudio aqui</strong>
               <span data-t="upload_music_multi_drop_text">Cada ficheiro fica numa faixa separada, depois podes mudar os nomes.</span>
             </div>
             <div id="track-list" class="stack-form"></div>
             <button type="button" class="btn btn-ghost" id="add-track" data-t="upload_music_add_track">Adicionar faixa</button>
           </div>
 
-          <button type="submit" class="btn btn-dark btn-full"><?= $editRelease ? '<span data-t="upload_music_save_review">Guardar e enviar para revisao</span>' : '<span data-t="upload_music_submit">Enviar para aprovacao</span>' ?></button>
+          <button type="submit" class="btn btn-dark btn-full"><?= $editRelease ? '<span data-t="upload_music_save_review">Guardar e enviar para revisão</span>' : '<span data-t="upload_music_submit">Enviar para aprovacao</span>' ?></button>
           <?php if ($editRelease): ?>
-            <a href="profile.php" class="btn btn-ghost btn-full" data-t="upload_music_back_profile">Voltar ao perfil</a>
+            <a href="profile.php?tab=music" class="btn btn-ghost btn-full" data-t="upload_music_back_profile">Voltar ao perfil</a>
           <?php endif; ?>
         </form>
       </div>
@@ -320,15 +361,18 @@ const addTrackButton = document.getElementById('add-track');
 const releaseForm = document.getElementById('release-form');
 const multiAudioDrop = document.getElementById('multi-audio-drop');
 const singleAudioPreview = document.getElementById('single-audio-preview');
+const coverInput = document.getElementById('capa');
+const coverImagePreview = document.getElementById('cover-image-preview');
 const existingTracks = <?= json_encode(array_map(static function ($track) {
     return [
         'id' => (int)$track['idFaixa'],
         'title' => (string)$track['titulo'],
         'audio' => (string)$track['ficheiro_audio'],
-        'audioUrl' => asset_url('audio', $track['ficheiro_audio'])
+        'audioUrl' => !empty($track['ficheiro_audio']) ? asset_url('audio', $track['ficheiro_audio']) : ''
     ];
 }, $editTracks), JSON_UNESCAPED_UNICODE) ?>;
 const editingRelease = <?= $editRelease ? 'true' : 'false' ?>;
+const existingSingleAudio = existingTracks[0]?.audio || '';
 
 function uploadLang() {
   return (localStorage.getItem('g_lang') || 'pt').startsWith('en') ? 'en' : 'pt';
@@ -340,15 +384,16 @@ function uploadText(key) {
     return T[active][key];
   }
   const fallback = {
-    upload_music_track_title_dynamic: active === 'en' ? 'Track title' : 'Titulo da faixa',
+    upload_music_track_title_dynamic: active === 'en' ? 'Track title' : 'Título da faixa',
     upload_music_track_audio_dynamic: active === 'en' ? 'Track audio' : 'Audio da faixa',
     upload_music_current_file: active === 'en' ? 'Current file' : 'Ficheiro atual',
     upload_music_replace_audio_help: active === 'en' ? 'Choose a new audio file only if you want to replace it.' : 'Escolhe novo audio so se quiseres substituir.',
-    upload_music_choose_drop_audio_help: active === 'en' ? 'Choose or drop the track audio file.' : 'Escolhe ou arrasta o ficheiro audio da faixa.',
+    upload_music_choose_drop_audio_help: active === 'en' ? 'Choose or drop the track audio file.' : 'Escolhe ou arrasta o ficheiro áudio da faixa.',
     upload_music_preview: active === 'en' ? 'Preview' : 'Previa',
     upload_music_play: active === 'en' ? 'Play' : 'Tocar',
     upload_music_pause: active === 'en' ? 'Pause' : 'Pausar',
-    upload_music_choose_audio_toast: active === 'en' ? 'Choose an audio file for the release.' : 'Escolhe o ficheiro audio do lancamento.',
+    upload_music_remove_track: active === 'en' ? 'Remove track' : 'Remover faixa',
+    upload_music_choose_audio_toast: active === 'en' ? 'Choose an audio file for the release.' : 'Escolhe o ficheiro áudio do lançamento.',
     upload_music_need_track_toast: active === 'en' ? 'Add at least one track with title and audio.' : 'Adiciona pelo menos uma faixa com titulo e audio.'
   };
   return fallback[key] || key;
@@ -375,14 +420,23 @@ function applyUploadMusicLanguage() {
   });
 }
 
+function refreshTrackRows() {
+  Array.from(trackList.children).forEach((row, index) => {
+    row.querySelectorAll('[data-track-number]').forEach((element) => {
+      element.dataset.trackNumber = index + 1;
+    });
+  });
+  applyUploadMusicLanguage();
+}
+
 function addTrackRow(index, track = null) {
   const row = document.createElement('div');
-  row.className = 'frow';
+  row.className = 'frow upload-track-row';
   row.innerHTML = `
     <div class="fg">
       <label class="flabel" data-upload-t-prefix="upload_music_track_title_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_title_dynamic')} ${index + 1}</label>
       <input type="hidden" name="track_id[]" value="${track?.id || 0}">
-      <input type="text" name="track_title[]" class="finput" maxlength="180" value="${(track?.title || '').replace(/"/g, '&quot;')}">
+      <input type="text" name="track_title[]" class="finput" required maxlength="180" value="${(track?.title || '').replace(/"/g, '&quot;')}">
       <div class="audio-upload-preview is-hidden">
         <span></span>
         <div class="audio-preview-controls">
@@ -398,17 +452,33 @@ function addTrackRow(index, track = null) {
       <label class="flabel" data-upload-t-prefix="upload_music_track_audio_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_audio_dynamic')} ${index + 1}</label>
       ${track?.audio ? `<p class="form-note" data-upload-t-current-file="1" data-file-name="${track.audio}">${uploadText('upload_music_current_file')}: ${track.audio}</p>` : ''}
       <div class="upload-zone upload-zone--compact">
-        <input type="file" name="tracks_audio[]" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a">
+        <input type="file" name="tracks_audio[]" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a" ${track?.audio ? '' : 'required'}>
         <p data-upload-t="${editingRelease ? 'upload_music_replace_audio_help' : 'upload_music_choose_drop_audio_help'}">${editingRelease ? uploadText('upload_music_replace_audio_help') : uploadText('upload_music_choose_drop_audio_help')}</p>
       </div>
     </div>
+    <button type="button" class="btn btn-ghost btn-sm upload-track-remove" data-upload-t="upload_music_remove_track">${uploadText('upload_music_remove_track')}</button>
   `;
+  row.querySelector('.upload-track-remove')?.addEventListener('click', () => {
+    row.querySelectorAll('.audio-upload-preview').forEach((preview) => {
+      const audio = preview.querySelector('audio');
+      if (audio) {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+      }
+      if (preview.dataset.objectUrl) {
+        URL.revokeObjectURL(preview.dataset.objectUrl);
+      }
+    });
+    row.remove();
+    refreshTrackRows();
+  });
   trackList.appendChild(row);
   bindDropZone(row.querySelector('.upload-zone'));
   if (track?.audioUrl) {
     showExistingAudioPreview(row.querySelector('.audio-upload-preview'), track);
   }
-  applyUploadMusicLanguage();
+  refreshTrackRows();
   return row;
 }
 
@@ -427,7 +497,15 @@ function syncReleaseMode() {
   }
 }
 
-addTrackButton?.addEventListener('click', () => addTrackRow(trackList.children.length));
+addTrackButton?.addEventListener('click', () => {
+  if (trackList.children.length >= <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>) {
+    toast(uploadLang() === 'en'
+      ? 'A release can have at most <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> tracks.'
+      : 'Um lançamento pode ter no máximo <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> faixas.');
+    return;
+  }
+  addTrackRow(trackList.children.length);
+});
 typeSelect?.addEventListener('change', syncReleaseMode);
 
 function audioTitleFromFile(file) {
@@ -444,6 +522,31 @@ function attachFileToInput(input, file) {
   if (!input || !file) return;
   input.files = fileListFrom(file);
   input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function clearImagePreview(preview) {
+  if (!preview) return;
+  if (preview.dataset.objectUrl) {
+    URL.revokeObjectURL(preview.dataset.objectUrl);
+    delete preview.dataset.objectUrl;
+  }
+  preview.innerHTML = '';
+  preview.hidden = true;
+}
+
+function updateCoverPreview() {
+  const file = coverInput?.files?.[0];
+  if (!coverImagePreview) return;
+  clearImagePreview(coverImagePreview);
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const image = document.createElement('img');
+  const objectUrl = URL.createObjectURL(file);
+  coverImagePreview.dataset.objectUrl = objectUrl;
+  image.src = objectUrl;
+  image.alt = file.name;
+  coverImagePreview.appendChild(image);
+  coverImagePreview.hidden = false;
 }
 
 function audioPreviewMarkup() {
@@ -581,8 +684,14 @@ function updateAudioPreview(input) {
 }
 
 function fillMultiTracks(files) {
-  const audioFiles = Array.from(files).filter((file) => /\.(mp3|wav|ogg|flac|m4a)$/i.test(file.name));
+  let audioFiles = Array.from(files).filter((file) => /\.(mp3|wav|ogg|flac|m4a)$/i.test(file.name));
   if (!audioFiles.length) return;
+  if (audioFiles.length > <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>) {
+    toast(uploadLang() === 'en'
+      ? 'A release can have at most <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> tracks.'
+      : 'Um lançamento pode ter no máximo <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> faixas.');
+    audioFiles = audioFiles.slice(0, <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>);
+  }
 
   typeSelect.value = audioFiles.length === 1 ? typeSelect.value : 'EP';
   syncReleaseMode();
@@ -638,6 +747,10 @@ function bindDropZone(zone) {
   });
 
   input?.addEventListener('change', () => {
+    if (!isAudioInput) {
+      updateCoverPreview();
+      return;
+    }
     updateAudioPreview(input);
     if (isAudioInput && input.id === 'audio' && input.files.length > 1) {
       fillMultiTracks(input.files);
@@ -679,7 +792,7 @@ multiAudioDrop?.addEventListener('drop', (event) => {
 
 releaseForm?.addEventListener('submit', (event) => {
   if (typeSelect.value === 'Single') {
-    if (!editingRelease && !document.getElementById('audio')?.files?.length) {
+    if ((!editingRelease || !existingSingleAudio) && !document.getElementById('audio')?.files?.length) {
       event.preventDefault();
       toast(uploadText('upload_music_choose_audio_toast'));
     }
@@ -687,11 +800,19 @@ releaseForm?.addEventListener('submit', (event) => {
   }
 
   const rows = Array.from(trackList.querySelectorAll('.frow'));
+  if (rows.length > <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>) {
+    event.preventDefault();
+    toast(uploadLang() === 'en'
+      ? 'A release can have at most <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> tracks.'
+      : 'Um lançamento pode ter no máximo <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?> faixas.');
+    return;
+  }
   const hasCompleteTrack = rows.some((row) => {
     const title = row.querySelector('input[type="text"]')?.value?.trim();
     const file = row.querySelector('input[type="file"]')?.files?.length;
     const trackId = Number(row.querySelector('input[name="track_id[]"]')?.value || 0);
-    return title && (file || (editingRelease && trackId > 0));
+    const currentAudio = existingTracks.find((track) => Number(track.id) === trackId)?.audio || '';
+    return title && (file || (editingRelease && trackId > 0 && currentAudio));
   });
 
   if (!hasCompleteTrack) {

@@ -10,17 +10,20 @@ $sizes = db_all($conn, "SELECT * FROM tamanho WHERE ativo = 1 ORDER BY ordem ASC
 $editId = (int)($_GET['edit'] ?? $_POST['product_id'] ?? 0);
 $editProduct = null;
 $editStocks = [];
+$editImages = [];
 
 if ($editId > 0) {
+    // Product edits are allowed only for the owner and only while not admin-blocked.
     $editProduct = db_one($conn, "SELECT * FROM produto WHERE idProduto = {$editId} AND idCliente = {$uid} LIMIT 1");
     if (!$editProduct || (int)($editProduct['bloqueado_admin'] ?? 0) === 1) {
-        header('Location: upload_merch.php');
+        header('Location: profile.php?tab=merch');
         exit;
     }
 
     foreach (db_all($conn, "SELECT idTamanho, stock FROM produto_tamanho_stock WHERE idProduto = {$editId}") as $stockRow) {
         $editStocks[(int)$stockRow['idTamanho']] = (int)$stockRow['stock'];
     }
+    $editImages = product_images($conn, $editId);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,12 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$err && $name === '') {
         $err = tr('error.product_name_required');
+    } elseif (!$err && ($err = required_field($brand, 'A marca', 'Brand'))) {
+    } elseif (!$err && ($err = required_field($description, 'A descrição', 'Description'))) {
     } elseif (!$err && $price <= 0) {
         $err = tr('error.price_positive');
     } elseif (!$err && $categoryId <= 0) {
         $err = tr('error.category_required');
-    } elseif (!$err && !$usesSizes && $stockTotal < 0) {
-        $err = tr('error.stock_negative');
+    } elseif (!$err && !$usesSizes && $stockTotal <= 0) {
+        $err = current_lang() === 'en' ? 'Stock must be greater than zero.' : 'O stock tem de ser maior que zero.';
     } elseif (!$err && $usesSizes && !$categorySupportsSizes) {
         $err = tr('error.category_no_sizes');
     }
@@ -83,18 +88,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $image = (string)($editProduct['imagem'] ?? '');
-    if (!$err && isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
-        $err = validate_uploaded_image($_FILES['imagem']);
-        $ext = strtolower(pathinfo($_FILES['imagem']['name'], PATHINFO_EXTENSION));
-        if (!$err) {
-            $image = 'product_' . $uid . '_' . time() . '.' . $ext;
-            $imgDir = __DIR__ . '/../assets/img/';
-            if (!is_dir($imgDir)) {
-                mkdir($imgDir, 0775, true);
+    $currentImages = $editProduct ? product_images($conn, $editId) : [];
+    $images = $currentImages;
+    if ($editProduct) {
+        // Existing image hidden inputs say which current images the artist kept.
+        $requestedExistingImages = $_POST['existing_images'] ?? [];
+        if (is_array($requestedExistingImages)) {
+            $images = [];
+            foreach ($requestedExistingImages as $requestedImage) {
+                $cleanImage = clean_product_image_name((string)$requestedImage);
+                if ($cleanImage !== '' && in_array($cleanImage, $currentImages, true)) {
+                    $images[] = $cleanImage;
+                }
             }
-            move_uploaded_file($_FILES['imagem']['tmp_name'], $imgDir . $image);
         }
+    }
+
+    $uploadedImages = [];
+    $imageFiles = $_FILES['imagens'] ?? null;
+    if (!$err && $imageFiles && is_array($imageFiles['name'] ?? null)) {
+        foreach ($imageFiles['name'] as $index => $sourceName) {
+            if ($sourceName === '') {
+                continue;
+            }
+
+            $file = [
+                'name' => $sourceName,
+                'type' => $imageFiles['type'][$index] ?? '',
+                'tmp_name' => $imageFiles['tmp_name'][$index] ?? '',
+                'error' => $imageFiles['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $imageFiles['size'][$index] ?? 0,
+            ];
+
+            $err = validate_uploaded_image($file);
+            if ($err) {
+                break;
+            }
+
+            [$savedImage, $saveErr] = save_uploaded_file($file, 'img', 'product_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], 5_000_000);
+            if ($saveErr) {
+                $err = $saveErr;
+                break;
+            }
+            $uploadedImages[] = $savedImage;
+        }
+    }
+    if (!$err && $uploadedImages) {
+        $images = array_merge($images, $uploadedImages);
+    }
+
+    if (!$err && !$images) {
+        $err = current_lang() === 'en' ? 'Add at least one product image.' : 'Adiciona pelo menos uma imagem do produto.';
+    } elseif (!$err && count($images) > GREENERRY_MAX_PRODUCT_IMAGES) {
+        $err = current_lang() === 'en'
+            ? 'A product can have at most ' . GREENERRY_MAX_PRODUCT_IMAGES . ' images.'
+            : 'Um produto pode ter no máximo ' . GREENERRY_MAX_PRODUCT_IMAGES . ' imagens.';
     }
 
     if (!$err) {
@@ -103,9 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nameSafe = db_escape($conn, $name);
             $brandSafe = db_escape($conn, $brand);
             $descriptionSafe = db_escape($conn, $description);
-            $imageSafe = db_escape($conn, $image);
-
             if ($editProduct) {
+                // Any merch edit goes back to pending review before it can appear publicly.
                 mysqli_query(
                     $conn,
                     "UPDATE produto
@@ -116,7 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          precoAtual = {$price},
                          stock_total = {$stockTotal},
                          usa_tamanhos = {$usesSizes},
-                         imagem = '{$imageSafe}',
                          estado = 'pendente',
                          ativo = 1,
                          motivo_rejeicao = NULL,
@@ -127,15 +173,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $productId = $editId;
                 mysqli_query($conn, "DELETE FROM produto_tamanho_stock WHERE idProduto = {$productId}");
             } else {
+                $commissionPercent = max(0, min(100, (float)site_setting('commission_percent', '5')));
                 mysqli_query(
                     $conn,
-                    "INSERT INTO produto (idCliente, idCategoria, nomeProduto, descricaoProduto, marca, precoAtual, stock_total, usa_tamanhos, imagem, estado, ativo)
-                     VALUES ({$uid}, {$categoryId}, '{$nameSafe}', '{$descriptionSafe}', '{$brandSafe}', {$price}, {$stockTotal}, {$usesSizes}, '{$imageSafe}', 'pendente', 1)"
+                    "INSERT INTO produto (idCliente, idCategoria, nomeProduto, descricaoProduto, marca, precoAtual, stock_total, usa_tamanhos, iva_percentual, comissao_percentual, estado, ativo)
+                     VALUES ({$uid}, {$categoryId}, '{$nameSafe}', '{$descriptionSafe}', '{$brandSafe}', {$price}, {$stockTotal}, {$usesSizes}, 23.00, {$commissionPercent}, 'pendente', 1)"
                 );
                 $productId = (int)mysqli_insert_id($conn);
             }
 
+            save_product_images($conn, $productId, $images);
+
             if ($usesSizes) {
+                // Size-based products derive stock_total from selected size rows.
                 $stockBySize = $_POST['stock_tamanho'] ?? [];
                 $sum = 0;
                 foreach ($sizes as $size) {
@@ -155,8 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             mysqli_commit($conn);
+            delete_orphan_asset_files($conn, 'img', array_diff($currentImages, $images));
+            cleanup_unused_uploaded_assets($conn);
             $ok = $editProduct
-                ? (current_lang() === 'en' ? 'Product updated and sent for review.' : 'Produto atualizado e enviado para revisao.')
+                ? (current_lang() === 'en' ? 'Product updated and sent for review.' : 'Produto atualizado e enviado para revisão.')
                 : tr('success.product_sent');
             if ($editProduct) {
                 $editProduct = db_one($conn, "SELECT * FROM produto WHERE idProduto = {$editId} AND idCliente = {$uid} LIMIT 1");
@@ -164,6 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach (db_all($conn, "SELECT idTamanho, stock FROM produto_tamanho_stock WHERE idProduto = {$editId}") as $stockRow) {
                     $editStocks[(int)$stockRow['idTamanho']] = (int)$stockRow['stock'];
                 }
+                $editImages = product_images($conn, $editId);
             }
         } catch (Throwable $e) {
             mysqli_rollback($conn);
@@ -172,20 +225,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$myProducts = db_all(
-    $conn,
-    "SELECT p.*, cat.nomeCategoria
-     FROM produto p
-     JOIN categoria cat ON cat.idCategoria = p.idCategoria
-     WHERE p.idCliente = {$uid}
-     ORDER BY p.created_at DESC"
-);
-
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
-  <div class="wrap">
+<section class="content-shell upload-merch-page">
+  <div class="wrap-sm">
     <div class="submission-hero submission-hero--merch hero-card--single">
       <div class="submission-hero-copy">
         <span class="slabel" data-t="upload_merch_label">Merch</span>
@@ -196,38 +240,37 @@ include '../includes/header.php';
     <?php if ($err): ?><div class="alert alert-err"><?= h($err) ?></div><?php endif; ?>
     <?php if ($ok): ?><div class="alert alert-ok"><?= h($ok) ?></div><?php endif; ?>
 
-    <div class="two-column-layout">
-      <div class="card surface-card surface-card--soft">
-        <div class="card-body">
-          <form method="post" enctype="multipart/form-data" class="stack-form">
-            <?= csrf_input() ?>
-            <?php if ($editProduct): ?>
-              <input type="hidden" name="product_id" value="<?= (int)$editProduct['idProduto'] ?>">
-            <?php endif; ?>
-            <div class="fg">
-              <label class="flabel" for="nomeProduto" data-t="upload_merch_name">Nome do produto</label>
-              <input id="nomeProduto" type="text" name="nomeProduto" class="finput" required maxlength="150" value="<?= h($editProduct['nomeProduto'] ?? '') ?>">
-            </div>
+    <div class="card surface-card surface-card--soft">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" class="stack-form">
+          <?= csrf_input() ?>
+          <?php if ($editProduct): ?>
+            <input type="hidden" name="product_id" value="<?= (int)$editProduct['idProduto'] ?>">
+          <?php endif; ?>
+          <div class="fg">
+            <label class="flabel" for="nomeProduto" data-t="upload_merch_name">Nome do produto</label>
+            <input id="nomeProduto" type="text" name="nomeProduto" class="finput" required maxlength="150" value="<?= h($editProduct['nomeProduto'] ?? '') ?>">
+          </div>
 
-            <div class="frow">
-              <div class="fg">
-                <label class="flabel" for="marca" data-t="upload_merch_brand">Marca</label>
-                <input id="marca" type="text" name="marca" class="finput" maxlength="100" value="<?= h($editProduct['marca'] ?? '') ?>">
-              </div>
-              <div class="fg">
-                <label class="flabel" for="idCategoria" data-t="upload_merch_category">Categoria</label>
-                <select id="idCategoria" name="idCategoria" class="finput" required>
-                  <option value="" data-t="upload_select">Seleciona</option>
-                  <?php foreach ($categories as $category): ?>
-                    <option
-                      value="<?= (int)$category['idCategoria'] ?>"
-                      data-supports-sizes="<?= (int)($category['usa_tamanhos'] ?? 0) === 1 ? '1' : '0' ?>"
-                      <?= $editProduct && (int)$editProduct['idCategoria'] === (int)$category['idCategoria'] ? 'selected' : '' ?>
-                    ><?= h($category['nomeCategoria']) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
+          <div class="frow">
+            <div class="fg">
+              <label class="flabel" for="marca" data-t="upload_merch_brand">Marca</label>
+              <input id="marca" type="text" name="marca" class="finput" required maxlength="100" value="<?= h($editProduct['marca'] ?? '') ?>">
             </div>
+            <div class="fg">
+              <label class="flabel" for="idCategoria" data-t="upload_merch_category">Categoria</label>
+              <select id="idCategoria" name="idCategoria" class="finput" required>
+                <option value="" data-t="upload_select">Seleciona</option>
+                <?php foreach ($categories as $category): ?>
+                  <option
+                    value="<?= (int)$category['idCategoria'] ?>"
+                    data-supports-sizes="<?= (int)($category['usa_tamanhos'] ?? 0) === 1 ? '1' : '0' ?>"
+                    <?= $editProduct && (int)$editProduct['idCategoria'] === (int)$category['idCategoria'] ? 'selected' : '' ?>
+                  ><?= h($category['nomeCategoria']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
 
             <div class="frow">
               <div class="fg">
@@ -236,26 +279,33 @@ include '../includes/header.php';
               </div>
               <div class="fg" id="stock-total-field">
                 <label class="flabel" for="stock_total" data-t="upload_merch_stock_total">Stock total</label>
-                <input id="stock_total" type="number" name="stock_total" class="finput" min="0" value="<?= (int)($editProduct['stock_total'] ?? 0) ?>">
+                <input id="stock_total" type="number" name="stock_total" class="finput" min="1" required value="<?= (int)($editProduct['stock_total'] ?? 0) ?>">
               </div>
             </div>
 
             <div class="fg">
-              <label class="flabel" for="descricao" data-t="upload_merch_description">Descricao</label>
-              <textarea id="descricao" name="descricao" class="finput" maxlength="2000"><?= h($editProduct['descricaoProduto'] ?? '') ?></textarea>
+              <label class="flabel" for="descricao" data-t="upload_merch_description">Descrição</label>
+              <textarea id="descricao" name="descricao" class="finput" required maxlength="2000"><?= h($editProduct['descricaoProduto'] ?? '') ?></textarea>
             </div>
 
             <div class="fg">
-              <label class="flabel" for="imagem" data-t="upload_merch_image">Imagem</label>
-              <?php if ($editProduct && !empty($editProduct['imagem'])): ?>
-                <div class="edit-media-preview">
-                  <img src="<?= h(asset_url('img', $editProduct['imagem'])) ?>" alt="<?= h($editProduct['nomeProduto']) ?>">
-                  <span><?= current_lang() === 'en' ? 'Current image' : 'Imagem atual' ?></span>
+              <label class="flabel" for="imagens" data-t="upload_merch_image">Imagens</label>
+              <?php if ($editProduct && $editImages): ?>
+                <div class="edit-media-gallery">
+                  <?php foreach ($editImages as $image): ?>
+                    <div class="edit-media-gallery-item">
+                      <img src="<?= h(asset_url('img', $image)) ?>" alt="<?= h($editProduct['nomeProduto']) ?>">
+                      <input type="hidden" name="existing_images[]" value="<?= h($image) ?>">
+                      <button type="button" class="merch-image-preview-remove" data-remove-existing-image aria-label="<?= h(current_lang() === 'en' ? 'Remove image' : 'Remover imagem') ?>">X</button>
+                    </div>
+                  <?php endforeach; ?>
+                  <span data-t="upload_merch_current_images">Imagens atuais</span>
                 </div>
               <?php endif; ?>
-              <div class="upload-zone upload-zone--compact">
-                <input id="imagem" type="file" name="imagem" class="finput" accept=".jpg,.jpeg,.png,.webp">
-                <p data-t="upload_merch_image_help">Carrega a imagem principal do produto.</p>
+              <div class="upload-zone upload-zone--compact merch-image-field">
+                <input id="imagens" type="file" name="imagens[]" class="finput" accept=".jpg,.jpeg,.png,.webp" multiple <?= $editProduct ? '' : 'required' ?>>
+                <div class="merch-image-preview-grid" id="merch-image-preview-grid" hidden></div>
+                <p data-t="upload_merch_image_help">Escolhe uma ou mais imagens do produto.</p>
               </div>
             </div>
 
@@ -287,39 +337,11 @@ include '../includes/header.php';
               <?php endforeach; ?>
             </div>
 
-            <button type="submit" class="btn btn-dark"><?= $editProduct ? (current_lang() === 'en' ? 'Save and send for review' : 'Guardar e enviar para revisao') : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
+            <button type="submit" class="btn btn-dark"><?= $editProduct ? (current_lang() === 'en' ? 'Save and send for review' : 'Guardar e enviar para revisão') : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
             <?php if ($editProduct): ?>
-              <a href="profile.php" class="btn btn-ghost"><?= current_lang() === 'en' ? 'Back to profile' : 'Voltar ao perfil' ?></a>
+              <a href="profile.php?tab=merch" class="btn btn-ghost"><?= current_lang() === 'en' ? 'Back to profile' : 'Voltar ao perfil' ?></a>
             <?php endif; ?>
           </form>
-        </div>
-      </div>
-
-      <div class="card surface-card surface-card--soft">
-        <div class="card-body">
-          <h3 class="section-card-title" data-t="upload_merch_requests">Os meus pedidos</h3>
-          <?php if (!$myProducts): ?>
-            <p data-t="upload_merch_empty">Ainda nao submeteste nenhum produto.</p>
-          <?php else: ?>
-            <div class="message-thread-list">
-              <?php foreach ($myProducts as $product): ?>
-                <article class="message-thread-item">
-                  <div class="message-thread-head">
-                    <strong><?= h($product['nomeProduto']) ?></strong>
-                    <span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-status-label="<?= h($product['estado']) ?>"><?= h(order_status_label($product['estado'])) ?></span>
-                  </div>
-                  <p class="message-thread-meta"><?= h($product['nomeCategoria']) ?> - <?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</p>
-                  <?php if (!empty($product['motivo_rejeicao'])): ?>
-                    <div class="message-reply-box">
-                      <span class="slabel" data-t="upload_rejection_reason">Motivo de rejeicao</span>
-                      <p><?= h($product['motivo_rejeicao']) ?></p>
-                    </div>
-                  <?php endif; ?>
-                </article>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
       </div>
     </div>
   </div>
@@ -335,6 +357,10 @@ const sizeToggleRow = document.getElementById('size-toggle-row');
 const sizeChoices = Array.from(document.querySelectorAll('.size-choice'));
 const sizeStockInputs = Array.from(document.querySelectorAll('.size-stock-input'));
 const merchForm = document.querySelector('form.stack-form');
+const imageInput = document.getElementById('imagens');
+const imagePreviewGrid = document.getElementById('merch-image-preview-grid');
+let merchImagePreviewUrls = [];
+let selectedMerchImages = [];
 
 function categoryAllowsSizes() {
   const option = categorySelect?.options?.[categorySelect.selectedIndex];
@@ -394,6 +420,83 @@ sizeStockInputs.forEach((input) => {
       return;
     }
     choice.checked = Number(input.value || 0) > 0;
+  });
+});
+
+function syncMerchImageInput() {
+  if (!imageInput) {
+    return;
+  }
+
+  const transfer = new DataTransfer();
+  selectedMerchImages.forEach((file) => transfer.items.add(file));
+  imageInput.files = transfer.files;
+}
+
+function clearMerchImagePreviewUrls() {
+  merchImagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+  merchImagePreviewUrls = [];
+}
+
+function renderMerchImagePreviews() {
+  if (!imagePreviewGrid) {
+    return;
+  }
+
+  clearMerchImagePreviewUrls();
+  imagePreviewGrid.innerHTML = '';
+  if (!selectedMerchImages.length) {
+    imagePreviewGrid.hidden = true;
+    return;
+  }
+
+  selectedMerchImages.forEach((file, index) => {
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+    const item = document.createElement('div');
+    item.className = 'merch-image-preview-item';
+
+    const image = document.createElement('img');
+    const objectUrl = URL.createObjectURL(file);
+    merchImagePreviewUrls.push(objectUrl);
+    image.src = objectUrl;
+    image.alt = file.name;
+    image.className = 'merch-image-preview';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'merch-image-preview-remove';
+    removeButton.setAttribute('aria-label', file.name);
+    removeButton.textContent = 'X';
+    removeButton.addEventListener('click', () => {
+      selectedMerchImages.splice(index, 1);
+      syncMerchImageInput();
+      renderMerchImagePreviews();
+    });
+
+    item.appendChild(image);
+    item.appendChild(removeButton);
+    imagePreviewGrid.appendChild(item);
+  });
+  imagePreviewGrid.hidden = imagePreviewGrid.children.length === 0;
+}
+
+imageInput?.addEventListener('change', () => {
+  selectedMerchImages = Array.from(imageInput.files || []).filter((file) => file.type.startsWith('image/'));
+  if (selectedMerchImages.length > <?= (int)GREENERRY_MAX_PRODUCT_IMAGES ?>) {
+    toast((localStorage.getItem('g_lang') || 'pt') === 'en'
+      ? 'A product can have at most <?= (int)GREENERRY_MAX_PRODUCT_IMAGES ?> images.'
+      : 'Um produto pode ter no máximo <?= (int)GREENERRY_MAX_PRODUCT_IMAGES ?> imagens.');
+    selectedMerchImages = selectedMerchImages.slice(0, <?= (int)GREENERRY_MAX_PRODUCT_IMAGES ?>);
+  }
+  syncMerchImageInput();
+  renderMerchImagePreviews();
+});
+
+document.querySelectorAll('[data-remove-existing-image]').forEach((button) => {
+  button.addEventListener('click', () => {
+    button.closest('.edit-media-gallery-item')?.remove();
   });
 });
 

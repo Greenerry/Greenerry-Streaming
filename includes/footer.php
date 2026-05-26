@@ -1,4 +1,5 @@
 <?php if (!isset($_base)) include __DIR__ . '/config.php'; ?>
+<?php if (!empty($showMaintenanceContent)) { ob_end_clean(); } ?>
 <?php
 $translationsJson = file_get_contents(__DIR__ . '/../assets/js/translations.json');
 if ($translationsJson === false) {
@@ -9,6 +10,17 @@ $sitePhone = site_setting('contact_phone', '+351 900 000 000');
 $instagramUrl = site_setting('instagram_url', '#');
 $xUrl = site_setting('x_url', '#');
 ?>
+<?php if (!empty($showMaintenanceContent)): ?>
+  <section class="content-shell maintenance-content">
+    <div class="wrap">
+      <div class="maintenance-panel">
+        <span class="slabel">Greenerry</span>
+        <h1><?= h(tr('maintenance.title')) ?></h1>
+        <p><?= h(tr('maintenance.text')) ?></p>
+      </div>
+    </div>
+  </section>
+<?php endif; ?>
   </div><!-- end .page-body -->
 
   <footer>
@@ -56,18 +68,23 @@ $xUrl = site_setting('x_url', '#');
 
 <aside class="sr" id="sr">
   <div class="sr-head">
-    <span class="sr-lbl" data-t="player_now_en">Now playing</span>
-    <button class="sr-close" id="sr-close" onclick="closeSr()" title="Close">
+    <div class="sr-head-copy">
+      <span class="sr-lbl" data-t="player_now_en">Now playing</span>
+      <span class="sr-head-sub" data-t="player_queue_hint">Queue and artist</span>
+    </div>
+    <button class="sr-close" id="sr-close" onclick="closeSr()" title="Close" aria-label="Close">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
   <div class="sr-body" id="sr-body">
-    <div class="np-cover" id="np-cover">
-      <div class="np-cover-ph" id="np-ph">
-        <svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" opacity=".15"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    <div class="sr-cover-frame">
+      <div class="np-cover" id="np-cover">
+        <div class="np-cover-ph" id="np-ph">
+          <svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" opacity=".15"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <img id="np-img" src="" alt="" class="media-hidden media-cover">
       </div>
-      <img id="np-img" src="" alt="" class="media-hidden media-cover">
     </div>
 
     <div class="np-meta-wrap">
@@ -76,7 +93,7 @@ $xUrl = site_setting('x_url', '#');
           <div class="np-track" id="np-track">-</div>
           <div class="np-artist" id="np-artist"></div>
         </div>
-        <button class="fav-btn" id="fav-btn" onclick="toggleFav()" title="Favorite">
+        <button class="fav-btn" id="fav-btn" onclick="toggleFav()" title="Favorite" aria-label="Favorite">
           <svg id="fav-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
@@ -94,9 +111,11 @@ $xUrl = site_setting('x_url', '#');
       </div>
     </div>
 
-    <div class="queue queue--spaced">
-      <span class="queue-lbl" data-t="player_next">Up next</span>
-      <div id="queue-list"></div>
+    <div class="queue queue-panel">
+      <div class="queue-panel-head">
+        <span class="queue-lbl" data-t="player_next">Up next</span>
+      </div>
+      <div id="queue-list" class="queue-list"></div>
     </div>
   </div>
 
@@ -151,6 +170,20 @@ $xUrl = site_setting('x_url', '#');
 </div><!-- end .shell -->
 <audio id="g-audio" class="media-hidden"></audio>
 <script id="greenerry-translations" type="application/json"><?= $translationsJson ?></script>
-<script src="<?= $_base ?>/assets/js/main.js?v=<?= filemtime(__DIR__ . '/../assets/js/main.js') ?>"></script>
+<?php
+$greenerryScripts = [
+    'core',
+    'favorites',
+    'player',
+    'cart',
+    'navigation',
+    'page-ui',
+    'experience',
+];
+foreach ($greenerryScripts as $script):
+    $scriptPath = __DIR__ . '/../assets/js/greenerry/' . $script . '.js';
+?>
+<script src="<?= $_base ?>/assets/js/greenerry/<?= h($script) ?>.js?v=<?= filemtime($scriptPath) ?>"></script>
+<?php endforeach; ?>
 </body>
 </html>

@@ -5,7 +5,8 @@ require_user_login();
 $uid = current_user_id();
 $ok = '';
 $err = '';
-$activeTab = 'edit';
+$requestedTab = (string)($_GET['tab'] ?? 'edit');
+$activeTab = in_array($requestedTab, ['edit', 'orders', 'music', 'merch'], true) ? $requestedTab : 'edit';
 $user = db_one($conn, "SELECT * FROM cliente WHERE idCliente = {$uid} LIMIT 1");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
@@ -22,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
         if (!$releaseToDelete) {
             $err = tr('error.release_delete');
         } else {
+            // Delete DB rows first, then remove files only after the transaction succeeds.
             $tracksToDelete = db_all($conn, "SELECT idFaixa, ficheiro_audio FROM faixa WHERE idRelease = {$releaseId}");
             $coverToDelete = (string)($releaseToDelete['capa'] ?? '');
             $trackIdsToDelete = array_map(static fn($track) => (int)($track['idFaixa'] ?? 0), $tracksToDelete);
@@ -44,10 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
                 }
                 mysqli_commit($conn);
 
-                delete_asset_file('img', $coverToDelete);
-                foreach ($audioFilesToDelete as $audioFile) {
-                    delete_asset_file('audio', $audioFile);
-                }
+                delete_orphan_asset_file($conn, 'img', $coverToDelete);
+                delete_orphan_asset_files($conn, 'audio', $audioFilesToDelete);
+                cleanup_unused_uploaded_assets($conn);
 
                 $ok = tr('success.release_deleted');
             } catch (Throwable $e) {
@@ -57,36 +58,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
         }
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    // Profile media is optional; existing files are kept unless the user uploads replacements.
     $nome = trim($_POST['nome'] ?? '');
     $telefone = trim($_POST['telefone'] ?? '');
     $bio = trim($_POST['bio'] ?? '');
-    $foto = $user['foto'] ?? '';
-    $banner = $user['banner'] ?? '';
+    $oldFoto = (string)($user['foto'] ?? '');
+    $oldBanner = (string)($user['banner'] ?? '');
+    $foto = $oldFoto;
+    $banner = $oldBanner;
 
     $err = verify_csrf_request()
         ?? validate_nome($nome)
         ?? validate_phone($telefone);
 
-    $imgDir = __DIR__ . '/../assets/img/';
-    if (!is_dir($imgDir)) {
-        mkdir($imgDir, 0775, true);
-    }
-
     if (!$err && isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
         $err = validate_uploaded_image($_FILES['foto']);
-        $ext = strtolower(pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION));
         if (!$err) {
-            $foto = 'avatar_' . $uid . '_' . time() . '.' . $ext;
-            move_uploaded_file($_FILES['foto']['tmp_name'], $imgDir . $foto);
+            [$savedFoto, $saveErr] = save_uploaded_file($_FILES['foto'], 'img', 'avatar_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], 5_000_000);
+            $err = $saveErr ?? '';
+            if (!$err) {
+                $foto = $savedFoto;
+            }
         }
     }
 
     if (!$err && isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
         $err = validate_uploaded_image($_FILES['banner']);
-        $ext = strtolower(pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION));
         if (!$err) {
-            $banner = 'banner_' . $uid . '_' . time() . '.' . $ext;
-            move_uploaded_file($_FILES['banner']['tmp_name'], $imgDir . $banner);
+            [$savedBanner, $saveErr] = save_uploaded_file($_FILES['banner'], 'img', 'banner_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], 5_000_000);
+            $err = $saveErr ?? '';
+            if (!$err) {
+                $banner = $savedBanner;
+            }
         }
     }
 
@@ -112,9 +115,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_release'])) {
 
         $_SESSION['user_name'] = $nome;
         $user = db_one($conn, "SELECT * FROM cliente WHERE idCliente = {$uid} LIMIT 1");
+        if ($oldFoto !== $foto) {
+            delete_orphan_asset_file($conn, 'img', $oldFoto);
+        }
+        if ($oldBanner !== $banner) {
+            delete_orphan_asset_file($conn, 'img', $oldBanner);
+        }
+        cleanup_unused_uploaded_assets($conn);
         $ok = tr('success.profile_updated');
     }
 }
+
+$ordersPerPage = 10;
+$releasesPerPage = 10;
+$productsPerPage = 10;
+// Each profile tab paginates independently through query-string keys.
+$ordersPage = max(1, (int)($_GET['orders_page'] ?? 1));
+$releasesPage = max(1, (int)($_GET['releases_page'] ?? 1));
+$productsPage = max(1, (int)($_GET['products_page'] ?? 1));
+
+$totalOrders = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM encomenda WHERE idCliente = {$uid}")['total'] ?? 0);
+$totalOwnReleases = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM release_musical WHERE idCliente = {$uid}")['total'] ?? 0);
+$totalOwnProducts = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM produto WHERE idCliente = {$uid}")['total'] ?? 0);
+$ordersTotalPages = max(1, (int)ceil($totalOrders / $ordersPerPage));
+$releasesTotalPages = max(1, (int)ceil($totalOwnReleases / $releasesPerPage));
+$productsTotalPages = max(1, (int)ceil($totalOwnProducts / $productsPerPage));
+$ordersPage = min($ordersPage, $ordersTotalPages);
+$releasesPage = min($releasesPage, $releasesTotalPages);
+$productsPage = min($productsPage, $productsTotalPages);
+$ordersOffset = ($ordersPage - 1) * $ordersPerPage;
+$releasesOffset = ($releasesPage - 1) * $releasesPerPage;
+$productsOffset = ($productsPage - 1) * $productsPerPage;
+
+$profilePageUrl = static function (string $tab, string $key, int $targetPage): string {
+    $query = $_GET;
+    $query['tab'] = $tab;
+    $query[$key] = $targetPage;
+    return 'profile.php?' . http_build_query($query);
+};
 
 $orders = db_all(
     $conn,
@@ -123,7 +161,8 @@ $orders = db_all(
      LEFT JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
      WHERE e.idCliente = {$uid}
      GROUP BY e.idEncomenda
-     ORDER BY e.created_at DESC"
+     ORDER BY e.criado_em DESC
+     LIMIT {$ordersPerPage} OFFSET {$ordersOffset}"
 );
 
 $releases = db_all(
@@ -133,17 +172,23 @@ $releases = db_all(
      LEFT JOIN faixa f ON f.idRelease = r.idRelease
      WHERE r.idCliente = {$uid}
      GROUP BY r.idRelease
-     ORDER BY r.created_at DESC"
+     ORDER BY r.criado_em DESC
+     LIMIT {$releasesPerPage} OFFSET {$releasesOffset}"
 );
 
+// Product rows keep category labels beside the moderation state shown in the table.
 $products = db_all(
     $conn,
     "SELECT p.*, cat.nomeCategoria
      FROM produto p
      LEFT JOIN categoria cat ON cat.idCategoria = p.idCategoria
      WHERE p.idCliente = {$uid}
-     ORDER BY p.created_at DESC"
+     ORDER BY p.criado_em DESC
+     LIMIT {$productsPerPage} OFFSET {$productsOffset}"
 );
+
+$totalFollowers = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_artista WHERE idArtista = {$uid}")['total'] ?? 0);
+$totalFollowing = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_artista WHERE idSeguidor = {$uid}")['total'] ?? 0);
 
 include '../includes/header.php';
 ?>
@@ -165,6 +210,14 @@ include '../includes/header.php';
       <span class="badge" data-t="profile_badge">A minha conta</span>
       <h1><?= h($user['nome']) ?></h1>
       <p><?= h($user['bio'] ?: '') ?></p>
+      <div class="artist-follow-stats">
+        <a href="artist.php?id=<?= (int)$uid ?>&followers=1" class="artist-follow-count">
+          <?= (int)$totalFollowers ?>&nbsp;<span data-t="artist_stat_followers">Seguidores</span>
+        </a>
+        <a href="artist.php?id=<?= (int)$uid ?>&following=1" class="artist-follow-count">
+          <?= (int)$totalFollowing ?>&nbsp;<span data-t="artist_stat_following">A seguir</span>
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -174,7 +227,7 @@ include '../includes/header.php';
     <div class="tabs">
       <button class="tab <?= $activeTab === 'edit' ? 'on' : '' ?>" data-tab="edit" data-t="profile_tab_profile">Perfil</button>
       <button class="tab <?= $activeTab === 'orders' ? 'on' : '' ?>" data-tab="orders" data-t="profile_tab_orders">Compras</button>
-      <button class="tab <?= $activeTab === 'music' ? 'on' : '' ?>" data-tab="music" data-t="profile_tab_releases">Lancamentos</button>
+      <button class="tab <?= $activeTab === 'music' ? 'on' : '' ?>" data-tab="music" data-t="profile_tab_releases">Lançamentos</button>
       <button class="tab <?= $activeTab === 'merch' ? 'on' : '' ?>" data-tab="merch" data-t="profile_tab_merch">Merch</button>
     </div>
 
@@ -210,11 +263,17 @@ include '../includes/header.php';
               <div class="fg">
                 <label class="flabel" for="foto" data-t="profile_field_photo">Foto de perfil</label>
                 <input id="foto" type="file" name="foto" class="finput" accept=".jpg,.jpeg,.png,.webp">
+                <div class="profile-upload-preview" data-image-preview-for="foto" <?= empty($user['foto']) ? 'hidden' : '' ?>>
+                  <img src="<?= !empty($user['foto']) ? h(asset_url('img', $user['foto'])) : '' ?>" alt="">
+                </div>
               </div>
 
               <div class="fg">
                 <label class="flabel" for="banner" data-t="profile_field_banner">Banner</label>
                 <input id="banner" type="file" name="banner" class="finput" accept=".jpg,.jpeg,.png,.webp">
+                <div class="profile-upload-preview profile-upload-preview--banner" data-image-preview-for="banner" <?= empty($user['banner']) ? 'hidden' : '' ?>>
+                  <img src="<?= !empty($user['banner']) ? h(asset_url('img', $user['banner'])) : '' ?>" alt="">
+                </div>
               </div>
 
               <button type="submit" name="update_profile" class="btn btn-dark" data-t="profile_save">Guardar alteracoes</button>
@@ -240,19 +299,20 @@ include '../includes/header.php';
               </div>
               <div class="simple-list-item">
                 <div>
-                  <strong data-t="profile_summary_releases">Lancamentos</strong>
-                  <p><?= count($releases) ?> <span data-t="profile_records">registo(s)</span></p>
+                  <strong data-t="profile_summary_releases">Lançamentos</strong>
+                  <p><?= h(count_label($totalOwnReleases, 'record')) ?></p>
                 </div>
               </div>
               <div class="simple-list-item">
                 <div>
                   <strong data-t="profile_summary_products">Produtos</strong>
-                  <p><?= count($products) ?> <span data-t="profile_records">registo(s)</span></p>
+                  <p><?= h(count_label($totalOwnProducts, 'record')) ?></p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -261,7 +321,7 @@ include '../includes/header.php';
         <div class="card-body">
           <h3 class="section-card-title" data-t="profile_orders">As minhas compras</h3>
           <?php if (!$orders): ?>
-            <p data-t="profile_orders_empty">Ainda nao fizeste compras.</p>
+            <p data-t="profile_orders_empty">Ainda não fizeste compras.</p>
           <?php else: ?>
             <div class="tbl-wrap">
               <table>
@@ -279,7 +339,7 @@ include '../includes/header.php';
                   <?php foreach ($orders as $order): ?>
                     <tr>
                       <td><strong>#<?= (int)$order['idEncomenda'] ?></strong></td>
-                      <td><?= date('d/m/Y', strtotime($order['created_at'])) ?></td>
+                      <td><?= date('d/m/Y', strtotime($order['criado_em'])) ?></td>
                       <td><span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span></td>
                       <td><span class="badge <?= h(state_badge_class($order['estado_pagamento'])) ?>" data-status-label="<?= h($order['estado_pagamento']) ?>"><?= h(payment_status_label($order['estado_pagamento'])) ?></span></td>
                       <td><?= h(format_eur((float)$order['total_final'])) ?></td>
@@ -289,6 +349,13 @@ include '../includes/header.php';
                 </tbody>
               </table>
             </div>
+            <?php if ($ordersTotalPages > 1): ?>
+              <nav class="pager" aria-label="Pagination">
+                <?= $ordersPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('orders', 'orders_page', $ordersPage - 1)) . '" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+                <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$ordersPage ?> <span data-t="pagination_of">de</span> <?= (int)$ordersTotalPages ?></span>
+                <?= $ordersPage < $ordersTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('orders', 'orders_page', $ordersPage + 1)) . '" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+              </nav>
+            <?php endif; ?>
           <?php endif; ?>
         </div>
       </div>
@@ -298,19 +365,19 @@ include '../includes/header.php';
       <div class="card surface-card">
         <div class="card-body">
           <div class="between mb6">
-            <h3 class="section-card-title" data-t="profile_releases">Os meus lancamentos</h3>
-            <a href="upload_music.php" class="btn btn-dark btn-sm" data-t="profile_new_release">Novo lancamento</a>
+            <h3 class="section-card-title" data-t="profile_releases">Os meus lançamentos</h3>
+            <a href="upload_music.php" class="btn btn-dark btn-sm" data-t="profile_new_release">Novo lançamento</a>
           </div>
 
           <?php if (!$releases): ?>
-            <p data-t="profile_releases_empty">Ainda nao submeteste lancamentos.</p>
+            <p data-t="profile_releases_empty">Ainda não submeteste lançamentos.</p>
           <?php else: ?>
             <div class="tbl-wrap">
               <table>
                 <thead>
                   <tr>
                     <th data-t="profile_table_cover">Capa</th>
-                    <th data-t="profile_table_title">Titulo</th>
+                    <th data-t="profile_table_title">Título</th>
                     <th data-t="profile_table_type">Tipo</th>
                     <th data-t="profile_table_tracks">Faixas</th>
                     <th data-t="profile_table_status">Estado</th>
@@ -362,6 +429,13 @@ include '../includes/header.php';
                 </tbody>
               </table>
             </div>
+            <?php if ($releasesTotalPages > 1): ?>
+              <nav class="pager" aria-label="Pagination">
+                <?= $releasesPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('music', 'releases_page', $releasesPage - 1)) . '" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+                <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$releasesPage ?> <span data-t="pagination_of">de</span> <?= (int)$releasesTotalPages ?></span>
+                <?= $releasesPage < $releasesTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('music', 'releases_page', $releasesPage + 1)) . '" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+              </nav>
+            <?php endif; ?>
           <?php endif; ?>
         </div>
       </div>
@@ -376,7 +450,7 @@ include '../includes/header.php';
           </div>
 
           <?php if (!$products): ?>
-            <p data-t="profile_products_empty">Ainda nao submeteste merch.</p>
+            <p data-t="profile_products_empty">Ainda não submeteste merch.</p>
           <?php else: ?>
             <div class="tbl-wrap">
               <table>
@@ -393,11 +467,12 @@ include '../includes/header.php';
                 </thead>
                 <tbody>
                   <?php foreach ($products as $product): ?>
+                    <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
                     <tr>
                       <td>
                         <div class="admin-table-thumb">
-                          <?php if (!empty($product['imagem'])): ?>
-                            <img src="<?= h(asset_url('img', $product['imagem'])) ?>" alt="<?= h($product['nomeProduto']) ?>">
+                          <?php if ($productImage): ?>
+                            <img src="<?= h(asset_url('img', $productImage)) ?>" alt="<?= h($product['nomeProduto']) ?>">
                           <?php else: ?>
                             <span data-t="products_no_image">Sem imagem</span>
                           <?php endif; ?>
@@ -409,7 +484,13 @@ include '../includes/header.php';
                           <br><span class="color-text3"><?= h($product['motivo_rejeicao']) ?></span>
                         <?php endif; ?>
                       </td>
-                      <td><?= !empty($product['nomeCategoria']) ? h($product['nomeCategoria']) : '<span data-t="profile_no_category">Sem categoria</span>' ?></td>
+                      <td>
+                        <?php if (!empty($product['nomeCategoria'])): ?>
+                          <span data-product-category="<?= h($product['nomeCategoria']) ?>"><?= h(category_label($product['nomeCategoria'])) ?></span>
+                        <?php else: ?>
+                          <span data-t="profile_no_category">Sem categoria</span>
+                        <?php endif; ?>
+                      </td>
                       <td><?= h(format_eur((float)$product['precoAtual'])) ?></td>
                       <td><?= (int)$product['stock_total'] ?></td>
                       <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-status-label="<?= h($product['estado']) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
@@ -432,6 +513,13 @@ include '../includes/header.php';
                 </tbody>
               </table>
             </div>
+            <?php if ($productsTotalPages > 1): ?>
+              <nav class="pager" aria-label="Pagination">
+                <?= $productsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('merch', 'products_page', $productsPage - 1)) . '" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+                <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$productsPage ?> <span data-t="pagination_of">de</span> <?= (int)$productsTotalPages ?></span>
+                <?= $productsPage < $productsTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($profilePageUrl('merch', 'products_page', $productsPage + 1)) . '" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+              </nav>
+            <?php endif; ?>
           <?php endif; ?>
         </div>
       </div>

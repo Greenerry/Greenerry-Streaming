@@ -17,7 +17,15 @@ $order = db_one(
      JOIN cliente c ON c.idCliente = e.idCliente
      LEFT JOIN morada_encomenda me ON me.idEncomenda = e.idEncomenda
      WHERE e.idEncomenda = {$orderId}
-       AND e.idCliente = {$uid}
+       AND (
+         e.idCliente = {$uid}
+         OR EXISTS (
+           SELECT 1
+           FROM encomenda_item ei
+           WHERE ei.idEncomenda = e.idEncomenda
+             AND ei.idArtista = {$uid}
+         )
+       )
      LIMIT 1"
 );
 
@@ -81,7 +89,7 @@ td{padding:12px 10px;border-bottom:1px solid #e4e9e6;color:#1f3028;}
     </div>
     <div class="col right">
       <div class="label">' . h($receiptDetails) . '</div>
-      <p class="value">' . h($receiptDate) . ': <strong>' . date('d/m/Y', strtotime($order['created_at'])) . '</strong></p>
+      <p class="value">' . h($receiptDate) . ': <strong>' . date('d/m/Y', strtotime($order['criado_em'])) . '</strong></p>
       <p class="value">' . h($receiptStatus) . ': <strong>' . h(order_status_label($order['estado_encomenda'])) . '</strong></p>
       <p class="value">' . h($receiptPayment) . ': <strong>' . h(payment_method_label($order['metodo_pagamento'])) . '</strong></p>
     </div>

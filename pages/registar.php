@@ -21,31 +21,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$err) {
-        $emailSafe = db_escape($conn, $emailValue);
-        $exists = db_one($conn, "SELECT idCliente FROM cliente WHERE email = '{$emailSafe}' LIMIT 1");
+        $exists = db_one_prepared($conn, "SELECT idCliente FROM cliente WHERE email = ? LIMIT 1", 's', [$emailValue]);
         if ($exists) {
             $err = tr('error.account_exists');
         } else {
-            $nomeSafe = db_escape($conn, $nomeValue);
             $slug = ensure_unique_cliente_slug($conn, $nomeValue);
-            $slugSafe = db_escape($conn, $slug);
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $passwordSafe = db_escape($conn, $passwordHash);
 
-            $sql = "INSERT INTO cliente (nome, email, palavra_passe, slug, estado)
-                    VALUES ('{$nomeSafe}', '{$emailSafe}', '{$passwordSafe}', '{$slugSafe}', 'ativo')";
-
-            if (mysqli_query($conn, $sql)) {
+            if (db_prepared(
+                $conn,
+                "INSERT INTO cliente (nome, email, palavra_passe, slug, estado)
+                 VALUES (?, ?, ?, ?, 'inativo')",
+                'ssss',
+                [$nomeValue, $emailValue, $passwordHash, $slug]
+            )) {
                 $newUserId = (int)mysqli_insert_id($conn);
-                $newUser = db_one($conn, "SELECT * FROM cliente WHERE idCliente = {$newUserId} LIMIT 1");
+                $newUser = db_one_prepared($conn, "SELECT * FROM cliente WHERE idCliente = ? LIMIT 1", 'i', [$newUserId]);
 
                 if ($newUser) {
-                    login_user_session($newUser);
-                    header('Location: index.php');
-                    exit;
+                    $token = create_email_verification($conn, $newUserId);
+                    if ($token && send_email_verification($newUser, $token)) {
+                        $ok = tr('success.account_created');
+                        $nomeValue = '';
+                        $emailValue = '';
+                    } else {
+                        db_prepared($conn, "DELETE FROM cliente WHERE idCliente = ?", 'i', [$newUserId]);
+                        $err = tr('error.verification_email_send');
+                    }
+                } else {
+                    $err = tr('error.create_account');
                 }
-
-                $ok = tr('success.account_created');
             } else {
                 $err = tr('error.create_account');
             }
@@ -62,7 +67,7 @@ include '../includes/header.php';
       <div class="auth-card-head">
         <span class="slabel" data-t="register_label">Registo</span>
         <h2 data-t="register_title">Criar conta</h2>
-        <p data-t="register_card_intro">Comeca com uma conta de listener. Depois podes publicar musica e merch pelo teu perfil.</p>
+        <p data-t="register_card_intro">Começa com uma conta de listener. Depois podes publicar música e merch pelo teu perfil.</p>
       </div>
 
       <?php if ($err): ?>
@@ -100,7 +105,7 @@ include '../includes/header.php';
       </form>
 
       <p class="auth-foot-note auth-foot-note--center">
-        <span data-t="register_have_account">Ja tens conta?</span>
+        <span data-t="register_have_account">Já tens conta?</span>
         <a href="login.php" data-t="register_login">Entrar</a>
       </p>
     </div>

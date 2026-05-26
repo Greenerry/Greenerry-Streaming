@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/config.php';
-require_admin_login();
+require_admin_permission('products');
 
 $adminId = current_admin_id();
 $feedback = '';
@@ -15,19 +15,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($feedback === '' && $productId > 0 && in_array($action, ['aprovar', 'rejeitar', 'inativar', 'reativar'], true)) {
         if ($action === 'aprovar') {
             mysqli_query($conn, "UPDATE produto SET estado = 'aprovado', motivo_rejeicao = NULL, idAdminAprovacao = {$adminId}, aprovado_em = NOW(), ativo = 1 WHERE idProduto = {$productId}");
+            send_product_review_email($conn, $productId, $action);
+            notify_product_review($conn, $productId, $action);
             $feedback = tr('success.product_approved');
         } elseif ($action === 'rejeitar') {
             mysqli_query($conn, "UPDATE produto SET estado = 'rejeitado', motivo_rejeicao = '{$reasonSafe}', idAdminAprovacao = {$adminId}, aprovado_em = NOW(), ativo = 0 WHERE idProduto = {$productId}");
+            send_product_review_email($conn, $productId, $action, $reason);
+            notify_product_review($conn, $productId, $action, $reason);
             $feedback = tr('success.product_rejected');
         } elseif ($action === 'inativar') {
             mysqli_query($conn, "UPDATE produto SET estado = 'inativo', ativo = 0, bloqueado_admin = 1 WHERE idProduto = {$productId}");
+            notify_product_review($conn, $productId, $action);
             $feedback = tr('success.product_deactivated');
         } elseif ($action === 'reativar') {
             mysqli_query($conn, "UPDATE produto SET estado = 'aprovado', ativo = 1, bloqueado_admin = 0 WHERE idProduto = {$productId}");
+            notify_product_review($conn, $productId, $action);
             $feedback = tr('success.product_reactivated');
         }
     }
 }
+
+$adminProductsPerPage = 50;
+$adminProductsPage = max(1, (int)($_GET['page'] ?? 1));
+$totalAdminProducts = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM produto")['total'] ?? 0);
+$adminProductsTotalPages = max(1, (int)ceil($totalAdminProducts / $adminProductsPerPage));
+$adminProductsPage = min($adminProductsPage, $adminProductsTotalPages);
+$adminProductsOffset = ($adminProductsPage - 1) * $adminProductsPerPage;
 
 $pending = db_all(
     $conn,
@@ -36,7 +49,8 @@ $pending = db_all(
      JOIN cliente c ON c.idCliente = p.idCliente
      JOIN categoria cat ON cat.idCategoria = p.idCategoria
      WHERE p.estado = 'pendente'
-     ORDER BY p.created_at DESC"
+     ORDER BY p.criado_em DESC
+     LIMIT 30"
 );
 
 $allProducts = db_all(
@@ -45,7 +59,8 @@ $allProducts = db_all(
      FROM produto p
      JOIN cliente c ON c.idCliente = p.idCliente
      JOIN categoria cat ON cat.idCategoria = p.idCategoria
-     ORDER BY p.created_at DESC"
+     ORDER BY p.criado_em DESC
+     LIMIT {$adminProductsPerPage} OFFSET {$adminProductsOffset}"
 );
 
 $productStats = [
@@ -55,16 +70,18 @@ $productStats = [
     'inativos' => 0,
 ];
 
-foreach ($allProducts as $product) {
-    $state = (string)($product['estado'] ?? '');
-    if ($state === 'pendente') {
-        $productStats['pendentes']++;
+foreach (db_all($conn, "SELECT estado, COUNT(*) AS total FROM produto GROUP BY estado") as $row) {
+    $state = (string)($row['estado'] ?? '');
+    if (isset($productStats[$state . 's'])) {
+        $productStats[$state . 's'] = (int)$row['total'];
+    } elseif ($state === 'pendente') {
+        $productStats['pendentes'] = (int)$row['total'];
     } elseif ($state === 'aprovado') {
-        $productStats['aprovados']++;
+        $productStats['aprovados'] = (int)$row['total'];
     } elseif ($state === 'rejeitado') {
-        $productStats['rejeitados']++;
+        $productStats['rejeitados'] = (int)$row['total'];
     } elseif ($state === 'inativo') {
-        $productStats['inativos']++;
+        $productStats['inativos'] = (int)$row['total'];
     }
 }
 
@@ -77,25 +94,17 @@ include 'admin_header.php';
     <h2 data-admin-t="products_title">Produtos</h2>
     <p data-admin-t="products_intro">Aprova, bloqueia e acompanha todo o merch da Greenerry.</p>
   </div>
+  <div class="stats-grid admin-top-stats">
+    <button type="button" class="stat stat-button" data-admin-stat-filter="products-search" data-filter-value="pendente"><div class="stat-val"><?= (int)$productStats['pendentes'] ?></div><div class="stat-lbl" data-admin-t="state_pending">Pendentes</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="products-search" data-filter-value="aprovado"><div class="stat-val"><?= (int)$productStats['aprovados'] ?></div><div class="stat-lbl" data-admin-t="state_approved">Aprovados</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="products-search" data-filter-value="rejeitado"><div class="stat-val"><?= (int)$productStats['rejeitados'] ?></div><div class="stat-lbl" data-admin-t="state_rejected">Rejeitados</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="products-search" data-filter-value="inativo"><div class="stat-val"><?= (int)$productStats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></button>
+  </div>
 </div>
 
 <?php if ($feedback): ?>
   <div class="alert alert-ok"><?= h($feedback) ?></div>
 <?php endif; ?>
-
-<div class="stats-grid">
-  <div class="stat"><div class="stat-val"><?= (int)$productStats['pendentes'] ?></div><div class="stat-lbl" data-admin-t="state_pending">Pendentes</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$productStats['aprovados'] ?></div><div class="stat-lbl" data-admin-t="state_approved">Aprovados</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$productStats['rejeitados'] ?></div><div class="stat-lbl" data-admin-t="state_rejected">Rejeitados</div></div>
-  <div class="stat"><div class="stat-val"><?= (int)$productStats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></div>
-</div>
-
-<div class="admin-search-row">
-  <label class="sbar">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="search" data-admin-search="products-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
-  </label>
-</div>
 
 <div id="products-search" data-admin-search-scope>
 <section class="acard-box">
@@ -109,7 +118,8 @@ include 'admin_header.php';
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($pending as $product): ?>
-        <article class="admin-review-card">
+        <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
+        <article class="admin-review-card" data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
               <span class="badge badge-light"><?= h($product['nomeCategoria']) ?></span>
@@ -117,24 +127,24 @@ include 'admin_header.php';
               <p><span data-admin-t="label_artist">Artista</span>: <?= h($product['artista']) ?></p>
               <p><span data-admin-t="label_price">Preco</span>: <?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</p>
               <p>IVA: <?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</p>
-              <p><span data-admin-t="label_commission">Comissao</span>: <?= number_format((float)$product['comissao_percentual'], 2, ',', '.') ?>%</p>
+              <p><span data-admin-t="label_commission">Comissão</span>: <?= number_format((float)$product['comissao_percentual'], 2, ',', '.') ?>%</p>
               <p><span data-admin-t="label_total_stock">Stock total</span>: <?= (int)$product['stock_total'] ?></p>
               <?php if (!empty($product['descricaoProduto'])): ?>
                 <p><?= h($product['descricaoProduto']) ?></p>
               <?php endif; ?>
             </div>
-            <?php if (!empty($product['imagem'])): ?>
-              <img src="../assets/img/<?= h($product['imagem']) ?>" alt="" class="admin-review-image">
+            <?php if ($productImage): ?>
+              <img src="../assets/img/<?= h($productImage) ?>" alt="" class="admin-review-image">
             <?php endif; ?>
           </div>
 
           <form method="post" class="admin-review-actions">
             <?= csrf_input() ?>
             <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
-            <textarea name="reason" class="finput" placeholder="Motivo de rejeicao (opcional para aprovar, recomendado para rejeitar)." data-admin-tp="products_reason_placeholder"></textarea>
+            <textarea name="reason" class="finput" placeholder="Motivo de rejeição (opcional para aprovar, recomendado para rejeitar)." data-admin-tp="products_reason_placeholder"></textarea>
             <div class="admin-action-buttons">
               <button type="submit" name="action" value="aprovar" class="btn btn-dark btn-sm" data-admin-t="btn_approve">Aprovar</button>
-              <button type="submit" name="action" value="rejeitar" class="btn btn-danger btn-sm" data-admin-t="btn_reject">Rejeitar</button>
+              <button type="submit" name="action" value="rejeitar" class="btn btn-danger btn-sm" data-confirm="Rejeitar este produto?" data-admin-t="btn_reject">Rejeitar</button>
             </div>
           </form>
         </article>
@@ -146,11 +156,17 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="products_all">Todos os produtos</h4>
-    <span class="badge badge-light"><?= count($allProducts) ?></span>
+    <div class="admin-card-head-tools">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" data-admin-search="products-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
+      </label>
+      <span class="badge badge-light"><?= (int)$totalAdminProducts ?></span>
+    </div>
   </div>
 
   <?php if (!$allProducts): ?>
-    <p data-admin-t="products_empty_all">Ainda nao existem produtos registados.</p>
+    <p data-admin-t="products_empty_all">Ainda não existem produtos registados.</p>
   <?php else: ?>
     <div class="tbl-wrap">
       <table>
@@ -168,12 +184,13 @@ include 'admin_header.php';
         </thead>
         <tbody>
           <?php foreach ($allProducts as $product): ?>
-            <tr>
+            <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
+            <tr data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
               <td>#<?= (int)$product['idProduto'] ?></td>
               <td>
                 <div class="admin-table-thumb">
-                  <?php if (!empty($product['imagem'])): ?>
-                    <img src="../assets/img/<?= h($product['imagem']) ?>" alt="">
+                  <?php if ($productImage): ?>
+                    <img src="../assets/img/<?= h($productImage) ?>" alt="">
                   <?php else: ?>
                     <span data-admin-t="products_no_image">Sem imagem</span>
                   <?php endif; ?>
@@ -194,11 +211,11 @@ include 'admin_header.php';
                   <?= csrf_input() ?>
                   <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
                   <?php if ($product['estado'] === 'aprovado' && (int)$product['ativo'] === 1): ?>
-                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-admin-t="btn_deactivate">Inativar</button>
+                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-confirm="Inativar este produto?" data-admin-t="btn_deactivate">Inativar</button>
                   <?php elseif ($product['estado'] !== 'pendente'): ?>
                     <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
                   <?php else: ?>
-                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisão</span>
                   <?php endif; ?>
                 </form>
               </td>
@@ -207,6 +224,13 @@ include 'admin_header.php';
         </tbody>
       </table>
     </div>
+    <?php if ($adminProductsTotalPages > 1): ?>
+      <nav class="pager" aria-label="Pagination">
+        <?= $adminProductsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage - 1) . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status">Página <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
+        <?= $adminProductsPage < $adminProductsTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage + 1) . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+      </nav>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 </div>

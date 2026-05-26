@@ -8,6 +8,13 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+if (!active_user_session($conn)) {
+    end_user_session_only();
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => tr('error.account_inactive')], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $uid = current_user_id();
 $type = $_POST['type'] ?? '';
 $id = (int)($_POST['id'] ?? 0);
@@ -24,6 +31,7 @@ if ($id <= 0 || !in_array($type, ['music', 'merch'], true)) {
     exit;
 }
 
+// Artists may only pause/reactivate their own approved catalog items.
 if ($type === 'music') {
     $row = db_one(
         $conn,
@@ -48,6 +56,7 @@ if ($type === 'music') {
     $newActive = (int)$row['ativo'] === 1 ? 0 : 1;
     $newState = $newActive === 1 ? 'aprovado' : 'inativo';
 
+    // Keep release and track visibility in sync for the music catalog.
     mysqli_query($conn, "UPDATE release_musical SET ativo = {$newActive}, estado = '{$newState}' WHERE idRelease = {$id}");
     mysqli_query($conn, "UPDATE faixa SET ativo = {$newActive}, estado = '" . ($newActive === 1 ? 'aprovada' : 'inativa') . "' WHERE idRelease = {$id}");
 
@@ -77,6 +86,7 @@ if ((int)($row['bloqueado_admin'] ?? 0) === 1) {
 
 $newActive = (int)$row['ativo'] === 1 ? 0 : 1;
 $newState = $newActive === 1 ? 'aprovado' : 'inativo';
+// Merch has one catalog row, so only the product state needs to change.
 mysqli_query($conn, "UPDATE produto SET ativo = {$newActive}, estado = '{$newState}' WHERE idProduto = {$id}");
 
 echo json_encode(['success' => true, 'enabled' => $newActive], JSON_UNESCAPED_UNICODE);

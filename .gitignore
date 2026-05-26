@@ -19,6 +19,11 @@ yarn-error.log*
 # Uploads and user content
 assets/img/uploads/
 assets/audio/uploads/
+assets/audio/track_*
+assets/img/avatar_*
+assets/img/banner_*
+assets/img/product_*
+assets/img/release_*
 temp/
 cache/
 logs/
@@ -54,6 +59,7 @@ tmp/
 
 # Composer
 vendor/
+composer.phar
 
 # Build artifacts
 dist/

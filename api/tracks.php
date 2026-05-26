@@ -24,7 +24,7 @@ $tracks = db_all(
        AND f.estado = 'aprovada'
        AND f.ativo = 1
        AND c.estado = 'ativo'
-     ORDER BY COALESCE(r.data_lancamento, DATE(r.created_at)) DESC, r.idRelease DESC, f.numero_faixa ASC"
+     ORDER BY COALESCE(r.data_lancamento, DATE(r.criado_em)) DESC, r.idRelease DESC, f.numero_faixa ASC"
 );
 
 echo json_encode($tracks, JSON_UNESCAPED_UNICODE);

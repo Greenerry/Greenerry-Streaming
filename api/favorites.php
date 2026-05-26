@@ -8,6 +8,13 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+if (!active_user_session($conn)) {
+    end_user_session_only();
+    http_response_code(403);
+    echo json_encode(['error' => tr('error.account_inactive')], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $uid = current_user_id();
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -18,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !verify_csrf_token($_POST['csrf_tok
 }
 
 if ($action === 'get') {
-    $rows = db_all(
+    $rows = db_all_prepared(
         $conn,
         "SELECT
             fm.idFavorito,
@@ -36,8 +43,10 @@ if ($action === 'get') {
          JOIN faixa f ON f.idFaixa = fm.idFaixa
          JOIN release_musical r ON r.idRelease = f.idRelease
          JOIN cliente c ON c.idCliente = r.idCliente
-         WHERE fm.idCliente = {$uid}
-         ORDER BY fm.created_at DESC"
+         WHERE fm.idCliente = ?
+         ORDER BY fm.criado_em DESC",
+        'i',
+        [$uid]
     );
 
     $result = [];
@@ -68,14 +77,14 @@ if ($action === 'add') {
         exit;
     }
 
-    $trackExists = db_one($conn, "SELECT idFaixa FROM faixa WHERE idFaixa = {$trackId} AND ativo = 1 LIMIT 1");
+    $trackExists = db_one_prepared($conn, "SELECT idFaixa FROM faixa WHERE idFaixa = ? AND ativo = 1 LIMIT 1", 'i', [$trackId]);
     if (!$trackExists) {
         http_response_code(404);
         echo json_encode(['error' => tr('error.api_invalid_request')], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    mysqli_query($conn, "INSERT IGNORE INTO favorito_musica (idCliente, idFaixa) VALUES ({$uid}, {$trackId})");
+    db_prepared($conn, "INSERT IGNORE INTO favorito_musica (idCliente, idFaixa) VALUES (?, ?)", 'ii', [$uid, $trackId]);
     echo json_encode(['status' => 'added'], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -88,7 +97,7 @@ if ($action === 'remove') {
         exit;
     }
 
-    mysqli_query($conn, "DELETE FROM favorito_musica WHERE idCliente = {$uid} AND idFaixa = {$trackId}");
+    db_prepared($conn, "DELETE FROM favorito_musica WHERE idCliente = ? AND idFaixa = ?", 'ii', [$uid, $trackId]);
     echo json_encode(['status' => 'removed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -101,7 +110,7 @@ if ($action === 'check') {
         exit;
     }
 
-    $exists = db_one($conn, "SELECT idFavorito FROM favorito_musica WHERE idCliente = {$uid} AND idFaixa = {$trackId} LIMIT 1");
+    $exists = db_one_prepared($conn, "SELECT idFavorito FROM favorito_musica WHERE idCliente = ? AND idFaixa = ? LIMIT 1", 'ii', [$uid, $trackId]);
     echo json_encode(['isFavorited' => (bool)$exists], JSON_UNESCAPED_UNICODE);
     exit;
 }

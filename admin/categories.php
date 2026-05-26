@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/config.php';
-require_admin_login();
+require_admin_permission('categories');
 
 $adminId = current_admin_id();
 $feedback = '';
@@ -117,6 +117,24 @@ $categories = db_all(
      ORDER BY cat.estado ASC, cat.nomeCategoria ASC"
 );
 
+$categoryStats = [
+    'ativos' => 0,
+    'inativos' => 0,
+    'tamanhos' => 0,
+    'produtos' => 0,
+];
+foreach ($categories as $category) {
+    if (($category['estado'] ?? '') === 'ativo') {
+        $categoryStats['ativos']++;
+    } else {
+        $categoryStats['inativos']++;
+    }
+    if ((int)($category['usa_tamanhos'] ?? 0) === 1) {
+        $categoryStats['tamanhos']++;
+    }
+    $categoryStats['produtos'] += (int)($category['total_produtos'] ?? 0);
+}
+
 $sizes = db_all($conn, "SELECT * FROM tamanho ORDER BY ordem ASC, etiqueta ASC");
 
 include 'admin_header.php';
@@ -128,6 +146,12 @@ include 'admin_header.php';
     <h2 data-admin-t="categories_title">Categorias</h2>
     <p data-admin-t="categories_intro">Organiza categorias, tamanhos e estados usados no merch.</p>
   </div>
+  <div class="stats-grid admin-top-stats">
+    <button type="button" class="stat stat-button" data-admin-stat-filter="categories-search" data-filter-value="ativo"><div class="stat-val"><?= (int)$categoryStats['ativos'] ?></div><div class="stat-lbl" data-admin-t="state_active">Ativo</div></button>
+    <button type="button" class="stat stat-button" data-admin-stat-filter="categories-search" data-filter-value="inativo"><div class="stat-val"><?= (int)$categoryStats['inativos'] ?></div><div class="stat-lbl" data-admin-t="state_inactive">Inativos</div></button>
+    <div class="stat"><div class="stat-val"><?= (int)$categoryStats['tamanhos'] ?></div><div class="stat-lbl" data-admin-t="categories_uses_sizes">Usa tamanhos</div></div>
+    <div class="stat"><div class="stat-val"><?= (int)$categoryStats['produtos'] ?></div><div class="stat-lbl" data-admin-t="categories_products_count">produtos</div></div>
+  </div>
 </div>
 
 <?php if ($feedback): ?>
@@ -138,13 +162,13 @@ include 'admin_header.php';
 <?php endif; ?>
 
 <div class="admin-workspace-grid">
-  <section class="acard-box">
-    <div class="acard-box-head">
+  <details class="acard-box admin-collapse-panel">
+    <summary class="acard-box-head admin-collapse-summary">
       <div>
         <span class="admin-kicker" data-admin-t="categories_new_kicker">Catalogo</span>
         <h4 data-admin-t="categories_new_title">Nova categoria</h4>
       </div>
-    </div>
+    </summary>
 
     <form method="post" class="stack-form admin-category-create-form">
       <?= csrf_input() ?>
@@ -156,7 +180,7 @@ include 'admin_header.php';
       </div>
 
       <div class="fg admin-category-description-field">
-        <label class="flabel" for="new-category-description" data-admin-t="categories_description">Descricao</label>
+        <label class="flabel" for="new-category-description" data-admin-t="categories_description">Descrição</label>
         <textarea id="new-category-description" name="descricaoCategoria" class="finput" rows="4"></textarea>
       </div>
 
@@ -175,22 +199,22 @@ include 'admin_header.php';
 
       <button type="submit" class="btn btn-dark admin-category-submit" data-admin-t="categories_create">Criar categoria</button>
     </form>
-  </section>
+  </details>
 
-  <section class="acard-box">
-    <div class="acard-box-head">
+  <details class="acard-box admin-collapse-panel">
+    <summary class="acard-box-head admin-collapse-summary">
       <div>
         <span class="admin-kicker" data-admin-t="categories_sizes_kicker">Tamanhos</span>
         <h4 data-admin-t="categories_sizes_title">Gerir tamanhos</h4>
       </div>
-    </div>
+    </summary>
 
     <form method="post" class="admin-size-create-form">
       <?= csrf_input() ?>
       <input type="hidden" name="action" value="create_size">
 
       <div class="fg">
-        <label class="flabel" for="new-size-code" data-admin-t="sizes_code">Codigo</label>
+        <label class="flabel" for="new-size-code" data-admin-t="sizes_code">Código</label>
         <input id="new-size-code" type="text" name="codigo" class="finput" required maxlength="20" placeholder="XL">
       </div>
 
@@ -221,7 +245,7 @@ include 'admin_header.php';
           <input type="hidden" name="size_id" value="<?= (int)$size['idTamanho'] ?>">
 
           <div class="fg">
-            <label class="flabel" data-admin-t="sizes_code">Codigo</label>
+            <label class="flabel" data-admin-t="sizes_code">Código</label>
             <input type="text" name="codigo" class="finput" value="<?= h($size['codigo']) ?>" required maxlength="20">
           </div>
 
@@ -245,29 +269,28 @@ include 'admin_header.php';
         </form>
       <?php endforeach; ?>
     </div>
-  </section>
-</div>
-
-<div class="admin-search-row">
-  <label class="sbar">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input type="search" data-admin-search="categories-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
-  </label>
+  </details>
 </div>
 
 <div id="categories-search" data-admin-search-scope>
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="categories_all">Categorias existentes</h4>
-    <span class="badge badge-light"><?= count($categories) ?></span>
+    <div class="admin-card-head-tools">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" data-admin-search="categories-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
+      </label>
+      <span class="badge badge-light"><?= count($categories) ?></span>
+    </div>
   </div>
 
   <?php if (!$categories): ?>
-    <p data-admin-t="categories_empty">Ainda nao existem categorias.</p>
+    <p data-admin-t="categories_empty">Ainda não existem categorias.</p>
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($categories as $category): ?>
-        <article class="admin-review-card">
+        <article class="admin-review-card" data-admin-state="<?= h($category['estado']) ?>">
           <form method="post" class="stack-form admin-category-edit-form">
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="update">
@@ -297,7 +320,7 @@ include 'admin_header.php';
             </div>
 
             <div class="fg admin-category-description-field">
-              <label class="flabel" data-admin-t="categories_description">Descricao</label>
+              <label class="flabel" data-admin-t="categories_description">Descrição</label>
               <textarea name="descricaoCategoria" class="finput" rows="3"><?= h($category['descricaoCategoria'] ?? '') ?></textarea>
             </div>
 

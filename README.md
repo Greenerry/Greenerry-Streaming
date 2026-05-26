@@ -1,180 +1,134 @@
 # Greenerry
 
-Greenerry is a web platform for independent music discovery, artist profiles, music releases, merchandise sales, and order management. It was built as a complete full-stack project with a public user area and an administration area.
+Greenerry is a PHP and MySQL web project created for a PAP. It is a platform for independent music, artist profiles, merch sales, orders, and admin moderation.
 
-The goal of Greenerry is to give artists a place to share music, promote their profile, sell merch, and manage their presence, while giving listeners a simple way to discover tracks, follow artists, save favourites, and buy products.
+The project has two main sides:
 
-## Project Overview
-
-Greenerry includes two main areas:
-
-**Public/User Area**
-
-- Browse music releases, tracks, artists, and merchandise
-- Register and log in as a user
-- Edit an artist profile with photo and banner
-- Upload music releases for approval
-- Upload merch products for approval
-- Follow artists and save favourite tracks
-- Add products to cart and complete checkout
-- View order history and download receipts
-
-**Admin Area**
-
-- View dashboard statistics
-- Approve, reject, deactivate, or reactivate music releases
-- Approve, reject, deactivate, or reactivate products
-- Manage product categories and sizes
-- Manage users
-- Update order and payment states
-- Read and reply to support messages
-- Manage password recovery requests
-- Export platform reports
-- Edit general platform settings
+- Public/user side: visitors and registered users can browse music, view artists, buy merch, and manage their own account.
+- Admin side: the admin can approve content, manage users, update orders, reply to messages, and change site settings.
 
 ## Main Features
 
-### Music
-
-- Release pages for singles, EPs, and albums
-- Track listing and playback
-- Cover image support
-- Favourite tracks
-- Artist connection for every release
-- Admin approval before releases become public
-
-### Artists
-
-- Public artist profile pages
-- Artist avatar and banner
-- Artist biography
-- Artist releases and merch displayed in one place
-- Follow system
-
-### Merchandise
-
-- Product upload system
-- Product categories
-- Size and stock management
-- Product approval workflow
-- Product detail pages
-- Shopping cart
-
-### Orders
-
-- Checkout form with recipient and delivery details
-- Order item storage
-- Payment method and payment state tracking
-- Order state tracking
-- PDF receipt generation
-- User order history
-- Admin order management
-
-### Administration
-
-- Dashboard with project statistics
-- Moderation tools for uploaded content
-- User account management
-- Category and size management
-- Message center
-- Password recovery workflow
-- Reports/export section
-- Site settings section
+- User registration with email verification
+- Login/logout for users and admin
+- Password recovery by email link
+- Artist profile with photo, banner, biography, releases, merch, followers, and following
+- Music release upload with tracks and cover image
+- Admin approval/rejection for music releases
+- Music player with favourites
+- Merch product upload with categories, sizes, stock, and multiple images
+- Admin approval/rejection for products
+- Shopping cart and checkout
+- Order history and receipt page
+- Admin dashboard, reports, messages, users, categories, products, releases, and settings
+- Portuguese/English translations
+- Dark/light theme
 
 ## Tech Stack
 
-- **PHP** for backend logic
-- **MySQL / MariaDB** for the database
-- **JavaScript** for interactivity, music player behaviour, favourites, cart actions, language/theme handling, and AJAX requests
-- **HTML5** for page structure
-- **CSS3** for the interface and responsive layout
-- **Composer** for PHP dependencies
-- **Dompdf** for PDF receipt generation
-- **XAMPP** for local Apache and MySQL development
+- PHP
+- MySQL/MariaDB
+- HTML
+- CSS
+- JavaScript
+- Composer
+- PHPMailer for SMTP email
+- Dompdf for receipts
+- XAMPP for local development
 
-## Folder Structure
+## Project Structure
 
-```txt
+```text
 greenerry/
-├── admin/          Admin dashboard and management pages
-├── api/            JSON endpoints used by JavaScript
-├── assets/
-│   ├── audio/      Uploaded music/audio files
-│   ├── css/        Main stylesheet
-│   ├── img/        Uploaded and static images
-│   └── js/         Frontend JavaScript and translations
-├── docs/           Project documentation and diagrams
-├── includes/       Shared configuration, header, and footer
-├── pages/          Public and user-facing pages
-├── vendor/         Composer dependencies
-├── greenerry.sql   Database structure and initial data
-└── README.md       Project documentation
+|-- admin/                 Admin pages
+|-- api/                   AJAX/JSON endpoints
+|-- assets/
+|   |-- audio/             Audio files
+|   |-- css/               Stylesheets
+|   |-- img/               Images
+|   `-- js/
+|       |-- greenerry/     Split frontend scripts
+|       `-- translations.json
+|-- docs/                  Diagrams and PAP documents
+|-- includes/              Shared PHP files
+|-- pages/                 Public/user pages
+|-- vendor/                Composer dependencies
+|-- greenerry.sql          Final database schema and seed data
+|-- index.php              Redirects to the homepage
+`-- README.md
 ```
 
-## Local Installation
+## Important Files
 
-### Requirements
+```text
+includes/config.php        Starts session, connects to DB, loads helpers
+includes/db.php            Database helper functions
+includes/auth.php          Login/session helper functions
+includes/auth_tokens.php   Email verification and password reset tokens
+includes/email.php         Email sending and notification helpers
+includes/i18n.php          PHP translations and label helpers
+includes/validation.php    Form and upload validation
+includes/product_images.php Product image helpers
+includes/header.php        Public layout header
+includes/footer.php        Public layout footer and frontend scripts
+```
 
-- XAMPP
-- PHP
-- MySQL / MariaDB
-- A modern browser
+Frontend JavaScript is split into smaller files:
 
-### Setup Steps
+```text
+assets/js/greenerry/core.js
+assets/js/greenerry/favorites.js
+assets/js/greenerry/player.js
+assets/js/greenerry/cart.js
+assets/js/greenerry/navigation.js
+assets/js/greenerry/page-ui.js
+```
 
-1. Place the project folder inside the XAMPP `htdocs` directory:
+## Local Setup
 
-```txt
+1. Put the project in XAMPP:
+
+```text
 C:\xampp\htdocs\dashboard\greenerry
 ```
 
-2. Start **Apache** and **MySQL** from the XAMPP control panel.
+2. Start Apache and MySQL in XAMPP.
 
-3. Open phpMyAdmin and create a database named:
+3. Import `greenerry.sql` in phpMyAdmin.
 
-```txt
-greenerry
-```
+The SQL file creates the database, tables, default site settings, default categories, default sizes, and one admin account.
 
-4. Import the database file:
+4. Open the project:
 
-```txt
-greenerry.sql
-```
-
-5. Open the project in the browser:
-
-```txt
+```text
 http://localhost/dashboard/greenerry/
+```
+
+## Default Admin
+
+```text
+Email: greenerry333@gmail.com
+Password: Srijan123@
 ```
 
 ## Database Configuration
 
-For local XAMPP development, the default database settings are already prepared:
+For local XAMPP, the default database settings are:
 
-```txt
+```text
 host: localhost
 user: root
 password:
 database: greenerry
 ```
 
-For hosting or deployment, real database credentials should not be written directly into the public repository. The project supports environment variables:
+For hosting, create a private file:
 
-```txt
-GREENERRY_DB_HOST
-GREENERRY_DB_USER
-GREENERRY_DB_PASS
-GREENERRY_DB_NAME
-```
-
-It also supports a private ignored file named:
-
-```txt
+```text
 includes/config.local.php
 ```
 
-Example private configuration:
+Example:
 
 ```php
 <?php
@@ -184,124 +138,125 @@ $db_pass = 'your-password';
 $db_name = 'your-database';
 ```
 
+The project also supports environment variables:
+
+```text
+GREENERRY_DB_HOST
+GREENERRY_DB_USER
+GREENERRY_DB_PASS
+GREENERRY_DB_NAME
+```
+
+## Hosting Notes
+
+The project can run locally and on hosting.
+
+Local links use the current localhost address. Live email links use:
+
+```text
+https://greenerry.gt.tc
+```
+
+When uploading to InfinityFree or another host, make sure to:
+
+- upload the project files
+- import `greenerry.sql`
+- configure `includes/config.local.php`
+- configure SMTP/email settings in the admin settings page
+- keep `includes/config.local.php` private
+
 ## Database Design
 
-The database is stored in `greenerry.sql` and includes the main entities needed for the platform:
+Main tables:
 
-- admins
-- users/artists
-- password recovery requests
-- music releases
-- tracks
-- favourites
-- artist follows
-- product categories
-- product sizes
-- products
-- product stock by size
-- orders
-- order items
-- delivery addresses
-- payments
-- admin messages
-- notifications
-- site settings
+- `admin`
+- `configuracao_site`
+- `cliente`
+- `verificacao_email`
+- `recuperacao_password`
+- `release_musical`
+- `faixa`
+- `favorito_musica`
+- `seguir_artista`
+- `categoria`
+- `tamanho`
+- `produto`
+- `produto_imagem`
+- `produto_tamanho_stock`
+- `encomenda`
+- `encomenda_item`
+- `morada_encomenda`
+- `pagamento`
+- `mensagem_admin`
+- `notificacao`
 
-The database uses foreign keys to connect related data, such as users with releases, releases with tracks, products with orders, and customers with messages.
+Important relationships:
 
-## Security Features
+- One `cliente` can create many releases, products, favourites, follows, orders, messages, notifications, email verification tokens, and password recovery tokens.
+- One `release_musical` has many `faixa`.
+- One `produto` can have many images and size stock rows.
+- One `encomenda` has many `encomenda_item`.
+- One `encomenda` has one delivery address and one payment record.
 
-Greenerry includes several security-focused decisions:
+## Security
 
-- User passwords are stored using PHP password hashing.
-- Session IDs are regenerated after successful login.
+- Passwords are stored with PHP password hashing.
+- Login regenerates the session ID.
 - Forms use CSRF tokens.
-- Authenticated API POST actions also validate CSRF tokens.
-- Output is escaped before being displayed in the browser.
-- Uploaded images are validated before being saved.
-- Users must be logged in before accessing private pages.
-- Admin pages require admin authentication.
-- Public content uploaded by users must be approved by an admin before it appears publicly.
-- Live database credentials are kept outside the committed source code.
-- `.htaccess` blocks direct access to sensitive file types such as SQL and environment files.
+- API POST actions validate CSRF tokens.
+- Output is escaped with `h()`.
+- Uploads validate file size, extension, and type.
+- Uploaded files get generated filenames.
+- Private pages require login.
+- Admin pages require admin login.
+- User uploads only become public after admin approval.
+- Database credentials can be kept outside the repository in `includes/config.local.php`.
 
-## User Roles
+## PAP Demo Flow
 
-### Visitor
-
-A visitor can browse public pages, view music, artists, and merch, and create an account.
-
-### Registered User / Artist
-
-A registered user can manage a profile, upload music, upload merch, follow artists, save favourites, place orders, and contact the admin.
-
-### Admin
-
-An admin can moderate uploaded content, manage users, manage product categories, update orders, handle messages, process password recovery requests, and view reports.
-
-## Recommended Demo Flow
-
-This flow shows the most important parts of the platform in a clear order:
-
-1. Open the homepage and show the navigation.
-2. Register or log in as a user.
-3. Edit the user/artist profile.
-4. Upload a music release.
-5. Log in as admin.
-6. Approve the music release.
-7. Return to the public music page.
-8. Play the approved track and add it to favourites.
+1. Open the homepage.
+2. Register a user and explain email verification.
+3. Log in as a user.
+4. Edit the artist profile.
+5. Upload a music release.
+6. Log in as admin.
+7. Approve the release.
+8. Play a track and add it to favourites.
 9. Upload a merch product.
 10. Approve the product as admin.
-11. Add the product to the cart.
+11. Add the product to cart.
 12. Complete checkout.
-13. Open the order history.
-14. Generate or view the receipt.
-15. Show the reports and messages sections in the admin panel.
+13. Open order history and receipt.
+14. Show admin dashboard, reports, messages, and settings.
 
 ## Testing Checklist
 
-Before presenting or submitting the project, test these flows:
-
 - User registration
-- User login and logout
-- Admin login and logout
-- Profile update with image upload
-- Music release upload
-- Admin release approval/rejection
-- Music player playback
-- Favourite add/remove
-- Artist follow/unfollow
+- Email verification
+- User login/logout
+- Admin login/logout
+- Password recovery
+- Profile update
+- Music upload
+- Release approval/rejection
+- Music player
+- Favourites
+- Follow/unfollow artist
 - Product upload
-- Admin product approval/rejection
-- Cart add/remove/update
+- Product approval/rejection
+- Cart
 - Checkout
-- Receipt generation
-- Order state update in admin
-- Contact admin form
-- Admin reply to message
-- Password recovery request
+- Receipt
+- Order status update
+- Contact admin
+- Admin reply
 - Language switch
 - Theme switch
 - Mobile navigation
 
-## PHP Syntax Validation
+## Validation Commands
 
-Useful syntax checks:
-
-```bash
-php -l includes/config.php
-php -l pages/login.php
-php -l pages/registar.php
-php -l pages/upload_music.php
-php -l pages/upload_merch.php
-php -l pages/checkout.php
-php -l admin/dashboard.php
-php -l admin/releases.php
-php -l admin/products.php
-```
-
-To check every project PHP file except dependencies:
+Check all PHP files except `vendor`:
 
 ```powershell
 Get-ChildItem -Recurse -Filter *.php |
@@ -309,34 +264,21 @@ Get-ChildItem -Recurse -Filter *.php |
   ForEach-Object { php -l $_.FullName }
 ```
 
-## Presentation Points
+Check frontend scripts:
 
-Important technical points to explain:
+```powershell
+Get-ChildItem assets\js\greenerry -Filter *.js |
+  ForEach-Object { node --check $_.FullName }
+```
 
-- The project has both a public side and an admin side.
-- The database is relational and uses connected tables.
-- Uploaded content does not become public immediately; it goes through admin approval.
-- Checkout uses order, order item, address, and payment records.
-- Passwords are hashed instead of stored as plain text.
-- CSRF tokens protect forms and important API actions.
-- Receipts are generated as PDF files using Dompdf.
-- The interface supports Portuguese and English.
-- The project is structured into reusable shared files, public pages, admin pages, API endpoints, and assets.
+## Diagrams
 
-## Future Improvements
+The `docs/` folder contains PAP support files:
 
-Possible improvements for later versions:
+- `DER_greenerry_Srijan.pdf`
+- `greenerry_mer_fnn.drawio`
+- `greenerry_mer_fnn.drawio.pdf`
 
-- Online payment gateway integration
-- Email notifications
-- Advanced search and filters
-- Playlist creation
-- Audio waveform previews
-- Better analytics for artists
-- Admin audit log
-- Automated tests
-- More detailed stock and sales reports
+## Final Status
 
-## Status
-
-Greenerry is ready as a functional full-stack web project with authentication, content uploads, admin moderation, music playback, merch sales, reports, and receipt generation.
+Greenerry is ready as a functional PAP project with authentication, email verification, password recovery, music uploads, merch sales, checkout, receipts, admin moderation, settings, reports, and organized code.

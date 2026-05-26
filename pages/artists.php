@@ -1,10 +1,18 @@
 <?php
 require_once '../includes/config.php';
 
+// Artist search is simple: it filters active artists by name.
 $search = trim($_GET['q'] ?? '');
-$searchSafe = db_escape($conn, $search);
-$searchSql = $search !== '' ? "AND c.nome LIKE '%{$searchSafe}%'" : '';
-$artists = db_all(
+$searchSql = '';
+$types = '';
+$params = [];
+if ($search !== '') {
+    $searchSql = 'AND c.nome LIKE ?';
+    $types = 's';
+    $params[] = '%' . $search . '%';
+}
+// This list only includes artists who already have at least one approved release.
+$artists = db_all_prepared(
     $conn,
     "SELECT
         c.idCliente,
@@ -28,28 +36,46 @@ $artists = db_all(
      WHERE c.estado = 'ativo'
        {$searchSql}
      GROUP BY c.idCliente, c.nome, c.email, c.foto, c.banner, c.bio, c.slug
-     ORDER BY total_releases DESC, nome ASC"
+     ORDER BY total_releases DESC, nome ASC",
+    $types,
+    $params
 );
+
+$artistsMediaCloud = [];
+foreach ($artists as $artist) {
+    foreach (['foto', 'banner'] as $imageField) {
+        $image = asset_url('img', $artist[$imageField] ?? '');
+        if ($image !== '') {
+            $artistsMediaCloud[$image] = [
+                'src' => $image,
+                'label' => (string)$artist['nome'],
+                'type' => 'artist',
+            ];
+        }
+    }
+}
+$artistsMediaCloud = array_values(array_slice($artistsMediaCloud, 0, 12));
 
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
+<section class="content-shell content-shell--cloud content-shell--catalog-cloud">
+  <div class="section-media-cloud section-media-cloud--catalog" data-media-cloud='<?= h(json_encode($artistsMediaCloud, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>' aria-hidden="true"></div>
   <div class="wrap">
     <div class="catalog-hero">
       <div>
         <span class="slabel" data-t="artists_label">Artists</span>
-        <h1 data-t="artists_title">Discover the artists</h1>
+        <h1 data-t="artists_title">Discover artists</h1>
       </div>
 
-      <form method="get" class="catalog-filter catalog-filter--single">
-        <input type="text" name="q" value="<?= h($search) ?>" class="finput" data-tp="artists_search_placeholder" placeholder="Search artists">
-        <button type="submit" class="btn btn-dark" data-t="artists_search">Search</button>
+      <form method="get" class="catalog-filter catalog-filter--single" data-instant-filter>
+        <input type="text" name="q" value="<?= h($search) ?>" class="finput" data-tp="artists_search_placeholder" placeholder="Search artists" autocomplete="off">
       </form>
     </div>
 
+    <div data-catalog-results>
     <?php if (!$artists): ?>
-      <div class="card surface-card">
+      <div class="card surface-card catalog-empty-state">
         <div class="card-body text-center">
           <p data-t="artists_empty">No artists matched your search.</p>
         </div>
@@ -80,14 +106,15 @@ include '../includes/header.php';
                 <?php endif; ?>
               </div>
               <div class="artist-panel-stats">
-                <span><?= (int)$artist['total_releases'] ?> releases</span>
-                <span><?= (int)$artist['total_faixas'] ?> tracks</span>
+                <span data-count-type="release" data-count-value="<?= (int)$artist['total_releases'] ?>"><?= h(count_label((int)$artist['total_releases'], 'release')) ?></span>
+                <span data-count-type="track" data-count-value="<?= (int)$artist['total_faixas'] ?>"><?= h(count_label((int)$artist['total_faixas'], 'track')) ?></span>
               </div>
             </div>
           </a>
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
+    </div>
   </div>
 </section>
 
