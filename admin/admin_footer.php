@@ -109,6 +109,9 @@
       releases_tracks: 'Faixas',
       releases_no_tracks: 'Sem faixas',
       releases_reason_placeholder: 'Motivo de rejeição.',
+      pagination_previous: 'Anterior',
+      pagination_next: 'Seguinte',
+      pagination_page_of: 'Página {current} de {total}',
       btn_approve: 'Aprovar',
       btn_reject: 'Rejeitar',
       messages_title: 'Mensagens',
@@ -400,6 +403,9 @@
       releases_tracks: 'Tracks',
       releases_no_tracks: 'No tracks',
       releases_reason_placeholder: 'Rejection reason.',
+      pagination_previous: 'Previous',
+      pagination_next: 'Next',
+      pagination_page_of: 'Page {current} of {total}',
       btn_approve: 'Approve',
       btn_reject: 'Reject',
       messages_title: 'Messages',
@@ -665,10 +671,20 @@
       if (strings[key] !== undefined) el.placeholder = strings[key];
     });
 
+    document.querySelectorAll('[data-admin-page-status]').forEach((el) => {
+      const current = el.dataset.pageCurrent || '1';
+      const total = el.dataset.pageTotal || '1';
+      el.textContent = (strings.pagination_page_of || 'Página {current} de {total}')
+        .replace('{current}', current)
+        .replace('{total}', total);
+    });
+
     document.querySelectorAll('.admin-lang button').forEach((button) => {
       button.classList.toggle('on', button.dataset.l === lang);
     });
   }
+
+  window.GreenerryApplyAdminLang = applyAdminLang;
 
   document.querySelectorAll('.admin-lang button').forEach((button) => {
     button.addEventListener('click', () => {
@@ -679,6 +695,37 @@
   });
 
   applyAdminLang(currentLang);
+
+  document.querySelectorAll('[data-users-pager]').forEach((link) => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const url = link.getAttribute('href');
+      if (!url) return;
+      const section = document.getElementById('users-search');
+      if (!section) return;
+      section.classList.add('is-loading');
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network error');
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newSection = doc.getElementById('users-search');
+        if (newSection) {
+          section.innerHTML = newSection.innerHTML;
+          history.pushState({}, '', url);
+          if (window.GreenerryApplyAdminLang) window.GreenerryApplyAdminLang(currentLang);
+          document.querySelectorAll('[data-users-pager]').forEach((newLink) => {
+            newLink.addEventListener('click', arguments.callee);
+          });
+        }
+      } catch (err) {
+        console.error('Pagination error:', err);
+      } finally {
+        section.classList.remove('is-loading');
+      }
+    });
+  });
 
   const adminSidebar = document.getElementById('admin-sidebar');
   const adminMenuButton = document.getElementById('admin-mobile-menu');

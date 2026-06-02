@@ -54,6 +54,13 @@ $adminReleasesTotalPages = max(1, (int)ceil($totalAdminReleases / $adminReleases
 $adminReleasesPage = min($adminReleasesPage, $adminReleasesTotalPages);
 $adminReleasesOffset = ($adminReleasesPage - 1) * $adminReleasesPerPage;
 
+$pendingPerPage = 6;
+$pendingPage = max(1, (int)($_GET['pending_page'] ?? 1));
+$totalPending = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM release_musical WHERE estado = 'pendente'")['total'] ?? 0);
+$pendingTotalPages = max(1, (int)ceil($totalPending / $pendingPerPage));
+$pendingPage = min($pendingPage, $pendingTotalPages);
+$pendingOffset = ($pendingPage - 1) * $pendingPerPage;
+
 $pending = db_all(
     $conn,
     "SELECT r.*, c.nome AS artista,
@@ -64,7 +71,7 @@ $pending = db_all(
      WHERE r.estado = 'pendente'
      GROUP BY r.idRelease
      ORDER BY r.criado_em DESC
-     LIMIT 30"
+     LIMIT {$pendingPerPage} OFFSET {$pendingOffset}"
 );
 
 $allReleases = db_all(
@@ -80,8 +87,9 @@ $allReleases = db_all(
 );
 
 $releaseTracks = [];
-if ($allReleases) {
-    $releaseIds = implode(',', array_map(static fn($release) => (int)$release['idRelease'], $allReleases));
+$combinedReleases = array_merge($allReleases, $pending);
+if ($combinedReleases) {
+    $releaseIds = implode(',', array_unique(array_map(static fn($release) => (int)$release['idRelease'], $combinedReleases)));
     $trackRows = db_all(
         $conn,
         "SELECT idRelease, numero_faixa, titulo, ficheiro_audio
@@ -139,7 +147,7 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="releases_pending">Lançamentos pendentes</h4>
-    <span class="badge badge-red"><?= count($pending) ?></span>
+    <span class="badge badge-red"><?= (int)$totalPending ?></span>
   </div>
 
   <?php if (!$pending): ?>
@@ -147,18 +155,35 @@ include 'admin_header.php';
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($pending as $release): ?>
-        <article class="admin-review-card" data-review-type="release" data-review-id="<?= (int)$release['idRelease'] ?>" data-admin-state="<?= h($release['estado']) ?>">
+        <article class="admin-review-card admin-review-card--release" data-review-type="release" data-review-id="<?= (int)$release['idRelease'] ?>" data-admin-state="<?= h($release['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
               <span class="badge badge-light"><?= h($release['tipo']) ?></span>
-              <strong><?= h($release['titulo']) ?></strong>
-              <p><span data-admin-t="label_artist">Artista</span>: <?= h($release['artista']) ?></p>
-              <p><span data-admin-t="label_tracks">Faixas</span>: <?= (int)$release['total_faixas'] ?></p>
-              <?php if (!empty($release['data_lancamento'])): ?>
-                <p><span data-admin-t="label_release_date">Lançamento</span>: <?= date('d/m/Y', strtotime($release['data_lancamento'])) ?></p>
-              <?php endif; ?>
+              <strong class="admin-release-title"><?= h($release['titulo']) ?></strong>
+              
+              <div class="admin-review-meta-grid">
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_artist">Artista</span>
+                  <strong><?= h($release['artista']) ?></strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="profile_table_type">Tipo</span>
+                  <strong><?= h($release['tipo']) ?></strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_tracks">Faixas</span>
+                  <strong><?= (int)$release['total_faixas'] ?></strong>
+                </div>
+                <?php if (!empty($release['data_lancamento'])): ?>
+                  <div class="admin-review-meta-item">
+                    <span data-admin-t="label_release_date">Lançamento</span>
+                    <strong><?= date('d/m/Y', strtotime($release['data_lancamento'])) ?></strong>
+                  </div>
+                <?php endif; ?>
+              </div>
+
               <?php if (!empty($release['descricao'])): ?>
-                <p><?= h($release['descricao']) ?></p>
+                <p class="admin-release-description"><?= h($release['descricao']) ?></p>
               <?php endif; ?>
               <?php if (!empty($releaseTracks[(int)$release['idRelease']])): ?>
                 <div class="admin-audio-list">
@@ -197,6 +222,15 @@ include 'admin_header.php';
         </article>
       <?php endforeach; ?>
     </div>
+    
+    <?php if ($pendingTotalPages > 1): ?>
+      <?php $otherPageParam = isset($_GET['page']) ? '&page=' . (int)$_GET['page'] : ''; ?>
+      <nav class="pager" aria-label="Pending Pagination">
+        <?= $pendingPage > 1 ? '<a class="btn btn-ghost btn-sm" href="releases.php?pending_page=' . (int)($pendingPage - 1) . $otherPageParam . '#releases-search" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$pendingPage ?>" data-page-total="<?= (int)$pendingTotalPages ?>">Página <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
+        <?= $pendingPage < $pendingTotalPages ? '<a class="btn btn-ghost btn-sm" href="releases.php?pending_page=' . (int)($pendingPage + 1) . $otherPageParam . '#releases-search" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+      </nav>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 
@@ -300,10 +334,11 @@ include 'admin_header.php';
       </table>
     </div>
     <?php if ($adminReleasesTotalPages > 1): ?>
+      <?php $otherPendingPageParam = isset($_GET['pending_page']) ? '&pending_page=' . (int)$_GET['pending_page'] : ''; ?>
       <nav class="pager" aria-label="Pagination">
-        <?= $adminReleasesPage > 1 ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage - 1) . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-        <span class="pager-status">Página <?= (int)$adminReleasesPage ?> de <?= (int)$adminReleasesTotalPages ?></span>
-        <?= $adminReleasesPage < $adminReleasesTotalPages ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage + 1) . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+        <?= $adminReleasesPage > 1 ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage - 1) . $otherPendingPageParam . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$adminReleasesPage ?>" data-page-total="<?= (int)$adminReleasesTotalPages ?>">Página <?= (int)$adminReleasesPage ?> de <?= (int)$adminReleasesTotalPages ?></span>
+        <?= $adminReleasesPage < $adminReleasesTotalPages ? '<a class="btn btn-ghost btn-sm" href="releases.php?page=' . (int)($adminReleasesPage + 1) . $otherPendingPageParam . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>
   <?php endif; ?>
@@ -312,8 +347,9 @@ include 'admin_header.php';
 
 <script>
 (() => {
-  const floatingAudioItems = Array.from(document.querySelectorAll('.admin-audio-item--table'));
   let activeAudioItem = null;
+  let activeAudio = null;
+  let activePlayer = null;
 
   function positionAudioMenu(item) {
     const menu = item?._floatingMenu;
@@ -342,33 +378,6 @@ include 'admin_header.php';
     if (activeAudioItem === item) activeAudioItem = null;
   }
 
-  floatingAudioItems.forEach((item) => {
-    const button = item.querySelector('.admin-audio-toggle');
-    const menu = item.querySelector('.admin-audio-menu');
-    if (!menu) return;
-    item._floatingMenu = menu;
-
-    button?.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (activeAudioItem === item && !menu.hidden) {
-        closeAudioMenu(item);
-        return;
-      }
-
-      if (activeAudioItem && activeAudioItem !== item) {
-        closeAudioMenu(activeAudioItem);
-      }
-
-      activeAudioItem = item;
-      item.classList.add('is-open');
-      button.setAttribute('aria-expanded', 'true');
-      menu.hidden = false;
-      menu.classList.add('is-floating');
-      (item.closest('.admin-shell') || document.body).appendChild(menu);
-      positionAudioMenu(item);
-    });
-  });
-
   document.addEventListener('click', (event) => {
     if (!activeAudioItem) return;
     const menu = activeAudioItem._floatingMenu;
@@ -378,10 +387,6 @@ include 'admin_header.php';
 
   window.addEventListener('scroll', () => positionAudioMenu(activeAudioItem), true);
   window.addEventListener('resize', () => positionAudioMenu(activeAudioItem));
-
-  const players = Array.from(document.querySelectorAll('.admin-mini-player'));
-  let activeAudio = null;
-  let activePlayer = null;
 
   function formatTime(seconds) {
     if (!Number.isFinite(seconds)) return '0:00';
@@ -399,63 +404,122 @@ include 'admin_header.php';
     if (fill) fill.style.width = '0%';
   }
 
-  players.forEach((player) => {
-    const button = player.querySelector('.admin-mini-play');
-    const time = player.querySelector('.admin-mini-time');
-    const fill = player.querySelector('.admin-mini-track div');
-    const track = player.querySelector('.admin-mini-track');
-    const audio = new Audio(player.dataset.audioSrc);
-    audio.preload = 'metadata';
+  function initReleaseControls(root = document) {
+    root.querySelectorAll('.admin-audio-item--table').forEach((item) => {
+      if (item.dataset.releaseAudioBound === '1') return;
+      item.dataset.releaseAudioBound = '1';
+      const button = item.querySelector('.admin-audio-toggle');
+      const menu = item.querySelector('.admin-audio-menu');
+      if (!menu) return;
+      item._floatingMenu = menu;
 
-    button?.addEventListener('click', async () => {
-      if (activeAudio && activeAudio !== audio) {
-        activeAudio.pause();
-        resetPlayer(activePlayer);
-      }
+      button?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (activeAudioItem === item && !menu.hidden) {
+          closeAudioMenu(item);
+          return;
+        }
 
-      if (audio.paused) {
-        activeAudio = audio;
-        activePlayer = player;
-        await audio.play();
-        player.classList.add('is-playing');
-        button.textContent = 'II';
-      } else {
-        audio.pause();
-        resetPlayer(player);
-      }
+        if (activeAudioItem && activeAudioItem !== item) closeAudioMenu(activeAudioItem);
+
+        activeAudioItem = item;
+        item.classList.add('is-open');
+        button.setAttribute('aria-expanded', 'true');
+        menu.hidden = false;
+        menu.classList.add('is-floating');
+        (item.closest('.admin-shell') || document.body).appendChild(menu);
+        positionAudioMenu(item);
+      });
     });
 
-    audio.addEventListener('timeupdate', () => {
-      if (time) time.textContent = formatTime(audio.currentTime);
-      if (fill && audio.duration) {
-        fill.style.width = `${Math.min(100, (audio.currentTime / audio.duration) * 100)}%`;
-      }
-    });
+    root.querySelectorAll('.admin-mini-player').forEach((player) => {
+      if (player.dataset.releasePlayerBound === '1') return;
+      player.dataset.releasePlayerBound = '1';
+      const button = player.querySelector('.admin-mini-play');
+      const time = player.querySelector('.admin-mini-time');
+      const fill = player.querySelector('.admin-mini-track div');
+      const track = player.querySelector('.admin-mini-track');
+      const audio = new Audio(player.dataset.audioSrc);
+      audio.preload = 'metadata';
 
-    function seekFromEvent(event) {
-      if (!audio.duration) return;
-      const box = track.getBoundingClientRect();
-      const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
-      audio.currentTime = ratio * audio.duration;
-      if (fill) fill.style.width = `${ratio * 100}%`;
+      button?.addEventListener('click', async () => {
+        if (activeAudio && activeAudio !== audio) {
+          activeAudio.pause();
+          resetPlayer(activePlayer);
+        }
+
+        if (audio.paused) {
+          activeAudio = audio;
+          activePlayer = player;
+          await audio.play();
+          player.classList.add('is-playing');
+          button.textContent = 'II';
+        } else {
+          audio.pause();
+          resetPlayer(player);
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (time) time.textContent = formatTime(audio.currentTime);
+        if (fill && audio.duration) fill.style.width = `${Math.min(100, (audio.currentTime / audio.duration) * 100)}%`;
+      });
+
+      function seekFromEvent(event) {
+        if (!audio.duration) return;
+        const box = track.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+        audio.currentTime = ratio * audio.duration;
+        if (fill) fill.style.width = `${ratio * 100}%`;
+      }
+
+      track?.addEventListener('click', seekFromEvent);
+      track?.addEventListener('pointerdown', (event) => {
+        seekFromEvent(event);
+        track.setPointerCapture(event.pointerId);
+        const move = (moveEvent) => seekFromEvent(moveEvent);
+        const up = () => {
+          track.removeEventListener('pointermove', move);
+          track.removeEventListener('pointerup', up);
+          track.removeEventListener('pointercancel', up);
+        };
+        track.addEventListener('pointermove', move);
+        track.addEventListener('pointerup', up);
+        track.addEventListener('pointercancel', up);
+      });
+
+      audio.addEventListener('ended', () => resetPlayer(player));
+    });
+  }
+
+  initReleaseControls();
+
+  document.addEventListener('click', async (event) => {
+    const link = event.target.closest('#releases-search .pager a[href]');
+    if (!link) return;
+    event.preventDefault();
+    const scope = document.getElementById('releases-search');
+    if (!scope) return;
+    scope.classList.add('is-loading');
+    try {
+      const response = await fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const html = await response.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const nextScope = doc.getElementById('releases-search');
+      if (!nextScope) {
+        window.location.href = link.href;
+        return;
+      }
+      scope.innerHTML = nextScope.innerHTML;
+      history.pushState(null, '', link.href);
+      initReleaseControls(scope);
+      window.GreenerryApplyAdminLang?.(localStorage.getItem('g_lang') || 'pt');
+      scope.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (_) {
+      window.location.href = link.href;
+    } finally {
+      scope.classList.remove('is-loading');
     }
-
-    track?.addEventListener('click', seekFromEvent);
-    track?.addEventListener('pointerdown', (event) => {
-      seekFromEvent(event);
-      track.setPointerCapture(event.pointerId);
-      const move = (moveEvent) => seekFromEvent(moveEvent);
-      const up = () => {
-        track.removeEventListener('pointermove', move);
-        track.removeEventListener('pointerup', up);
-        track.removeEventListener('pointercancel', up);
-      };
-      track.addEventListener('pointermove', move);
-      track.addEventListener('pointerup', up);
-      track.addEventListener('pointercancel', up);
-    });
-
-    audio.addEventListener('ended', () => resetPlayer(player));
   });
 })();
 </script>

@@ -20,7 +20,7 @@
       const isHeroVisual = cloud.classList.contains('hero-visual-cloud');
       const isSectionCloud = cloud.classList.contains('section-media-cloud');
       const isCatalogCloud = cloud.classList.contains('section-media-cloud--catalog');
-      const mediaLimit = isHeroVisual ? 14 : (isCatalogCloud ? 12 : (isSectionCloud ? 8 : 12));
+      const mediaLimit = isHeroVisual ? 24 : (isCatalogCloud ? 12 : (isSectionCloud ? 8 : 12));
 
       media = media.filter((item) => item?.src).slice(0, mediaLimit);
       if (media.length < 1) {
@@ -62,6 +62,9 @@
         items.forEach((item) => {
           const visible = activeFilter === 'all' || item.type === activeFilter;
           item.el.classList.toggle('is-hidden', !visible);
+          if (!visible) {
+            item.el.style.transform = 'translate3d(-9999px, -9999px, 0)';
+          }
         });
         scope.querySelectorAll('[data-media-cloud-filter]').forEach((button) => {
           button.classList.toggle('on', button.dataset.mediaCloudFilter === activeFilter);
@@ -74,7 +77,10 @@
 
       function render(time) {
         items.forEach((item, index) => {
-          if (activeFilter !== 'all' && item.type !== activeFilter) return;
+          if (activeFilter !== 'all' && item.type !== activeFilter) {
+            item.el.style.transform = 'translate3d(-9999px, -9999px, 0)';
+            return;
+          }
           const drift = Math.sin(time * item.speed + item.phase);
           const float = Math.cos(time * item.speed * 1.4 + item.phase);
           const x = item.x + drift * 4;

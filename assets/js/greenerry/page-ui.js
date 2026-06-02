@@ -386,6 +386,7 @@ async function _initPageContent() {
   initArtistFilters();
   initOrderFilters();
   initLibraryTabs();
+  if (typeof initPlaylistPicker === 'function') initPlaylistPicker();
   initFollowersModal();
   initArtistFollow();
   initImageFilePreviews();

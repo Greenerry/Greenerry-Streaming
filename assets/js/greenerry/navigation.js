@@ -5,7 +5,20 @@ const _softNavPages = new Set([
   'artists.php',
   'artist.php',
   'shop.php',
-  'favourites.php'
+  'produto.php',
+  'favourites.php',
+  'profile.php',
+  'cart.php',
+  'checkout.php',
+  'my_orders.php',
+  'notifications.php',
+  'receipt.php',
+  'artist_dashboard.php',
+  'upload_music.php',
+  'upload_merch.php',
+  'orders.php',
+  'revenue.php',
+  'contact_admin.php'
 ]);
 let _softNavBusy = false;
 
@@ -17,7 +30,6 @@ function _pageNameFromUrl(url) {
 }
 
 function _canSoftNavigate(link, event) {
-  if (!_cur) return false;
   if (!link || link.target || link.hasAttribute('download')) return false;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return false;
 
@@ -26,6 +38,38 @@ function _canSoftNavigate(link, event) {
   if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false;
 
   return _softNavPages.has(_pageNameFromUrl(url));
+}
+
+function _runPageScripts(root) {
+  root.querySelectorAll('script').forEach((oldScript) => {
+    const script = document.createElement('script');
+    Array.from(oldScript.attributes).forEach((attr) => {
+      script.setAttribute(attr.name, attr.value);
+    });
+
+    if (!oldScript.src) {
+      script.textContent = `
+(() => {
+  const originalAddEventListener = document.addEventListener.bind(document);
+  const readyEvent = new Event('DOMContentLoaded', { bubbles: true, cancelable: true });
+  document.addEventListener = function(type, listener, options) {
+    if (type === 'DOMContentLoaded' && document.readyState !== 'loading' && typeof listener === 'function') {
+      queueMicrotask(() => listener.call(document, readyEvent));
+      return;
+    }
+    return originalAddEventListener(type, listener, options);
+  };
+  try {
+${oldScript.textContent}
+  } finally {
+    document.addEventListener = originalAddEventListener;
+  }
+})();
+`;
+    }
+
+    oldScript.replaceWith(script);
+  });
 }
 
 function _syncNavActive() {
@@ -56,6 +100,7 @@ async function _softNavigate(url, push = true) {
     if (!nextBody || !currentBody) throw new Error('Missing page body');
 
     currentBody.innerHTML = nextBody.innerHTML;
+    _runPageScripts(currentBody);
     document.title = doc.title || document.title;
 
     if (push) history.pushState({ greenerrySoftNav: true }, '', url.href);

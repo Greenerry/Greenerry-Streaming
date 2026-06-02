@@ -285,6 +285,7 @@ function _registerMotion(root = document) {
 
   _motionGroups(root).forEach((group) => {
     root.querySelectorAll(group.selector).forEach((element, index) => {
+      if (element.closest('.admin-shell')) return;
       if (element.hasAttribute('data-motion') || element.classList.contains('no-motion')) return;
 
       element.setAttribute('data-motion', group.type);

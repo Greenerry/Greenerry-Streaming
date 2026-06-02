@@ -49,8 +49,8 @@ $totalFollowing = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_arti
 // These query flags open the follower/following modal directly from profile links.
 $showFollowers = (int)($_GET['followers'] ?? 0) === 1;
 $showFollowing = (int)($_GET['following'] ?? 0) === 1;
-$artistReleasesPerPage = 8;
-$artistProductsPerPage = 8;
+$artistReleasesPerPage = 10;
+$artistProductsPerPage = 10;
 $artistReleasePage = max(1, (int)($_GET['release_page'] ?? 1));
 $artistProductPage = max(1, (int)($_GET['product_page'] ?? 1));
 $artistReleaseTotalPages = max(1, (int)ceil($totalReleases / $artistReleasesPerPage));
@@ -406,7 +406,7 @@ include '../includes/header.php';
       </nav>
     <?php endif; ?>
 
-    <div class="grid stg" data-artist-filter-grid="release">
+    <div class="grid stg" id="artist-releases-section" data-artist-filter-grid="release">
       <?php foreach ($releases as $release): ?>
         <?php
           $cover = asset_url('img', $release['capa']);
@@ -448,9 +448,9 @@ include '../includes/header.php';
       <p class="empty-copy is-hidden" data-artist-empty="release" data-t="artist_releases_empty">Nenhum release correspondeu ao filtro.</p>
       <?php if ($artistReleaseTotalPages > 1): ?>
         <nav class="pager" aria-label="Pagination">
-          <?= $artistReleasePage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('release_page', $artistReleasePage - 1)) . '" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+          <?= $artistReleasePage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('release_page', $artistReleasePage - 1)) . '#artist-releases-section" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
           <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$artistReleasePage ?> <span data-t="pagination_of">de</span> <?= (int)$artistReleaseTotalPages ?></span>
-          <?= $artistReleasePage < $artistReleaseTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('release_page', $artistReleasePage + 1)) . '" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+          <?= $artistReleasePage < $artistReleaseTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('release_page', $artistReleasePage + 1)) . '#artist-releases-section" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
         </nav>
       <?php endif; ?>
     <?php endif; ?>
@@ -469,7 +469,7 @@ include '../includes/header.php';
         <?php endforeach; ?>
       </nav>
 
-      <div class="grid stg" data-artist-filter-grid="merch">
+      <div class="grid stg" id="artist-store-section" data-artist-filter-grid="merch">
         <?php foreach ($products as $product): ?>
           <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
           <a href="produto.php?id=<?= (int)$product['idProduto'] ?>" class="mcard" data-filter-item data-merch-category-value="<?= (int)$product['idCategoria'] ?>">
@@ -491,9 +491,9 @@ include '../includes/header.php';
         <p class="empty-copy is-hidden" data-artist-empty="merch" data-t="artist_merch_empty">Nenhum produto correspondeu ao filtro.</p>
         <?php if ($artistProductTotalPages > 1): ?>
           <nav class="pager" aria-label="Pagination">
-            <?= $artistProductPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('product_page', $artistProductPage - 1)) . '" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+            <?= $artistProductPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('product_page', $artistProductPage - 1)) . '#artist-store-section" data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
             <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$artistProductPage ?> <span data-t="pagination_of">de</span> <?= (int)$artistProductTotalPages ?></span>
-            <?= $artistProductPage < $artistProductTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('product_page', $artistProductPage + 1)) . '" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+            <?= $artistProductPage < $artistProductTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($artistPageUrl('product_page', $artistProductPage + 1)) . '#artist-store-section" data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
           </nav>
         <?php endif; ?>
       <?php endif; ?>

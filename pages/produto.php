@@ -31,6 +31,70 @@ if ($viewerId > 0 && !active_user_session($conn)) {
     $viewerId = 0;
 }
 $isOwnProduct = $viewerId > 0 && $viewerId === (int)$product['artist_id'];
+$reviewOk = '';
+$reviewErr = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
+    if ($viewerId <= 0) {
+        $reviewErr = tr('error.api_unauthenticated');
+    } else {
+        $reviewErr = verify_csrf_request() ?? '';
+    }
+    $rating = (int)($_POST['rating'] ?? 0);
+    $comment = trim((string)($_POST['comment'] ?? ''));
+    $eligibleOrder = null;
+
+    if (!$reviewErr && ($rating < 1 || $rating > 5)) {
+        $reviewErr = current_lang() === 'en' ? 'Choose a rating from 1 to 5.' : 'Escolhe uma avaliação de 1 a 5.';
+    }
+
+    if (!$reviewErr) {
+        $eligibleOrder = db_one_prepared(
+            $conn,
+            "SELECT e.idEncomenda
+             FROM encomenda e
+             JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
+             WHERE e.idCliente = ?
+               AND ei.idProduto = ?
+               AND e.estado_pagamento = 'pago'
+               AND ei.estado_item IN ('enviado', 'entregue')
+             ORDER BY e.criado_em DESC
+             LIMIT 1",
+            'ii',
+            [$viewerId, $productId]
+        );
+        if (!$eligibleOrder) {
+            $reviewErr = current_lang() === 'en'
+                ? 'Only customers who bought this product can review it.'
+                : 'Só clientes que compraram este produto podem avaliá-lo.';
+        }
+    }
+
+    if (!$reviewErr) {
+        $existingReview = db_one_prepared(
+            $conn,
+            "SELECT idReview FROM produto_review WHERE idProduto = ? AND idCliente = ? LIMIT 1",
+            'ii',
+            [$productId, $viewerId]
+        );
+        if ($existingReview) {
+            $reviewErr = current_lang() === 'en'
+                ? 'You already reviewed this product.'
+                : 'Já avaliaste este produto.';
+        }
+    }
+
+    if (!$reviewErr && $eligibleOrder) {
+        db_prepared(
+            $conn,
+            "INSERT INTO produto_review (idProduto, idCliente, idEncomenda, rating, comentario)
+             VALUES (?, ?, ?, ?, ?)",
+            'iiiis',
+            [$productId, $viewerId, (int)$eligibleOrder['idEncomenda'], $rating, $comment]
+        );
+        $reviewOk = current_lang() === 'en' ? 'Review published.' : 'Avaliação publicada.';
+    }
+}
 
 $sizes = db_all(
     $conn,
@@ -55,6 +119,43 @@ $relatedProducts = db_all(
      ORDER BY p.criado_em DESC
      LIMIT 3"
 );
+
+$reviewStats = db_one_prepared(
+    $conn,
+    "SELECT COUNT(*) AS total_reviews, COALESCE(AVG(rating), 0) AS avg_rating
+     FROM produto_review
+     WHERE idProduto = ?",
+    'i',
+    [$productId]
+) ?: ['total_reviews' => 0, 'avg_rating' => 0];
+$reviews = db_all_prepared(
+    $conn,
+    "SELECT pr.*, c.nome, c.foto
+     FROM produto_review pr
+     JOIN cliente c ON c.idCliente = pr.idCliente
+     WHERE pr.idProduto = ?
+     ORDER BY pr.criado_em DESC",
+    'i',
+    [$productId]
+);
+$canReview = false;
+if ($viewerId > 0 && !$isOwnProduct) {
+    $canReview = (bool)db_one_prepared(
+        $conn,
+        "SELECT e.idEncomenda
+         FROM encomenda e
+         JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
+         LEFT JOIN produto_review pr ON pr.idProduto = ei.idProduto AND pr.idCliente = e.idCliente
+         WHERE e.idCliente = ?
+           AND ei.idProduto = ?
+           AND e.estado_pagamento = 'pago'
+           AND ei.estado_item IN ('enviado', 'entregue')
+           AND pr.idReview IS NULL
+         LIMIT 1",
+        'ii',
+        [$viewerId, $productId]
+    );
+}
 
 include '../includes/header.php';
 
@@ -100,32 +201,15 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
               <?php if ($mainImage): ?>
                 <img src="<?= h(asset_url('img', $mainImage)) ?>" alt="<?= h($product['nomeProduto']) ?>" id="product-main-image" class="product-gallery-main">
               <?php endif; ?>
-            </div>
-            <?php if (count($productImages) > 1): ?>
-              <div class="product-gallery-controls">
-                <button type="button" class="product-gallery-arrow" data-gallery-step="-1" aria-label="<?= h(current_lang() === 'en' ? 'Previous image' : 'Imagem anterior') ?>">
+              <?php if (count($productImages) > 1): ?>
+                <button type="button" class="product-gallery-arrow product-gallery-arrow--overlay product-gallery-arrow--prev" data-gallery-step="-1" aria-label="<?= h(current_lang() === 'en' ? 'Previous image' : 'Imagem anterior') ?>">
                   <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
                 </button>
-                <div class="product-gallery-thumbs" role="tablist" aria-label="<?= h(current_lang() === 'en' ? 'Product images' : 'Imagens do produto') ?>">
-                  <?php foreach ($productImages as $thumbIndex => $thumbImage): ?>
-                    <button
-                      type="button"
-                      class="product-gallery-thumb<?= $thumbIndex === 0 ? ' on' : '' ?>"
-                      data-gallery-index="<?= (int)$thumbIndex ?>"
-                      role="tab"
-                      aria-selected="<?= $thumbIndex === 0 ? 'true' : 'false' ?>"
-                      aria-label="<?= h((current_lang() === 'en' ? 'Image ' : 'Imagem ') . ($thumbIndex + 1)) ?>"
-                    >
-                      <img src="<?= h(asset_url('img', $thumbImage)) ?>" alt="">
-                    </button>
-                  <?php endforeach; ?>
-                </div>
-                <button type="button" class="product-gallery-arrow" data-gallery-step="1" aria-label="<?= h(current_lang() === 'en' ? 'Next image' : 'Imagem seguinte') ?>">
+                <button type="button" class="product-gallery-arrow product-gallery-arrow--overlay product-gallery-arrow--next" data-gallery-step="1" aria-label="<?= h(current_lang() === 'en' ? 'Next image' : 'Imagem seguinte') ?>">
                   <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
-              </div>
-              <p class="product-gallery-count" id="product-gallery-count" aria-live="polite">1 / <?= count($productImages) ?></p>
-            <?php endif; ?>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
       </div>
@@ -200,6 +284,73 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
       </div>
     </div>
 
+    <section class="product-reviews-section">
+      <div class="page-intro mt8">
+        <span class="slabel" data-t="product_reviews_label">Avaliações</span>
+        <h2 data-t="product_reviews_title">Reviews do produto</h2>
+        <p>
+          <strong><?= number_format((float)$reviewStats['avg_rating'], 1, ',', '.') ?>/5</strong>
+          · <?= h(count_label((int)$reviewStats['total_reviews'], 'record')) ?>
+        </p>
+      </div>
+
+      <?php if ($reviewOk): ?><div class="alert alert-ok"><?= h($reviewOk) ?></div><?php endif; ?>
+      <?php if ($reviewErr): ?><div class="alert alert-err"><?= h($reviewErr) ?></div><?php endif; ?>
+
+      <?php if ($canReview): ?>
+        <form method="post" class="card surface-card product-review-form">
+          <div class="card-body">
+            <?= csrf_input() ?>
+            <div class="frow">
+              <div class="fg">
+                <label class="flabel" for="rating" data-t="product_review_rating">Avaliação</label>
+                <select id="rating" name="rating" class="finput" required>
+                  <option value="5">5 - <?= current_lang() === 'en' ? 'Excellent' : 'Excelente' ?></option>
+                  <option value="4">4 - <?= current_lang() === 'en' ? 'Good' : 'Bom' ?></option>
+                  <option value="3">3 - <?= current_lang() === 'en' ? 'Okay' : 'Razoável' ?></option>
+                  <option value="2">2</option>
+                  <option value="1">1</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="flabel" for="comment" data-t="product_review_comment">Comentário</label>
+                <textarea id="comment" name="comment" class="finput" maxlength="1200" data-tp="product_review_placeholder" placeholder="Partilha a tua opinião sobre o produto"></textarea>
+              </div>
+            </div>
+            <button type="submit" name="submit_review" value="1" class="btn btn-dark" data-t="product_review_submit">Publicar review</button>
+          </div>
+        </form>
+      <?php elseif ($viewerId > 0 && !$isOwnProduct): ?>
+        <p class="color-text3" data-t="product_review_purchase_only">Só podes avaliar depois de comprares este produto, e apenas uma vez.</p>
+      <?php endif; ?>
+
+      <?php if ($reviews): ?>
+        <div class="review-list">
+          <?php foreach ($reviews as $review): ?>
+            <article class="message-thread-item review-item">
+              <div class="between">
+                <div class="order-product-info">
+                  <div class="avatar review-avatar">
+                    <?php if (!empty($review['foto'])): ?><img src="<?= h(asset_url('img', $review['foto'])) ?>" alt=""><?php endif; ?>
+                  </div>
+                  <div>
+                    <strong><?= h($review['nome']) ?></strong>
+                    <p><?= date('d/m/Y', strtotime($review['criado_em'])) ?></p>
+                  </div>
+                </div>
+                <span class="badge badge-dark"><?= (int)$review['rating'] ?>/5</span>
+              </div>
+              <?php if (!empty($review['comentario'])): ?>
+                <p><?= nl2br(h($review['comentario'])) ?></p>
+              <?php endif; ?>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <p class="color-text3" data-t="product_reviews_empty">Ainda não existem reviews.</p>
+      <?php endif; ?>
+    </section>
+
     <?php if ($relatedProducts): ?>
       <div class="page-intro mt8">
         <span class="slabel" data-t="product_more_merch">Mais merch</span>
@@ -226,212 +377,5 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
   </div>
 </section>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const box = document.querySelector('.product-buy-box');
-  const button = document.getElementById('product-add-btn');
-  const sizeSelect = document.getElementById('product-size');
-  const stockNote = document.getElementById('product-stock-note');
-  const currentLang = () => (localStorage.getItem('g_lang') || document.documentElement.lang || 'pt').toLowerCase().startsWith('en') ? 'en' : 'pt';
-  const productText = (pt, en) => currentLang() === 'en' ? en : pt;
-  const unitLabel = (stock) => currentLang() === 'en'
-    ? (stock === 1 ? 'unit' : 'units')
-    : (stock === 1 ? 'unidade' : 'unidades');
-
-  if (!box || !button) {
-    return;
-  }
-
-  const mainImage = document.getElementById('product-main-image');
-  const galleryRoot = document.querySelector('.product-gallery');
-  const galleryCover = galleryRoot?.querySelector('.product-cover');
-  const galleryCount = document.getElementById('product-gallery-count');
-  const galleryThumbs = Array.from(document.querySelectorAll('.product-gallery-thumb'));
-  let galleryImages = [];
-  try {
-    galleryImages = JSON.parse(galleryRoot?.dataset.galleryImages || '[]');
-  } catch {
-    galleryImages = [];
-  }
-  let galleryIndex = 0;
-
-  function updateGalleryFrame() {
-    if (!mainImage || !galleryCover || !mainImage.naturalWidth || !mainImage.naturalHeight) {
-      return;
-    }
-
-    const ratio = mainImage.naturalWidth / mainImage.naturalHeight;
-    galleryCover.classList.remove('product-cover--portrait', 'product-cover--wide');
-
-    if (ratio < 0.82) {
-      galleryCover.classList.add('product-cover--portrait');
-    } else if (ratio > 1.18) {
-      galleryCover.classList.add('product-cover--wide');
-    }
-  }
-
-  function syncGalleryUi() {
-    galleryThumbs.forEach((thumb, index) => {
-      const active = index === galleryIndex;
-      thumb.classList.toggle('on', active);
-      thumb.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-
-    if (galleryCount && galleryImages.length > 1) {
-      galleryCount.textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
-    }
-  }
-
-  function showGalleryImage(index) {
-    if (!mainImage || !galleryImages.length) {
-      return;
-    }
-
-    const nextIndex = (index + galleryImages.length) % galleryImages.length;
-    if (!galleryImages[nextIndex] || nextIndex === galleryIndex) {
-      return;
-    }
-
-    galleryIndex = nextIndex;
-    mainImage.classList.add('is-changing');
-
-    window.setTimeout(() => {
-      mainImage.src = galleryImages[galleryIndex];
-      syncGalleryUi();
-    }, 120);
-  }
-
-  if (mainImage) {
-    mainImage.addEventListener('load', () => {
-      mainImage.classList.remove('is-changing');
-      updateGalleryFrame();
-    });
-    if (mainImage.complete) {
-      updateGalleryFrame();
-    }
-  }
-
-  document.querySelectorAll('[data-gallery-step]').forEach((button) => {
-    button.addEventListener('click', () => {
-      showGalleryImage(galleryIndex + Number(button.dataset.galleryStep || 0));
-    });
-  });
-
-  galleryThumbs.forEach((thumb) => {
-    thumb.addEventListener('click', () => {
-      showGalleryImage(Number(thumb.dataset.galleryIndex || 0));
-    });
-  });
-
-  syncGalleryUi();
-
-  function updateStockNote(stock, label = '') {
-    if (!stockNote) {
-      return;
-    }
-    if (box.dataset.ownProduct === '1') {
-      stockNote.textContent = productText('Não podes comprar o teu próprio produto.', 'You cannot buy your own product.');
-      return;
-    }
-    if (sizeSelect) {
-      if (!label) {
-        stockNote.textContent = productText('Seleciona um tamanho para ver o stock.', 'Select a size to see stock.');
-        return;
-      }
-      stockNote.textContent = stock > 0
-        ? productText(`Stock ${label}: ${stock} ${unitLabel(stock)}`, `${label} stock: ${stock} ${unitLabel(stock)}`)
-        : productText(`${label} sem stock.`, `${label} is out of stock.`);
-      return;
-    }
-    stockNote.textContent = stock > 0
-      ? productText(`Em stock: ${stock} ${unitLabel(stock)}`, `In stock: ${stock} ${unitLabel(stock)}`)
-      : productText('Sem stock', 'Out of stock');
-  }
-
-  if (sizeSelect) {
-    sizeSelect.addEventListener('change', () => {
-      const selected = sizeSelect.options[sizeSelect.selectedIndex];
-      const stock = Number(selected?.dataset?.stock || 0);
-      box.dataset.productStock = stock;
-      const qtyEl = box.querySelector('.product-qty');
-      if (qtyEl) {
-        const nextQty = stock > 0 ? Math.min(Number(qtyEl.textContent) || 1, stock) : 1;
-        qtyEl.textContent = String(nextQty);
-      }
-      updateStockNote(stock, selected?.textContent?.split(' - ')[0] || '');
-    });
-    updateStockNote(0, '');
-  } else {
-    updateStockNote(Number(box.dataset.baseStock || 0));
-  }
-
-  window.addEventListener('greenerry:langchange', () => {
-    if (sizeSelect) {
-      const selected = sizeSelect.options[sizeSelect.selectedIndex];
-      const stock = Number(selected?.dataset?.stock || 0);
-      updateStockNote(stock, selected?.value ? (selected.textContent || '').split(' - ')[0] : '');
-      return;
-    }
-
-    updateStockNote(Number(box.dataset.baseStock || 0));
-  });
-
-  window.handleProductAddToCart = () => {
-    if (box.dataset.ownProduct === '1') {
-      toast(productText('Não podes comprar o teu próprio produto.', 'You cannot buy your own product.'));
-      return;
-    }
-
-    const qtyEl = box.querySelector('.product-qty');
-    const qty = Number(qtyEl?.textContent || 1);
-    const stock = Number(box.dataset.productStock || 0);
-    const sizeId = sizeSelect ? Number(sizeSelect.value || 0) : 0;
-
-    if (sizeSelect && !sizeId) {
-      toast(productText('Seleciona um tamanho antes de adicionar ao carrinho.', 'Select a size before adding to cart.'));
-      return;
-    }
-
-    if (stock <= 0) {
-      toast(productText('Este produto esta sem stock.', 'This product is out of stock.'));
-      return;
-    }
-
-    const cart = JSON.parse(localStorage.getItem('g_cart') || '[]');
-    const itemKey = sizeId > 0 ? `${box.dataset.productId}:${sizeId}` : `${box.dataset.productId}`;
-    const existing = cart.find((item) => item.key === itemKey);
-    const sizeName = sizeSelect ? (sizeSelect.options[sizeSelect.selectedIndex]?.textContent?.split(' - ')[0] || '') : '';
-
-    if (existing) {
-      existing.qty = Math.min(existing.qty + qty, stock);
-    } else {
-      cart.push({
-        key: itemKey,
-        id: Number(box.dataset.productId),
-        name: box.dataset.productName,
-        price: Number(box.dataset.productPrice),
-        img: box.dataset.productImg,
-        qty,
-        stock,
-        sizeId,
-        sizeName
-      });
-    }
-
-    localStorage.setItem('g_cart', JSON.stringify(cart));
-
-    if (typeof updateCartBadgeGlobal === 'function') {
-      updateCartBadgeGlobal();
-    }
-
-    toast(productText('Produto adicionado ao carrinho.', 'Product added to cart.'));
-
-    if ((document.body?.dataset?.userId || '0') === '0') {
-      toast(productText('Guardado no carrinho. Inicia sessao para finalizar.', 'Saved to cart. Sign in to checkout.'));
-      setTimeout(() => { window.location.href = 'login.php?next=cart.php'; }, 650);
-    }
-  };
-});
-</script>
 
 <?php include '../includes/footer.php'; ?>

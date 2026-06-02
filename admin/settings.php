@@ -91,7 +91,7 @@ include 'admin_header.php';
 <form method="post" class="settings-grid">
   <?= csrf_input() ?>
 
-  <details class="acard-box settings-panel" open>
+  <details class="acard-box settings-panel">
     <summary class="settings-panel-summary">
       <h4 data-admin-t="settings_public_contact">Contacto publico</h4>
       <span data-admin-t="settings_panel_email_note">Email, SMTP e contacto</span>
@@ -182,13 +182,13 @@ include 'admin_header.php';
     </div>
   </details>
 
-  <section class="acard-box settings-save-card">
-    <div>
+  <footer class="admin-save-bar">
+    <div class="admin-save-bar-copy">
       <span class="admin-kicker" data-admin-t="settings_live_kicker">User side</span>
-      <h4 data-admin-t="settings_live_title">As alteracoes aparecem no footer publico.</h4>
+      <p data-admin-t="settings_live_title">As alteracoes aparecem no footer publico.</p>
     </div>
     <button type="submit" class="btn btn-dark" data-admin-t="settings_save">Guardar definicoes</button>
-  </section>
+  </footer>
 </form>
 
 <?php include 'admin_footer.php'; ?>

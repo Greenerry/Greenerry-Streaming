@@ -193,7 +193,11 @@ include '../includes/header.php';
         <article>
           <span data-t="revenue_received">Valor recebido</span>
           <strong><?= h(format_eur((float)($summary['total_artist_value'] ?? 0))) ?></strong>
-          <small><?= (int)($summary['total_items'] ?? 0) ?> <span data-t="revenue_items">itens vendidos</span></small>
+          <div class="client-revenue-kpi-meta">
+            <small><?= (int)($summary['total_items'] ?? 0) ?> <span data-t="revenue_items">itens vendidos</span></small>
+            <?php $avgPerItem = (int)($summary['total_items'] ?? 0) > 0 ? (float)($summary['total_artist_value'] ?? 0) / (int)($summary['total_items'] ?? 0) : 0; ?>
+            <span class="badge badge-light"><?= h(format_eur($avgPerItem)) ?> / item</span>
+          </div>
         </article>
         <article>
           <span data-t="revenue_orders">Encomendas entregues</span>

@@ -245,13 +245,13 @@ include 'admin_header.php';
     </div>
   </section>
 
-  <section class="acard-box settings-save-card curator-save-card">
-    <div>
+  <footer class="admin-save-bar">
+    <div class="admin-save-bar-copy">
       <span class="admin-kicker" data-admin-t="settings_live_kicker">User side</span>
-      <h4 data-admin-t="home_curator_save_note">Os destaques atualizam a homepage publica.</h4>
+      <p data-admin-t="home_curator_save_note">Os destaques atualizam a homepage publica.</p>
     </div>
     <button type="submit" class="btn btn-dark" data-admin-t="settings_save">Guardar definicoes</button>
-  </section>
+  </footer>
 </form>
 
 <?php include 'admin_footer.php'; ?>

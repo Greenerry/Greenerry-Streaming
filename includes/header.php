@@ -57,7 +57,8 @@ if (str_ends_with($clientPagesDir, '/pages') && page_under_maintenance($page) &&
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=optional" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
 <body data-user-id="<?= (int)$jsUserId ?>">
@@ -105,32 +106,20 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
             <span data-t="nav_cart">Carrinho</span><span class="cart-badge">0</span>
           </a>
           <a href="<?= $_base ?>/pages/favourites.php" class="sl-link <?= $page === 'favourites.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <span data-t="nav_favourites">Favoritos</span>
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span data-t="nav_library">Biblioteca</span>
           </a>
-          <a href="<?= $_base ?>/pages/contact_admin.php" class="sl-link <?= $page === 'contact_admin.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span data-t="nav_contact_admin">Falar com o admin</span>
+          <a href="<?= $_base ?>/pages/my_orders.php" class="sl-link <?= $page === 'my_orders.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 10h6"/><path d="M8 14h6"/><path d="M8 18h6"/></svg>
+            <span data-t="nav_my_orders">As minhas compras</span>
           </a>
         </div>
 
         <div class="sl-sec">
-          <span class="sl-lbl" data-t="nav_tools">Ferramentas</span>
-          <a href="<?= $_base ?>/pages/upload_music.php" class="sl-link <?= $page === 'upload_music.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><polyline points="9 18 5 15 9 12"/></svg>
-            <span data-t="nav_upload_music">Publicar música</span>
-          </a>
-          <a href="<?= $_base ?>/pages/upload_merch.php" class="sl-link <?= $page === 'upload_merch.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><polyline points="16 10 12 6 8 10"/><line x1="12" y1="6" x2="12" y2="16"/></svg>
-            <span data-t="nav_upload_merch">Publicar merch</span>
-          </a>
-          <a href="<?= $_base ?>/pages/orders.php" class="sl-link <?= $page === 'orders.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 10h6"/><path d="M8 14h6"/><path d="M8 18h6"/></svg>
-            <span data-t="nav_orders">Pedidos</span><span class="orders-badge" style="<?= $pendingArtistOrders > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistOrders ?></span>
-          </a>
-          <a href="<?= $_base ?>/pages/revenue.php" class="sl-link <?= $page === 'revenue.php' ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            <span data-t="nav_revenue">Rendimento</span>
+          <span class="sl-lbl" data-t="nav_artist_area">�rea de artista</span>
+          <a href="<?= $_base ?>/pages/artist_dashboard.php" class="sl-link sl-link--artist <?= in_array($page, ['artist_dashboard.php', 'upload_music.php', 'upload_merch.php', 'orders.php', 'revenue.php'], true) ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M17 8H9.5a3.5 3.5 0 0 0 0 7H15a3 3 0 0 1 0 6H7"/><path d="M6 3h12"/></svg>
+            <span data-t="nav_artist_side">Artist side</span><span class="orders-badge" style="<?= $pendingArtistOrders > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistOrders ?></span>
           </a>
         </div>
       <?php elseif (is_admin_logged_in()): ?>

@@ -176,7 +176,11 @@ foreach ($featuredProducts as $product) {
     $productImage = product_main_image($conn, (int)$product['idProduto']);
     $addHomeMedia($homeStoreCloud, asset_url('img', $productImage), (string)$product['nomeProduto'], 'store');
 }
-$homeMediaCloud = array_values(array_slice($homeMusicCloud + $homeArtistCloud + $homeStoreCloud, 0, 24));
+$homeMediaCloud = array_values(array_merge(
+    array_slice($homeMusicCloud, 0, 8),
+    array_slice($homeArtistCloud, 0, 8),
+    array_slice($homeStoreCloud, 0, 8)
+));
 $homeMusicCloud = array_values(array_slice($homeMusicCloud, 0, 18));
 $homeArtistCloud = array_values(array_slice($homeArtistCloud, 0, 18));
 $homeStoreCloud = array_values(array_slice($homeStoreCloud, 0, 18));

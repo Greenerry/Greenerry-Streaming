@@ -110,6 +110,148 @@ function _escapeHtml(value) {
   })[char]);
 }
 
+let _playlistTargetTrack = 0;
+let _playlistCache = [];
+let _playlistSearch = '';
+
+function _playlistText(pt, en) {
+  return typeof commerceText === 'function' ? commerceText(pt, en) : ((lang || 'pt') === 'en' ? en : pt);
+}
+
+async function _loadPlaylistCache() {
+  const url = new URL((window.SITE_BASE || '') + '/api/playlists.php', window.location.origin);
+  url.searchParams.set('action', 'list');
+  if (_playlistTargetTrack) url.searchParams.set('trackId', _playlistTargetTrack);
+  const response = await fetch(url.toString());
+  const result = await response.json();
+  _playlistCache = Array.isArray(result.playlists) ? result.playlists : [];
+  return _playlistCache;
+}
+
+function _renderPlaylistPicker() {
+  const list = document.getElementById('playlist-picker-list');
+  if (!list) return;
+
+  const query = _playlistSearch.trim().toLowerCase();
+  const playlists = query
+    ? _playlistCache.filter((playlist) => String(playlist.nome || '').toLowerCase().includes(query))
+    : _playlistCache;
+
+  if (!_playlistCache.length) {
+    list.innerHTML = `<p class="color-text3">${_playlistText('Cria uma playlist para guardar esta musica.', 'Create a playlist to save this song.')}</p>`;
+    return;
+  }
+
+  if (!playlists.length) {
+    list.innerHTML = `<p class="color-text3">${_playlistText('Nenhuma playlist encontrada.', 'No playlists found.')}</p>`;
+    return;
+  }
+
+  list.innerHTML = playlists.map((playlist) => {
+    const saved = Number(playlist.in_playlist || 0) > 0;
+    const count = Number(playlist.total_faixas || 0);
+    return `
+    <button type="button" class="playlist-picker-option ${saved ? 'is-saved' : ''}" data-playlist-id="${Number(playlist.idPlaylist)}" data-playlist-saved="${saved ? '1' : '0'}">
+      <span class="playlist-picker-art">${saved ? '&#10003;' : '&#9835;'}</span>
+      <span class="playlist-picker-copy"><strong>${_escapeHtml(playlist.nome || '')}</strong><small>${count} ${_playlistText(count === 1 ? 'faixa' : 'faixas', count === 1 ? 'track' : 'tracks')}</small></span>
+      <span class="playlist-picker-check" aria-hidden="true">&#10003;</span>
+    </button>
+  `;
+  }).join('');
+
+  list.querySelectorAll('[data-playlist-id]').forEach((button) => {
+    button.addEventListener('click', () => _toggleTrackInPlaylist(Number(button.dataset.playlistId || 0), button.dataset.playlistSaved === '1'));
+  });
+}
+
+async function openPlaylistPicker(button) {
+  _playlistTargetTrack = Number(button?.dataset?.trackId || 0);
+  if (!_playlistTargetTrack) return;
+  _playlistSearch = '';
+  const search = document.getElementById('playlist-picker-search');
+  if (search) search.value = '';
+  await _loadPlaylistCache();
+  _renderPlaylistPicker();
+  document.getElementById('playlist-picker')?.showModal();
+}
+
+async function _toggleTrackInPlaylist(playlistId, saved) {
+  const body = new URLSearchParams();
+  body.set('action', saved ? 'remove_track' : 'add_track');
+  body.set('playlistId', playlistId);
+  body.set('trackId', _playlistTargetTrack);
+  if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
+
+  const response = await fetch((window.SITE_BASE || '') + '/api/playlists.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString()
+  });
+  const result = await response.json();
+  if (!result.success) {
+    toast(result.error || 'Error');
+    return;
+  }
+
+  await _loadPlaylistCache();
+  _renderPlaylistPicker();
+  toast(saved ? _playlistText('Musica removida da playlist.', 'Song removed from playlist.') : _playlistText('Musica adicionada a playlist.', 'Song added to playlist.'));
+}
+
+function initPlaylistPicker(root = document) {
+  const createButton = root.getElementById?.('playlist-picker-create') || document.getElementById('playlist-picker-create');
+  const search = root.getElementById?.('playlist-picker-search') || document.getElementById('playlist-picker-search');
+  const newToggle = root.getElementById?.('playlist-picker-new-toggle') || document.getElementById('playlist-picker-new-toggle');
+  const createRow = root.getElementById?.('playlist-picker-create-row') || document.getElementById('playlist-picker-create-row');
+
+  if (search && search.dataset.playlistReady !== '1') {
+    search.dataset.playlistReady = '1';
+    search.addEventListener('input', () => {
+      _playlistSearch = search.value || '';
+      _renderPlaylistPicker();
+    });
+  }
+
+  if (newToggle && newToggle.dataset.playlistReady !== '1') {
+    newToggle.dataset.playlistReady = '1';
+    newToggle.addEventListener('click', () => {
+      if (!createRow) return;
+      createRow.hidden = !createRow.hidden;
+      if (!createRow.hidden) document.getElementById('playlist-picker-new')?.focus();
+    });
+  }
+
+  if (!createButton || createButton.dataset.playlistReady === '1') return;
+  createButton.dataset.playlistReady = '1';
+  createButton.addEventListener('click', async () => {
+    const input = document.getElementById('playlist-picker-new');
+    const name = (input?.value || '').trim();
+    if (!name) return;
+
+    const body = new URLSearchParams();
+    body.set('action', 'create');
+    body.set('name', name);
+    if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
+
+    const response = await fetch((window.SITE_BASE || '') + '/api/playlists.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      if (input) input.value = '';
+      if (createRow) createRow.hidden = true;
+      await _loadPlaylistCache();
+      _renderPlaylistPicker();
+      return;
+    }
+
+    toast(result.error || 'Error');
+  });
+}
+
 function _renderFavPager(total, currentPage) {
   const pager = document.getElementById('favs-pager');
   if (!pager) return;

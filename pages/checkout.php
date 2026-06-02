@@ -377,7 +377,7 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <?php if ($ok): ?>
-      <div class="card surface-card">
+      <div class="card surface-card" data-clear-cart-on-load>
         <div class="card-body text-center">
           <span class="badge badge-blue" data-t="checkout_success_badge">Encomenda criada</span>
           <h3 class="mt4"><span data-t="checkout_order_number">Pedido</span> #<?= (int)$orderId ?></h3>
@@ -389,14 +389,6 @@ include '../includes/header.php';
         </div>
       </div>
 
-      <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        localStorage.setItem('g_cart', '[]');
-        if (typeof updateCartBadgeGlobal === 'function') {
-          updateCartBadgeGlobal();
-        }
-      });
-      </script>
     <?php else: ?>
       <div class="checkout-layout">
         <div class="card surface-card">
@@ -499,77 +491,6 @@ include '../includes/header.php';
         </div>
       </div>
 
-      <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        // Hidden cart_json bridges the local cart UI to the PHP checkout handler.
-        const cart = JSON.parse(localStorage.getItem('g_cart') || '[]');
-        const items = document.getElementById('checkout-items');
-        const subtotalEl = document.getElementById('checkout-subtotal');
-        const ivaEl = document.getElementById('checkout-iva');
-        const totalEl = document.getElementById('checkout-total');
-        const cartJson = document.getElementById('cart_json');
-        const countrySelect = document.getElementById('pais');
-        const postalInput = document.getElementById('codigo_postal');
-        const phoneInput = document.getElementById('telefone');
-        const taxLabel = document.getElementById('tax-label');
-
-        cartJson.value = JSON.stringify(cart);
-
-        const syncCountryFields = () => {
-          const option = countrySelect.options[countrySelect.selectedIndex];
-          postalInput.placeholder = option.dataset.postalPlaceholder || '';
-          postalInput.pattern = option.dataset.postalPattern || '';
-          phoneInput.placeholder = option.dataset.phonePlaceholder || '';
-          if (countrySelect.value === 'Portugal') {
-            taxLabel.dataset.t = 'checkout_tax_nif';
-            taxLabel.textContent = 'NIF';
-          } else {
-            taxLabel.dataset.t = 'checkout_tax_number';
-            taxLabel.textContent = document.documentElement.lang === 'en' ? 'Tax number' : 'Número fiscal';
-          }
-        };
-
-        countrySelect.addEventListener('change', syncCountryFields);
-        window.addEventListener('greenerry:langchange', syncCountryFields);
-        syncCountryFields();
-
-        const renderEmptyCart = () => {
-          items.innerHTML = `<p data-t="checkout_empty_cart">${document.documentElement.lang === 'en' ? 'The cart is empty.' : 'O carrinho esta vazio.'}</p>`;
-        };
-
-        if (!cart.length) {
-          renderEmptyCart();
-          window.addEventListener('greenerry:langchange', renderEmptyCart);
-          return;
-        }
-
-        let subtotal = 0;
-
-        items.innerHTML = cart.map((item) => {
-          const qty = Number(item.qty || 1);
-          const price = Number(item.price || 0);
-          const lineTotal = qty * price;
-          subtotal += lineTotal;
-
-          return `
-            <div class="simple-list-item">
-              <div>
-                <strong>${item.name || ''}</strong>
-                <p>${qty} x ${price.toFixed(2).replace('.', ',')} EUR</p>
-              </div>
-              <span>${lineTotal.toFixed(2).replace('.', ',')} EUR</span>
-            </div>
-          `;
-        }).join('');
-
-        const iva = subtotal * 0.23;
-        const total = subtotal + iva;
-
-        subtotalEl.textContent = subtotal.toFixed(2).replace('.', ',') + ' EUR';
-        ivaEl.textContent = iva.toFixed(2).replace('.', ',') + ' EUR';
-        totalEl.textContent = total.toFixed(2).replace('.', ',') + ' EUR';
-      });
-      </script>
     <?php endif; ?>
   </div>
 </section>

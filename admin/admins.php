@@ -209,8 +209,10 @@ include 'admin_header.php';
           $roleLabel = $rowIsSuper
               ? (current_lang() === 'en' ? 'Super admin' : 'Admin principal')
               : ($roles[(string)$row['cargo']][current_lang()] ?? $row['cargo']);
+          $roleKey = admin_role_key($row);
+          $isLimited = !in_array($roleKey, ['super', 'admin'], true);
           ?>
-          <tr data-admin-state="<?= h($state . ' ' . admin_role_key($row) . ' ' . $row['cargo']) ?>">
+          <tr data-admin-state="<?= h($state . ' ' . $roleKey . ' ' . $row['cargo'] . ($isLimited ? ' limitado' : '')) ?>">
             <td>#<?= (int)$row['idAdmin'] ?></td>
             <td><strong><?= h($row['nome']) ?></strong><br><span><?= h(date('d/m/Y', strtotime($row['criado_em']))) ?></span></td>
             <td><?= h($row['email']) ?></td>
@@ -218,6 +220,8 @@ include 'admin_header.php';
               <span class="badge badge-light" <?= $rowIsSuper ? 'data-admin-t="admins_role_super"' : ($roleKey ? 'data-admin-t="' . h($roleKey) . '"' : '') ?>><?= h($roleLabel) ?></span>
               <?php if ($rowIsSuper): ?>
                 <small class="admin-role-note" data-admin-t="admins_owner_account">Conta dona</small>
+              <?php elseif (!in_array(admin_role_key($row), ['super', 'admin'], true)): ?>
+                <small class="admin-role-note">Limitado</small>
               <?php endif; ?>
             </td>
             <td><span class="badge <?= h(state_badge_class($state)) ?>"><?= h(order_status_label($state)) ?></span></td>

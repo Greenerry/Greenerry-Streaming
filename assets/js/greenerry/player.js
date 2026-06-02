@@ -42,7 +42,7 @@ function _pickRandomTrack(excluded = []) {
   return source[Math.floor(Math.random() * source.length)];
 }
 
-const QUEUE_DISPLAY_MAX = 4;
+const QUEUE_DISPLAY_MAX = 5;
 
 function _fillRandomQueue(minItems = QUEUE_DISPLAY_MAX) {
   if (!_allTracks.length) return;
@@ -282,6 +282,24 @@ let _fakeT = 0;
 let _fakeDur = 210;
 let _fakeTimer = null;
 let _audioBound = false;
+let _listenReportedKey = '';
+
+function _reportListen(seconds = 0) {
+  if (!_cur?.id || !_cur?.artistId) return;
+  const key = `${_cur.id}:${Math.floor(Date.now() / 60000)}`;
+  if (_listenReportedKey === key) return;
+  _listenReportedKey = key;
+
+  const body = new URLSearchParams();
+  body.set('trackId', _cur.id);
+  body.set('seconds', Math.max(0, Math.floor(seconds || 0)));
+  if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
+  fetch((window.SITE_BASE || '') + '/api/listen.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString()
+  }).catch(() => {});
+}
 
 function _bindAudio(audio) {
   if (_audioBound) return;
@@ -297,6 +315,9 @@ function _bindAudio(audio) {
     _setText('pb-dur', _fmt(audio.duration));
     const now = Date.now();
     if (now - _saveThrottle > 5000) { _saveThrottle = now; _saveState(); }
+    if (audio.currentTime >= 20 || (audio.duration && audio.currentTime / audio.duration >= 0.5)) {
+      _reportListen(audio.currentTime);
+    }
   };
 
   audio.onended = () => {
@@ -322,6 +343,7 @@ function _startFake() {
       _updatePlayBtn(false);
       nextTrack();
     }
+    if (_fakeT >= 20) _reportListen(_fakeT);
   }, 1000);
 }
 

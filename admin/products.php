@@ -42,6 +42,13 @@ $adminProductsTotalPages = max(1, (int)ceil($totalAdminProducts / $adminProducts
 $adminProductsPage = min($adminProductsPage, $adminProductsTotalPages);
 $adminProductsOffset = ($adminProductsPage - 1) * $adminProductsPerPage;
 
+$pendingPerPage = 6;
+$pendingPage = max(1, (int)($_GET['pending_page'] ?? 1));
+$totalPending = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM produto WHERE estado = 'pendente'")['total'] ?? 0);
+$pendingTotalPages = max(1, (int)ceil($totalPending / $pendingPerPage));
+$pendingPage = min($pendingPage, $pendingTotalPages);
+$pendingOffset = ($pendingPage - 1) * $pendingPerPage;
+
 $pending = db_all(
     $conn,
     "SELECT p.*, c.nome AS artista, cat.nomeCategoria
@@ -50,7 +57,7 @@ $pending = db_all(
      JOIN categoria cat ON cat.idCategoria = p.idCategoria
      WHERE p.estado = 'pendente'
      ORDER BY p.criado_em DESC
-     LIMIT 30"
+     LIMIT {$pendingPerPage} OFFSET {$pendingOffset}"
 );
 
 $allProducts = db_all(
@@ -110,7 +117,7 @@ include 'admin_header.php';
 <section class="acard-box">
   <div class="acard-box-head">
     <h4 data-admin-t="products_pending">Produtos pendentes</h4>
-    <span class="badge badge-red"><?= count($pending) ?></span>
+    <span class="badge badge-red"><?= (int)$totalPending ?></span>
   </div>
 
   <?php if (!$pending): ?>
@@ -122,15 +129,34 @@ include 'admin_header.php';
         <article class="admin-review-card" data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
-              <span class="badge badge-light"><?= h($product['nomeCategoria']) ?></span>
-              <strong><?= h($product['nomeProduto']) ?></strong>
-              <p><span data-admin-t="label_artist">Artista</span>: <?= h($product['artista']) ?></p>
-              <p><span data-admin-t="label_price">Preco</span>: <?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</p>
-              <p>IVA: <?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</p>
-              <p><span data-admin-t="label_commission">Comissão</span>: <?= number_format((float)$product['comissao_percentual'], 2, ',', '.') ?>%</p>
-              <p><span data-admin-t="label_total_stock">Stock total</span>: <?= (int)$product['stock_total'] ?></p>
+              <span class="badge badge-light" style="margin-bottom: 12px;"><?= h($product['nomeCategoria']) ?></span>
+              <strong style="display: block; font-size: 1.15rem; margin-bottom: 8px;"><?= h($product['nomeProduto']) ?></strong>
+              
+              <div class="admin-review-meta-grid">
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_artist">Artista</span>
+                  <strong><?= h($product['artista']) ?></strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_price">Preço</span>
+                  <strong><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span>IVA</span>
+                  <strong><?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_commission">Comissão</span>
+                  <strong><?= number_format((float)$product['comissao_percentual'], 2, ',', '.') ?>%</strong>
+                </div>
+                <div class="admin-review-meta-item">
+                  <span data-admin-t="label_total_stock">Stock total</span>
+                  <strong><?= (int)$product['stock_total'] ?></strong>
+                </div>
+              </div>
+
               <?php if (!empty($product['descricaoProduto'])): ?>
-                <p><?= h($product['descricaoProduto']) ?></p>
+                <p style="margin-top: 12px; font-size: 0.88rem; line-height: 1.5; color: var(--admin-soft);"><?= h($product['descricaoProduto']) ?></p>
               <?php endif; ?>
             </div>
             <?php if ($productImage): ?>
@@ -150,6 +176,15 @@ include 'admin_header.php';
         </article>
       <?php endforeach; ?>
     </div>
+    
+    <?php if ($pendingTotalPages > 1): ?>
+      <?php $otherPageParam = isset($_GET['page']) ? '&page=' . (int)$_GET['page'] : ''; ?>
+      <nav class="pager" aria-label="Pending Pagination">
+        <?= $pendingPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage - 1) . $otherPageParam . '#products-search" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status">Página <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
+        <?= $pendingPage < $pendingTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage + 1) . $otherPageParam . '#products-search" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+      </nav>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 
@@ -225,10 +260,11 @@ include 'admin_header.php';
       </table>
     </div>
     <?php if ($adminProductsTotalPages > 1): ?>
+      <?php $otherPendingPageParam = isset($_GET['pending_page']) ? '&pending_page=' . (int)$_GET['pending_page'] : ''; ?>
       <nav class="pager" aria-label="Pagination">
-        <?= $adminProductsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage - 1) . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <?= $adminProductsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage - 1) . $otherPendingPageParam . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
         <span class="pager-status">Página <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
-        <?= $adminProductsPage < $adminProductsTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage + 1) . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+        <?= $adminProductsPage < $adminProductsTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage + 1) . $otherPendingPageParam . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>
   <?php endif; ?>

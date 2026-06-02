@@ -25,11 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$perPage = 20;
+$page = max(1, (int)($_GET['page'] ?? 1));
+$totalUsers = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM cliente")['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalUsers / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
 $users = db_all(
     $conn,
     "SELECT c.*,
             COUNT(DISTINCT p.idProduto) AS total_products,
-            COUNT(DISTINCT r.idRelease) AS total_releases,
+            COUNT(DISTINCT CASE WHEN r.estado = 'aprovado' THEN r.idRelease END) AS total_releases,
             COUNT(DISTINCT e.idEncomenda) AS total_orders
      FROM cliente c
      LEFT JOIN produto p ON p.idCliente = c.idCliente
@@ -37,7 +44,7 @@ $users = db_all(
      LEFT JOIN encomenda e ON e.idCliente = c.idCliente
      GROUP BY c.idCliente
      ORDER BY c.criado_em DESC
-     LIMIT 120"
+     LIMIT {$perPage} OFFSET {$offset}"
 );
 
 $stats = [
@@ -93,7 +100,7 @@ include 'admin_header.php';
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input type="search" data-admin-search="users-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
       </label>
-      <span class="badge badge-light"><?= count($users) ?></span>
+      <span class="badge badge-light"><?= (int)$totalUsers ?></span>
     </div>
   </div>
 
@@ -142,6 +149,13 @@ include 'admin_header.php';
         </tbody>
       </table>
     </div>
+  <?php endif; ?>
+  <?php if ($totalPages > 1): ?>
+    <nav class="pager" aria-label="Pagination">
+      <?= $page > 1 ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page - 1) . '" data-users-pager data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
+      <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$page ?> <span data-t="pagination_of">de</span> <?= (int)$totalPages ?></span>
+      <?= $page < $totalPages ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page + 1) . '" data-users-pager data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+    </nav>
   <?php endif; ?>
 </section>
 </div>

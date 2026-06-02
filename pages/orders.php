@@ -10,8 +10,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
     $orderId = (int)($_POST['order_id'] ?? 0);
     $action = $_POST['action'] ?? '';
+    $productId = (int)($_POST['product_id'] ?? 0);
 
-    if (!$error && $orderId > 0 && in_array($action, ['prepare', 'ship', 'deliver', 'cancel'], true)) {
+    if (!$error && $action === 'reply_message' && $orderId > 0 && $productId > 0) {
+        $message = trim((string)($_POST['message'] ?? ''));
+        $thread = db_one_prepared(
+            $conn,
+            "SELECT e.idCliente AS comprador, ei.idArtista
+             FROM encomenda e
+             JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
+             WHERE e.idEncomenda = ?
+               AND ei.idProduto = ?
+               AND ei.idArtista = ?
+             LIMIT 1",
+            'iii',
+            [$orderId, $productId, $uid]
+        );
+        if (!$thread || $message === '') {
+            $error = current_lang() === 'en' ? 'Write a reply for the buyer.' : 'Escreve uma resposta para o comprador.';
+        } else {
+            db_prepared(
+                $conn,
+                "INSERT INTO encomenda_mensagem (idEncomenda, idProduto, idComprador, idArtista, remetente, mensagem)
+                 VALUES (?, ?, ?, ?, 'artista', ?)",
+                'iiiis',
+                [$orderId, $productId, (int)$thread['comprador'], $uid, $message]
+            );
+            create_notification(
+                $conn,
+                (int)$thread['comprador'],
+                current_lang() === 'en' ? 'Seller replied' : 'Resposta do vendedor',
+                (current_lang() === 'en' ? 'Order #' : 'Encomenda #') . $orderId . ': ' . mb_substr($message, 0, 120),
+                'encomenda'
+            );
+            $feedback = current_lang() === 'en' ? 'Reply sent.' : 'Resposta enviada.';
+        }
+    } elseif (!$error && $orderId > 0 && in_array($action, ['prepare', 'ship', 'deliver', 'cancel'], true)) {
         // Artists can only update the order lines that belong to their own merch.
         $ownedItems = db_all(
             $conn,
@@ -294,6 +328,18 @@ include '../includes/header.php';
               <div class="simple-list">
                 <?php foreach ($items as $item): ?>
                   <?php $productImage = product_main_image($conn, (int)$item['idProduto']); ?>
+                  <?php
+                  $messages = db_all_prepared(
+                      $conn,
+                      "SELECT * FROM encomenda_mensagem
+                       WHERE idEncomenda = ?
+                         AND idProduto = ?
+                         AND idArtista = ?
+                       ORDER BY criado_em ASC",
+                      'iii',
+                      [(int)$order['idEncomenda'], (int)$item['idProduto'], $uid]
+                  );
+                  ?>
                   <div class="simple-list-item">
                     <div class="order-product-info">
                       <div class="profile-thumb order-product-thumb">
@@ -318,6 +364,24 @@ include '../includes/header.php';
                       <span><?= h(format_eur($item['estado_item'] === 'cancelado' ? 0.0 : (float)$item['valor_artista'])) ?></span>
                     </div>
                   </div>
+                  <?php if ($messages): ?>
+                    <div class="order-message-thread">
+                      <?php foreach ($messages as $messageRow): ?>
+                        <div class="order-message-bubble <?= $messageRow['remetente'] === 'artista' ? 'from-me' : '' ?>">
+                          <span data-t="<?= $messageRow['remetente'] === 'artista' ? 'message_you' : 'message_buyer' ?>"><?= $messageRow['remetente'] === 'artista' ? 'Tu' : 'Comprador' ?></span>
+                          <p><?= nl2br(h($messageRow['mensagem'])) ?></p>
+                        </div>
+                      <?php endforeach; ?>
+                      <form method="post" class="order-message-form">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="action" value="reply_message">
+                        <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
+                        <input type="hidden" name="product_id" value="<?= (int)$item['idProduto'] ?>">
+                        <textarea name="message" class="finput" rows="2" maxlength="1200" data-tp="artist_orders_reply_placeholder" placeholder="Responder ao comprador"></textarea>
+                        <button type="submit" class="btn btn-dark btn-sm" data-t="artist_orders_reply">Responder</button>
+                      </form>
+                    </div>
+                  <?php endif; ?>
                 <?php endforeach; ?>
               </div>
 

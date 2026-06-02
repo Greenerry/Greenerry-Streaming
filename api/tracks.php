@@ -7,6 +7,7 @@ $tracks = db_all(
     "SELECT
         f.idFaixa AS id,
         f.titulo AS title,
+        f.genero AS genre,
         f.ficheiro_audio AS audio,
         r.capa AS cover,
         r.tipo AS type,

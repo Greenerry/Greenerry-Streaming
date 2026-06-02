@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['descricao'] ?? '');
     $releaseDate = trim($_POST['data_lancamento'] ?? '');
     $trackTitles = $_POST['track_title'] ?? [];
+    $trackGenres = $_POST['track_genre'] ?? [];
 
     $err = verify_csrf_request() ?? '';
 
@@ -32,6 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $err = tr('error.release_title_required');
     } elseif (!$err && !in_array($type, ['Single', 'EP', 'Album'], true)) {
         $err = tr('error.release_type_invalid');
+    } elseif (!$err) {
+        $existing = db_one_prepared(
+            $conn,
+            "SELECT idRelease FROM release_musical WHERE idCliente = ? AND titulo = ? LIMIT 1",
+            'is',
+            [$uid, $title]
+        );
+        if ($existing && (!$editRelease || (int)$existing['idRelease'] !== $editId)) {
+            $err = current_lang() === 'en' ? 'You already have a release with this title.' : 'Já tem um lançamento com este título.';
+        }
     } elseif (!$err && ($err = required_field($description, 'A descrição', 'Description'))) {
     } elseif (!$err && ($err = required_field($releaseDate, 'A data de lançamento', 'Release date'))) {
     } elseif (!$err && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $releaseDate)) {
@@ -69,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($type === 'Single') {
             // Single mode has one track row and one audio upload.
             $singleTitle = trim($_POST['single_track_title'] ?? $title);
+            $singleGenre = trim((string)($_POST['single_track_genre'] ?? ''));
             if ($singleTitle === '') {
                 $err = current_lang() === 'en' ? 'Track title is required.' : 'O título da faixa é obrigatório.';
             }
@@ -83,13 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $err = $saveErr ?? '';
                 }
                 if (!$err) {
-                    $tracks[] = ['title' => $singleTitle, 'audio' => $audioName];
+                    $tracks[] = ['title' => $singleTitle, 'genre' => $singleGenre, 'audio' => $audioName];
                 }
             } elseif (!$err && $editRelease && $editTracks) {
                 if (empty($editTracks[0]['ficheiro_audio'])) {
                     $err = tr('error.audio_required');
                 } else {
-                    $tracks[] = ['id' => (int)$editTracks[0]['idFaixa'], 'title' => $singleTitle, 'audio' => $editTracks[0]['ficheiro_audio']];
+                    if ($singleGenre === '') {
+                        $singleGenre = (string)($editTracks[0]['genero'] ?? '');
+                    }
+                    $tracks[] = ['id' => (int)$editTracks[0]['idFaixa'], 'title' => $singleTitle, 'genre' => $singleGenre, 'audio' => $editTracks[0]['ficheiro_audio']];
                 }
             } elseif (!$err) {
                 $err = tr('error.audio_required');
@@ -164,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
                 }
 
-                $tracks[] = ['id' => $trackId, 'title' => $trackTitle, 'audio' => $audioName];
+                $tracks[] = ['id' => $trackId, 'title' => $trackTitle, 'genre' => trim((string)($trackGenres[$index] ?? ($existingTrack['genero'] ?? ''))), 'audio' => $audioName];
             }
 
             if (!$err && !$tracks) {
@@ -216,12 +231,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             foreach ($tracks as $index => $track) {
                 $trackTitleSafe = db_escape($conn, $track['title']);
+                $trackGenreSafe = db_escape($conn, mb_substr((string)($track['genre'] ?? ''), 0, 80));
                 $audioSafe = db_escape($conn, $track['audio']);
                 $trackNumber = $index + 1;
                 mysqli_query(
                     $conn,
-                    "INSERT INTO faixa (idRelease, numero_faixa, titulo, ficheiro_audio, estado, ativo)
-                     VALUES ({$releaseId}, {$trackNumber}, '{$trackTitleSafe}', '{$audioSafe}', 'pendente', 1)"
+                    "INSERT INTO faixa (idRelease, numero_faixa, titulo, genero, ficheiro_audio, estado, ativo)
+                     VALUES ({$releaseId}, {$trackNumber}, '{$trackTitleSafe}', " . ($trackGenreSafe !== '' ? "'{$trackGenreSafe}'" : "NULL") . ", '{$audioSafe}', 'pendente', 1)"
                 );
             }
 
@@ -242,6 +258,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$genreSuggestions = array_values(array_unique(array_filter(array_merge(
+    ['Pop', 'Rock', 'Hip-hop', 'R&B', 'Afrobeat', 'Kizomba', 'Fado', 'Jazz', 'Electronic', 'House', 'Techno', 'Indie', 'Trap', 'Soul', 'Reggaeton'],
+    array_map(static fn($row) => (string)($row['genero'] ?? ''), db_all($conn, "SELECT DISTINCT genero FROM faixa WHERE genero IS NOT NULL AND genero != '' ORDER BY genero ASC LIMIT 30"))
+))));
 
 include '../includes/header.php';
 ?>
@@ -266,7 +287,11 @@ include '../includes/header.php';
       <div class="card-body">
         <form method="post" enctype="multipart/form-data" class="stack-form" id="release-form">
           <?= csrf_input() ?>
-          <?php if ($editRelease): ?>
+          <datalist id="genre-suggestions">
+            <?php foreach ($genreSuggestions as $genreSuggestion): ?>
+              <option value="<?= h($genreSuggestion) ?>"></option>
+            <?php endforeach; ?>
+          </datalist>          <?php if ($editRelease): ?>
             <input type="hidden" name="release_id" value="<?= (int)$editRelease['idRelease'] ?>">
           <?php endif; ?>
           <div class="fg">
@@ -325,9 +350,14 @@ include '../includes/header.php';
               </div>
             </div>
             <div class="fg">
+              <label class="flabel" for="single_track_genre" data-t="upload_music_genre">Género</label>
+              <input id="single_track_genre" type="text" name="single_track_genre" class="finput" maxlength="80" list="genre-suggestions" data-tp="upload_music_genre_placeholder" placeholder="Escreve ou escolhe um género" value="<?= h($editTracks[0]['genero'] ?? '') ?>">
+              <p class="form-note" data-t="upload_music_genre_help">Sugestões aparecem enquanto escreves.</p>
+            </div>
+            <div class="fg">
               <label class="flabel" for="audio" data-t="upload_music_audio">Ficheiro de áudio</label>
               <div class="upload-zone upload-zone--compact">
-                <input id="audio" type="file" name="audio" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a" <?= ($editRelease && !empty($editTracks[0]['ficheiro_audio'])) ? '' : 'required' ?>>
+                <input id="audio" type="file" name="audio" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a,.mp4" <?= ($editRelease && !empty($editTracks[0]['ficheiro_audio'])) ? '' : 'required' ?>>
                 <p data-t="upload_music_audio_help">Formatos suportados: MP3, WAV, OGG, FLAC e M4A. Podes arrastar um ou vários ficheiros.</p>
               </div>
             </div>
@@ -343,7 +373,11 @@ include '../includes/header.php';
           </div>
 
           <button type="submit" class="btn btn-dark btn-full"><?= $editRelease ? '<span data-t="upload_music_save_review">Guardar e enviar para revisão</span>' : '<span data-t="upload_music_submit">Enviar para aprovacao</span>' ?></button>
-          <?php if ($editRelease): ?>
+          <datalist id="genre-suggestions">
+            <?php foreach ($genreSuggestions as $genreSuggestion): ?>
+              <option value="<?= h($genreSuggestion) ?>"></option>
+            <?php endforeach; ?>
+          </datalist>          <?php if ($editRelease): ?>
             <a href="profile.php?tab=music" class="btn btn-ghost btn-full" data-t="upload_music_back_profile">Voltar ao perfil</a>
           <?php endif; ?>
         </form>
@@ -367,6 +401,7 @@ const existingTracks = <?= json_encode(array_map(static function ($track) {
     return [
         'id' => (int)$track['idFaixa'],
         'title' => (string)$track['titulo'],
+        'genre' => (string)($track['genero'] ?? ''),
         'audio' => (string)$track['ficheiro_audio'],
         'audioUrl' => !empty($track['ficheiro_audio']) ? asset_url('audio', $track['ficheiro_audio']) : ''
     ];
@@ -393,8 +428,12 @@ function uploadText(key) {
     upload_music_play: active === 'en' ? 'Play' : 'Tocar',
     upload_music_pause: active === 'en' ? 'Pause' : 'Pausar',
     upload_music_remove_track: active === 'en' ? 'Remove track' : 'Remover faixa',
+    upload_music_genre: active === 'en' ? 'Genre' : 'Género',
+    upload_music_genre_placeholder: active === 'en' ? 'Type or choose a genre' : 'Escreve ou escolhe um género',
+    upload_music_genre_help: active === 'en' ? 'Suggestions appear while you type.' : 'Sugestões aparecem enquanto escreves.',
     upload_music_choose_audio_toast: active === 'en' ? 'Choose an audio file for the release.' : 'Escolhe o ficheiro áudio do lançamento.',
-    upload_music_need_track_toast: active === 'en' ? 'Add at least one track with title and audio.' : 'Adiciona pelo menos uma faixa com titulo e audio.'
+    upload_music_need_track_toast: active === 'en' ? 'Add at least one track with title and audio.' : 'Adiciona pelo menos uma faixa com titulo e audio.',
+    upload_music_metadata_loaded: active === 'en' ? 'Metadata loaded.' : 'Metadados carregados.'
   };
   return fallback[key] || key;
 }
@@ -420,6 +459,202 @@ function applyUploadMusicLanguage() {
   });
 }
 
+function parseMetadata(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const buf = e.target.result;
+      const view = new DataView(buf);
+      const len = view.byteLength;
+      const utf8 = (start, length) => {
+        if (start + length > len || length <= 0) return '';
+        return new TextDecoder('utf-8').decode(new Uint8Array(buf, start, length)).replace(/\0/g, '').trim();
+      };
+      const fourCC = (pos) => pos + 4 <= len
+        ? String.fromCharCode(view.getUint8(pos), view.getUint8(pos + 1), view.getUint8(pos + 2), view.getUint8(pos + 3))
+        : '';
+      // Detect MP4/M4A: look for 'ftyp' box at offset 4
+      const isMp4 = len > 8 && fourCC(4) === 'ftyp';
+      if (isMp4) {
+        // Walk top-level MP4 boxes to find moov > udta > meta > ilst
+        const readBox = (start, end) => {
+          if (start + 8 > end) return null;
+          let sz = view.getUint32(start, false);
+          const type = fourCC(start + 4);
+          if (sz === 1) {
+            if (start + 16 > end) return null;
+            sz = Number(view.getBigUint64(start + 8, false));
+          }
+          if (sz < 8 || start + sz > end) return null;
+          return { start, type, sz, dataStart: start + 8 };
+        };
+        const findBox = (name, from, to) => {
+          let p = from;
+          while (p + 8 <= to) {
+            const b = readBox(p, to);
+            if (!b) break;
+            if (b.type === name) return b;
+            p += b.sz;
+          }
+          return null;
+        };
+        const tags = {};
+        const moov = findBox('moov', 0, len);
+        if (moov) {
+          const udta = findBox('udta', moov.dataStart, moov.start + moov.sz);
+          if (udta) {
+            let metaBox = findBox('meta', udta.dataStart, udta.start + udta.sz);
+            if (metaBox) {
+              // meta has a 4-byte version/flags before its children
+              const ilstFrom = metaBox.dataStart + 4;
+              const ilst = findBox('ilst', ilstFrom, metaBox.start + metaBox.sz);
+              if (ilst) {
+                let p = ilst.dataStart;
+                const ilstEnd = ilst.start + ilst.sz;
+                while (p + 8 <= ilstEnd) {
+                  const atom = readBox(p, ilstEnd);
+                  if (!atom) break;
+                  const atomEnd = atom.start + atom.sz;
+                  // each ilst child contains a 'data' sub-atom
+                  const data = findBox('data', atom.dataStart, atomEnd);
+                  if (data) {
+                    const typeFlag = data.start + 8 <= len ? view.getUint32(data.dataStart, false) : 0;
+                    const valueStart = data.dataStart + 8;
+                    const valueLen = (data.start + data.sz) - valueStart;
+                    if (atom.type === '\xa9nam' && !tags.title) tags.title = utf8(valueStart, valueLen);
+                    else if (atom.type === '\xa9alb' && !tags.album) tags.album = utf8(valueStart, valueLen);
+                    else if (atom.type === '\xa9ART' && !tags.artist) tags.artist = utf8(valueStart, valueLen);
+                    else if (atom.type === '\xa9day' && !tags.year) tags.year = utf8(valueStart, valueLen).slice(0, 4);
+                    else if ((atom.type === 'covr') && !tags.picture && valueLen > 0) {
+                      const mime = typeFlag === 14 ? 'image/png' : 'image/jpeg';
+                      const imgBytes = new Uint8Array(buf, valueStart, valueLen);
+                      tags.picture = new File([imgBytes], `cover.${mime.split('/')[1]}`, { type: mime });
+                    }
+                  }
+                  p += atom.sz;
+                }
+              }
+            }
+          }
+        }
+        resolve(tags);
+        return;
+      }
+      // --- ID3v2 parser (MP3) ---
+      if (len < 10 || view.getUint8(0) !== 0x49 || view.getUint8(1) !== 0x44 || view.getUint8(2) !== 0x33) {
+        resolve({});
+        return;
+      }
+      const version = view.getUint8(3);
+      const flags = view.getUint8(5);
+      let size = 0;
+      for (let i = 0; i < 4; i++) size = (size << 7) | (view.getUint8(6 + i) & 0x7F);
+      let offset = 10;
+      if (flags & 0x40) {
+        if (len < offset + 4) { resolve({}); return; }
+        let extSize = 0;
+        const extBytes = version >= 4 ? 4 : 6;
+        for (let i = 0; i < extBytes; i++) {
+          extSize = version >= 4 ? ((extSize << 7) | (view.getUint8(offset + i) & 0x7F)) : ((extSize << 8) | view.getUint8(offset + i));
+        }
+        offset += extSize + (version >= 4 ? 0 : 2);
+      }
+      const tags = {};
+      const end = Math.min(10 + size, len);
+      const findNull = (start, cap, enc) => {
+        const step = (enc === 1 || enc === 2) ? 2 : 1;
+        for (let i = start; i < cap - step + 1; i += step) {
+          if (view.getUint8(i) === 0 && (step === 1 || view.getUint8(i + 1) === 0)) return i;
+        }
+        return cap;
+      };
+      const readText = (start, length, enc) => {
+        if (start + length > len || length <= 0) return '';
+        const bytes = new Uint8Array(buf, start, length);
+        if (enc === 0 || enc === 3) return new TextDecoder(enc === 0 ? 'iso-8859-1' : 'utf-8').decode(bytes).replace(/\0/g, '').trim();
+        if (enc === 1 || enc === 2) return new TextDecoder(enc === 1 ? 'utf-16' : 'utf-16be').decode(bytes).replace(/\0/g, '').trim();
+        return '';
+      };
+      let pos = offset;
+      while (pos + 10 <= end) {
+        if (view.getUint8(pos) === 0) break;
+        const id = fourCC(pos);
+        if (!id.match(/^[A-Z0-9]{4}$/)) break;
+        let frameSize = 0;
+        if (version >= 4) {
+          for (let i = 0; i < 4; i++) frameSize = (frameSize << 7) | (view.getUint8(pos + 4 + i) & 0x7F);
+        } else {
+          frameSize = view.getUint32(pos + 4, false);
+        }
+        if (frameSize <= 0) break;
+        const dataStart = pos + 10;
+        const enc = view.getUint8(dataStart);
+        if (id === 'TIT2') tags.title = readText(dataStart + 1, frameSize - 1, enc);
+        else if (id === 'TALB') tags.album = readText(dataStart + 1, frameSize - 1, enc);
+        else if (id === 'TYER' || id === 'TDRC') tags.year = readText(dataStart + 1, frameSize - 1, enc).slice(0, 4);
+        else if (id === 'TPE1') tags.artist = readText(dataStart + 1, frameSize - 1, enc);
+        else if (id === 'APIC' && !tags.picture) {
+          const frameEnd = dataStart + frameSize;
+          let p = dataStart + 1;
+          const mimeEnd = findNull(p, frameEnd, 0);
+          const mimeStr = new TextDecoder('ascii').decode(new Uint8Array(buf, p, mimeEnd - p)).trim();
+          p = mimeEnd + 1;
+          if (p < frameEnd) {
+            p++;
+            const descEnd = findNull(p, frameEnd, enc);
+            p = descEnd + (enc === 1 || enc === 2 ? 2 : 1);
+            if (p < frameEnd) {
+              const imgBytes = new Uint8Array(buf, p, frameEnd - p);
+              const mime = mimeStr.includes('/') ? mimeStr : 'image/jpeg';
+              tags.picture = new File([imgBytes], `cover.${mime.split('/')[1] || 'jpg'}`, { type: mime });
+            }
+          }
+        }
+        pos = dataStart + frameSize;
+      }
+      resolve(tags);
+    };
+    reader.onerror = () => resolve({});
+    reader.readAsArrayBuffer(file.slice(0, 6 * 1024 * 1024));
+  });
+}
+
+function fillMetadataIntoForm(tags, targetInput) {
+  const isSingle = typeSelect.value === 'Single';
+  // Fill track title if empty
+  const row = targetInput?.closest('.upload-track-row') || targetInput?.closest('.frow');
+  const titleInput = isSingle
+    ? document.getElementById('single_track_title')
+    : row?.querySelector('input[name="track_title[]"]');
+  if (titleInput && !titleInput.value.trim() && tags.title) {
+    titleInput.value = tags.title;
+  }
+  // Fill release title from album if empty
+  const releaseTitleInput = document.getElementById('titulo');
+  if (releaseTitleInput && !releaseTitleInput.value.trim() && tags.album) {
+    releaseTitleInput.value = tags.album;
+  }
+  // Fill release date from year if empty
+  const dateInput = document.getElementById('data_lancamento');
+  if (dateInput && !dateInput.value && tags.year && /^\d{4}$/.test(tags.year)) {
+    const y = parseInt(tags.year, 10);
+    if (y >= 1900 && y <= 2100) dateInput.value = `${tags.year}-01-01`;
+  }
+  // Fill cover image from embedded art if cover input is empty
+  if (tags.picture && coverInput && !coverInput.files?.length) {
+    try {
+      const transfer = new DataTransfer();
+      transfer.items.add(tags.picture);
+      coverInput.files = transfer.files;
+      coverInput.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (_) {}
+  }
+  // Toast feedback
+  if (tags.title || tags.album || tags.picture) {
+    toast(uploadText('upload_music_metadata_loaded'));
+  }
+}
+
 function refreshTrackRows() {
   Array.from(trackList.children).forEach((row, index) => {
     row.querySelectorAll('[data-track-number]').forEach((element) => {
@@ -431,32 +666,42 @@ function refreshTrackRows() {
 
 function addTrackRow(index, track = null) {
   const row = document.createElement('div');
-  row.className = 'frow upload-track-row';
+  row.className = 'upload-track-row';
   row.innerHTML = `
-    <div class="fg">
-      <label class="flabel" data-upload-t-prefix="upload_music_track_title_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_title_dynamic')} ${index + 1}</label>
-      <input type="hidden" name="track_id[]" value="${track?.id || 0}">
-      <input type="text" name="track_title[]" class="finput" required maxlength="180" value="${(track?.title || '').replace(/"/g, '&quot;')}">
-      <div class="audio-upload-preview is-hidden">
-        <span></span>
-        <div class="audio-preview-controls">
-          <button type="button" class="audio-preview-play" data-upload-t-play="upload_music_play">${uploadText('upload_music_play')}</button>
-          <small class="audio-preview-current">0:00</small>
-          <div class="audio-preview-bar"><div></div><em>0:00</em></div>
-          <small class="audio-preview-duration">0:00</small>
+    <div class="upload-track-head">
+      <span class="upload-track-index" data-upload-t-prefix="upload_music_track_title_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_title_dynamic')} ${index + 1}</span>
+      <button type="button" class="btn btn-ghost btn-sm upload-track-remove" data-upload-t="upload_music_remove_track">${uploadText('upload_music_remove_track')}</button>
+    </div>
+    <div class="upload-track-grid">
+      <div class="fg">
+        <label class="flabel" data-upload-t-prefix="upload_music_track_title_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_title_dynamic')} ${index + 1}</label>
+        <input type="hidden" name="track_id[]" value="${track?.id || 0}">
+        <input type="text" name="track_title[]" class="finput" required maxlength="180" value="${(track?.title || '').replace(/"/g, '&quot;')}">
+        <div class="audio-upload-preview is-hidden">
+          <span></span>
+          <div class="audio-preview-controls">
+            <button type="button" class="audio-preview-play" data-upload-t-play="upload_music_play">${uploadText('upload_music_play')}</button>
+            <small class="audio-preview-current">0:00</small>
+            <div class="audio-preview-bar"><div></div><em>0:00</em></div>
+            <small class="audio-preview-duration">0:00</small>
+          </div>
+          <audio preload="metadata"></audio>
         </div>
-        <audio preload="metadata"></audio>
+      </div>
+      <div class="fg">
+        <label class="flabel" data-upload-t="upload_music_genre">${uploadText('upload_music_genre')}</label>
+        <input type="text" name="track_genre[]" class="finput" maxlength="80" list="genre-suggestions" value="${(track?.genre || '').replace(/"/g, '&quot;')}" placeholder="${uploadText('upload_music_genre_placeholder')}">
+        <p class="form-note" data-upload-t="upload_music_genre_help">${uploadText('upload_music_genre_help')}</p>
+      </div>
+      <div class="fg">
+        <label class="flabel" data-upload-t-prefix="upload_music_track_audio_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_audio_dynamic')} ${index + 1}</label>
+        ${track?.audio ? `<p class="form-note" data-upload-t-current-file="1" data-file-name="${track.audio}">${uploadText('upload_music_current_file')}: ${track.audio}</p>` : ''}
+        <div class="upload-zone upload-zone--compact">
+          <input type="file" name="tracks_audio[]" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a,.mp4" ${track?.audio ? '' : 'required'}>
+          <p data-upload-t="${editingRelease ? 'upload_music_replace_audio_help' : 'upload_music_choose_drop_audio_help'}">${editingRelease ? uploadText('upload_music_replace_audio_help') : uploadText('upload_music_choose_drop_audio_help')}</p>
+        </div>
       </div>
     </div>
-    <div class="fg">
-      <label class="flabel" data-upload-t-prefix="upload_music_track_audio_dynamic" data-track-number="${index + 1}">${uploadText('upload_music_track_audio_dynamic')} ${index + 1}</label>
-      ${track?.audio ? `<p class="form-note" data-upload-t-current-file="1" data-file-name="${track.audio}">${uploadText('upload_music_current_file')}: ${track.audio}</p>` : ''}
-      <div class="upload-zone upload-zone--compact">
-        <input type="file" name="tracks_audio[]" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a" ${track?.audio ? '' : 'required'}>
-        <p data-upload-t="${editingRelease ? 'upload_music_replace_audio_help' : 'upload_music_choose_drop_audio_help'}">${editingRelease ? uploadText('upload_music_replace_audio_help') : uploadText('upload_music_choose_drop_audio_help')}</p>
-      </div>
-    </div>
-    <button type="button" class="btn btn-ghost btn-sm upload-track-remove" data-upload-t="upload_music_remove_track">${uploadText('upload_music_remove_track')}</button>
   `;
   row.querySelector('.upload-track-remove')?.addEventListener('click', () => {
     row.querySelectorAll('.audio-upload-preview').forEach((preview) => {
@@ -482,10 +727,19 @@ function addTrackRow(index, track = null) {
   return row;
 }
 
+function setSectionDisabled(section, disabled) {
+  section?.querySelectorAll('input, textarea, select, button').forEach((element) => {
+    if (element.type === 'submit') return;
+    element.disabled = disabled;
+  });
+}
+
 function syncReleaseMode() {
   const isSingle = typeSelect.value === 'Single';
   singleFields.style.display = isSingle ? 'grid' : 'none';
   multiFields.style.display = isSingle ? 'none' : 'grid';
+  setSectionDisabled(singleFields, !isSingle);
+  setSectionDisabled(multiFields, isSingle);
 
   if (!isSingle && trackList.children.length === 0) {
     if (editingRelease && existingTracks.length) {
@@ -644,8 +898,8 @@ function showExistingAudioPreview(preview, track) {
 }
 
 function updateAudioPreview(input) {
-  if (!input?.accept?.includes('.mp3')) return;
-  const row = input.closest('.frow');
+  if (!input?.accept?.includes('.mp3') && !input?.accept?.includes('.mp4')) return;
+  const row = input.closest('.upload-track-row') || input.closest('.frow');
   const titleGroup = row?.querySelector('.fg:first-child');
   const zone = input.closest('.upload-zone');
   const file = input.files?.[0];
@@ -681,10 +935,12 @@ function updateAudioPreview(input) {
   preview.querySelector('.audio-preview-duration').textContent = '0:00';
   preview.querySelector('.audio-preview-bar div').style.width = '0%';
   preview.querySelector('.audio-preview-play').textContent = uploadText('upload_music_play');
+  // Auto-fill metadata from ID3 tags
+  parseMetadata(file).then((tags) => fillMetadataIntoForm(tags, input));
 }
 
 function fillMultiTracks(files) {
-  let audioFiles = Array.from(files).filter((file) => /\.(mp3|wav|ogg|flac|m4a)$/i.test(file.name));
+  let audioFiles = Array.from(files).filter((file) => /\.(mp3|wav|ogg|flac|m4a|mp4)$/i.test(file.name));
   if (!audioFiles.length) return;
   if (audioFiles.length > <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>) {
     toast(uploadLang() === 'en'
@@ -698,9 +954,12 @@ function fillMultiTracks(files) {
   if (typeSelect.value === 'Single' && audioFiles.length === 1) {
     attachFileToInput(document.getElementById('audio'), audioFiles[0]);
     const titleInput = document.getElementById('single_track_title');
-    if (titleInput && !titleInput.value.trim()) {
-      titleInput.value = audioTitleFromFile(audioFiles[0]);
-    }
+    const baseTitle = audioTitleFromFile(audioFiles[0]);
+    if (titleInput && !titleInput.value.trim()) titleInput.value = baseTitle;
+    parseMetadata(audioFiles[0]).then((tags) => {
+      if (titleInput && (titleInput.value === baseTitle || !titleInput.value.trim()) && tags.title) titleInput.value = tags.title;
+      fillMetadataIntoForm(tags, document.getElementById('audio'));
+    });
     return;
   }
 
@@ -711,8 +970,19 @@ function fillMultiTracks(files) {
     const row = addTrackRow(index);
     const titleInput = row.querySelector('input[name="track_title[]"]');
     const fileInput = row.querySelector('input[type="file"]');
-    if (titleInput) titleInput.value = audioTitleFromFile(file);
+    const baseTitle = audioTitleFromFile(file);
+    if (titleInput) titleInput.value = baseTitle;
     attachFileToInput(fileInput, file);
+    // Try to read ID3 and improve title/release fields
+    (async () => {
+      const tags = await parseMetadata(file);
+      if (titleInput && !titleInput.value.trim() && tags.title) {
+        titleInput.value = tags.title;
+      } else if (titleInput && titleInput.value === baseTitle && tags.title) {
+        titleInput.value = tags.title;
+      }
+      fillMetadataIntoForm(tags, fileInput);
+    })();
   });
 }
 
@@ -720,7 +990,7 @@ function bindDropZone(zone) {
   if (!zone || zone.dataset.dropBound === '1') return;
   zone.dataset.dropBound = '1';
   const input = zone.querySelector('input[type="file"]');
-  const isAudioInput = input?.accept?.includes('.mp3');
+  const isAudioInput = input?.accept?.includes('.mp3') || input?.accept?.includes('.mp4');
 
   ['dragenter', 'dragover'].forEach((eventName) => {
     zone.addEventListener(eventName, (event) => {
@@ -799,7 +1069,7 @@ releaseForm?.addEventListener('submit', (event) => {
     return;
   }
 
-  const rows = Array.from(trackList.querySelectorAll('.frow'));
+  const rows = Array.from(trackList.querySelectorAll('.upload-track-row'));
   if (rows.length > <?= (int)GREENERRY_MAX_RELEASE_TRACKS ?>) {
     event.preventDefault();
     toast(uploadLang() === 'en'

@@ -4,7 +4,7 @@ require_once '../includes/config.php';
 // Shop filters come from the URL, for example: shop.php?q=hoodie&cat=2
 $category = (int)($_GET['cat'] ?? 0);
 $search = trim($_GET['q'] ?? '');
-$perPage = 20;
+$perPage = 15;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
 $whereParts = ["p.estado = 'aprovado'", 'p.ativo = 1', "c.estado = 'ativo'"];

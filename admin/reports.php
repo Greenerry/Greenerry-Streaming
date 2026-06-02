@@ -39,7 +39,7 @@ $finance = db_one(
      FROM encomenda e
      JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
      WHERE e.criado_em >= {$dateFromSql}"
-) ?? [];
+) ?: [];
 
 $topArtists = db_all(
     $conn,
@@ -329,7 +329,7 @@ if (($_GET['export'] ?? '') === 'excel') {
             (SELECT COUNT(*) FROM release_musical WHERE estado = 'rejeitado') AS releases_rejeitados,
             (SELECT COUNT(*) FROM faixa) AS faixas_total,
             (SELECT COUNT(*) FROM mensagem_admin WHERE estado = 'aberta') AS mensagens_abertas"
-    ) ?? [];
+    ) ?: [];
 
     $productsExport = db_all(
         $conn,

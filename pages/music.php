@@ -4,7 +4,7 @@ require_once '../includes/config.php';
 // Filters arrive through the URL, for example: music.php?q=rock&tipo=EP&page=2
 $type = trim($_GET['tipo'] ?? '');
 $search = trim($_GET['q'] ?? '');
-$perPage = 20;
+$perPage = 18;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
 $whereParts = ["r.estado = 'aprovado'", 'r.ativo = 1', "c.estado = 'ativo'"];
@@ -65,6 +65,7 @@ $releases = db_all_prepared(
         COUNT(f.idFaixa) AS total_faixas,
         first_track.idFaixa AS first_track_id,
         first_track.titulo AS first_track_title,
+        first_track.genero AS first_track_genre,
         first_track.ficheiro_audio AS first_track_audio
      FROM release_musical r
      JOIN cliente c ON c.idCliente = r.idCliente
@@ -83,7 +84,7 @@ $releases = db_all_prepared(
             LIMIT 1
         )
      {$where}
-     GROUP BY r.idRelease, r.titulo, r.tipo, r.capa, r.data_lancamento, r.criado_em, c.idCliente, c.nome, c.foto, first_track.idFaixa, first_track.titulo, first_track.ficheiro_audio
+     GROUP BY r.idRelease, r.titulo, r.tipo, r.capa, r.data_lancamento, r.criado_em, c.idCliente, c.nome, c.foto, first_track.idFaixa, first_track.titulo, first_track.genero, first_track.ficheiro_audio
      ORDER BY COALESCE(r.data_lancamento, DATE(r.criado_em)) DESC, r.idRelease DESC
      LIMIT {$perPage} OFFSET {$offset}",
     $types,
@@ -180,7 +181,13 @@ include '../includes/header.php';
               <span class="badge badge-dark" data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label($release['tipo'])) ?></span>
               <h4><?= h($release['release_titulo']) ?></h4>
               <div class="sub"><?= h($release['artist_nome']) ?></div>
+              <?php if (!empty($release['first_track_genre'])): ?>
+                <div class="sub"><?= h($release['first_track_genre']) ?></div>
+              <?php endif; ?>
               <div class="sub" data-count-type="track" data-count-value="<?= (int)$release['total_faixas'] ?>"><?= h(count_label((int)$release['total_faixas'], 'track')) ?></div>
+              <?php if (is_user_logged_in() && !empty($release['first_track_id'])): ?>
+                <button type="button" class="btn btn-ghost btn-sm playlist-add-trigger" data-track-id="<?= (int)$release['first_track_id'] ?>" onclick="event.preventDefault(); event.stopPropagation(); openPlaylistPicker(this)" data-t="playlist_add">Adicionar à playlist</button>
+              <?php endif; ?>
             </div>
           </a>
         <?php endforeach; ?>
@@ -208,5 +215,33 @@ include '../includes/header.php';
     </div>
   </div>
 </section>
+
+<?php if (is_user_logged_in()): ?>
+<dialog class="playlist-picker-dialog" id="playlist-picker">
+  <form method="dialog" class="playlist-picker-card">
+    <div class="playlist-picker-head">
+      <h3 data-t="playlist_add_title">Adicionar à playlist</h3>
+      <button type="submit" class="playlist-picker-close" aria-label="Close">×</button>
+    </div>
+    <label class="playlist-picker-search">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="playlist-picker-search" data-tp="playlist_find_placeholder" placeholder="Encontrar playlist">
+    </label>
+    <button type="button" class="playlist-new-row" id="playlist-picker-new-toggle">
+      <span>+</span>
+      <strong data-t="playlist_new">Nova playlist</strong>
+    </button>
+    <div class="playlist-create-inline" id="playlist-picker-create-row" hidden>
+      <input type="text" id="playlist-picker-new" maxlength="140" data-tp="playlist_create_placeholder" placeholder="Nova playlist">
+      <button type="button" id="playlist-picker-create" data-t="playlist_create">Criar</button>
+    </div>
+    <p class="playlist-picker-label" data-t="playlist_saved_in">Guardada em</p>
+    <div id="playlist-picker-list" class="playlist-picker-list"></div>
+    <div class="playlist-picker-actions">
+      <button type="submit" class="playlist-cancel" data-t="cancel">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+<?php endif; ?>
 
 <?php include '../includes/footer.php'; ?>

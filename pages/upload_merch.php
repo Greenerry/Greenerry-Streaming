@@ -337,7 +337,7 @@ include '../includes/header.php';
               <?php endforeach; ?>
             </div>
 
-            <button type="submit" class="btn btn-dark"><?= $editProduct ? (current_lang() === 'en' ? 'Save and send for review' : 'Guardar e enviar para revisÃ£o') : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
+            <button type="submit" class="btn btn-dark"><?= $editProduct ? (current_lang() === 'en' ? 'Save and send for review' : 'Guardar e enviar para revisão') : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
             <?php if ($editProduct): ?>
               <a href="profile.php?tab=merch" class="btn btn-ghost"><?= current_lang() === 'en' ? 'Back to profile' : 'Voltar ao perfil' ?></a>
             <?php endif; ?>
@@ -361,6 +361,8 @@ const imageInput = document.getElementById('imagens');
 const imagePreviewGrid = document.getElementById('merch-image-preview-grid');
 let merchImagePreviewUrls = [];
 let selectedMerchImages = [];
+let draggedMerchImageIndex = null;
+let draggedExistingImageItem = null;
 
 function categoryAllowsSizes() {
   const option = categorySelect?.options?.[categorySelect.selectedIndex];
@@ -456,6 +458,8 @@ function renderMerchImagePreviews() {
     }
     const item = document.createElement('div');
     item.className = 'merch-image-preview-item';
+    item.draggable = true;
+    item.dataset.imageIndex = String(index);
 
     const image = document.createElement('img');
     const objectUrl = URL.createObjectURL(file);
@@ -471,6 +475,35 @@ function renderMerchImagePreviews() {
     removeButton.textContent = 'X';
     removeButton.addEventListener('click', () => {
       selectedMerchImages.splice(index, 1);
+      syncMerchImageInput();
+      renderMerchImagePreviews();
+    });
+
+    item.addEventListener('dragstart', () => {
+      draggedMerchImageIndex = index;
+      item.classList.add('is-dragging');
+    });
+    item.addEventListener('dragend', () => {
+      draggedMerchImageIndex = null;
+      item.classList.remove('is-dragging');
+      imagePreviewGrid.querySelectorAll('.is-drag-over').forEach((element) => element.classList.remove('is-drag-over'));
+    });
+    item.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      item.classList.add('is-drag-over');
+    });
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('is-drag-over');
+    });
+    item.addEventListener('drop', (event) => {
+      event.preventDefault();
+      item.classList.remove('is-drag-over');
+      const targetIndex = Number(item.dataset.imageIndex);
+      if (draggedMerchImageIndex === null || draggedMerchImageIndex === targetIndex) {
+        return;
+      }
+      const [movedFile] = selectedMerchImages.splice(draggedMerchImageIndex, 1);
+      selectedMerchImages.splice(targetIndex, 0, movedFile);
       syncMerchImageInput();
       renderMerchImagePreviews();
     });
@@ -493,6 +526,47 @@ imageInput?.addEventListener('change', () => {
   syncMerchImageInput();
   renderMerchImagePreviews();
 });
+
+function setupExistingImageSorting() {
+  const gallery = document.querySelector('.edit-media-gallery');
+  if (!gallery) {
+    return;
+  }
+
+  gallery.querySelectorAll('.edit-media-gallery-item').forEach((item) => {
+    item.draggable = true;
+    item.addEventListener('dragstart', () => {
+      draggedExistingImageItem = item;
+      item.classList.add('is-dragging');
+    });
+    item.addEventListener('dragend', () => {
+      draggedExistingImageItem = null;
+      gallery.querySelectorAll('.is-dragging, .is-drag-over').forEach((element) => {
+        element.classList.remove('is-dragging', 'is-drag-over');
+      });
+    });
+    item.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      if (item !== draggedExistingImageItem) {
+        item.classList.add('is-drag-over');
+      }
+    });
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('is-drag-over');
+    });
+    item.addEventListener('drop', (event) => {
+      event.preventDefault();
+      item.classList.remove('is-drag-over');
+      if (!draggedExistingImageItem || draggedExistingImageItem === item) {
+        return;
+      }
+      const items = Array.from(gallery.querySelectorAll('.edit-media-gallery-item'));
+      const draggedIndex = items.indexOf(draggedExistingImageItem);
+      const targetIndex = items.indexOf(item);
+      gallery.insertBefore(draggedExistingImageItem, draggedIndex < targetIndex ? item.nextSibling : item);
+    });
+  });
+}
 
 document.querySelectorAll('[data-remove-existing-image]').forEach((button) => {
   button.addEventListener('click', () => {
@@ -525,6 +599,7 @@ merchForm?.addEventListener('submit', (event) => {
 });
 
 syncSizeFields();
+setupExistingImageSorting();
 </script>
 
 <?php include '../includes/footer.php'; ?>
