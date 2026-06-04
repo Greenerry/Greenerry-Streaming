@@ -74,9 +74,7 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="page-intro page-intro--row">
       <div>
-        <span class="slabel" data-t="notifications_label">Conta</span>
         <h2 data-t="notifications_title">Notificações</h2>
-        <p data-t="notifications_intro">Atualizações sobre aprovações, mensagens e encomendas.</p>
       </div>
       <?php if ($unreadTotal > 0): ?>
         <form method="post">

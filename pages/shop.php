@@ -85,19 +85,74 @@ $pageUrl = static function (int $targetPage) use ($paginationQuery): string {
 include '../includes/header.php';
 ?>
 
+<style>
+@media (min-width: 901px) {
+  .catalog-hero--shop {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px) !important;
+    align-items: end !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+  }
+
+  .catalog-hero--shop h1 {
+    max-width: none !important;
+    white-space: nowrap !important;
+    font-size: clamp(3.35rem, 4.25vw, 4rem) !important;
+    line-height: .98 !important;
+    margin: 0 !important;
+  }
+
+  .catalog-hero--shop .catalog-filter {
+    width: 100% !important;
+    max-width: 440px !important;
+    justify-self: end !important;
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1fr) 150px !important;
+    align-items: end !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  .main.sr-open .catalog-hero--shop {
+    grid-template-columns: minmax(0, max-content) minmax(330px, 390px) !important;
+    gap: 20px !important;
+  }
+
+  .main.sr-open .catalog-hero--shop h1 {
+    font-size: clamp(2.7rem, 3vw, 3.45rem) !important;
+  }
+
+  .main.sr-open .catalog-hero--shop .catalog-filter {
+    max-width: 390px !important;
+    grid-template-columns: minmax(160px, 1fr) 132px !important;
+    gap: 8px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1180px) {
+  .catalog-hero--shop {
+    grid-template-columns: 1fr !important;
+  }
+
+  .catalog-hero--shop .catalog-filter {
+    justify-self: start !important;
+  }
+}
+</style>
+
 <section class="content-shell content-shell--cloud content-shell--catalog-cloud">
   <div class="section-media-cloud section-media-cloud--catalog" data-media-cloud='<?= h(json_encode($shopMediaCloud, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>' aria-hidden="true"></div>
   <div class="wrap">
     <div class="catalog-hero catalog-hero--shop">
       <div>
-        <span class="slabel" data-t="shop_label">Merch store</span>
-        <h1 data-t="shop_title">Shop artist merch</h1>
+        <h1 data-t="shop_title">Artist products</h1>
       </div>
 
       <form method="get" class="catalog-filter" data-instant-filter>
         <input type="text" name="q" value="<?= h($search) ?>" class="finput" data-tp="shop_search_placeholder" placeholder="Search product or artist" autocomplete="off">
         <select name="cat" class="finput">
-          <option value="0" data-t="shop_all_categories">All categories</option>
+          <option value="0" data-t="shop_all_categories">All</option>
           <?php foreach ($categories as $cat): ?>
             <option value="<?= (int)$cat['idCategoria'] ?>" data-product-category="<?= h($cat['nomeCategoria']) ?>" <?= $category === (int)$cat['idCategoria'] ? 'selected' : '' ?>><?= h(category_label($cat['nomeCategoria'])) ?></option>
           <?php endforeach; ?>
@@ -121,20 +176,11 @@ include '../includes/header.php';
               <?php if ($mainImage !== ''): ?>
                 <img src="<?= h(asset_url('img', $mainImage)) ?>" alt="<?= h($product['nomeProduto']) ?>">
               <?php endif; ?>
-              <div class="cover-ov"><button class="pbt" data-t="product_open">Abrir</button></div>
             </div>
             <div class="meta">
               <span class="badge badge-dark" data-product-category="<?= h($product['nomeCategoria']) ?>"><?= h(category_label($product['nomeCategoria'])) ?></span>
               <h4><?= h($product['nomeProduto']) ?></h4>
-              <div class="sub"><?= h($product['artista_nome']) ?></div>
-              <div class="between mt4">
-                <span class="price"><?= h(format_eur((float)$product['precoAtual'])) ?></span>
-                <span class="sub" data-t="<?= (int)$product['stock_total'] > 0 ? 'product_in_stock' : 'product_sold_out' ?>">
-                  <?= (int)$product['stock_total'] > 0
-                    ? (current_lang() === 'en' ? 'In stock' : 'Em stock')
-                    : (current_lang() === 'en' ? 'Sold out' : 'Esgotado') ?>
-                </span>
-              </div>
+              <div class="price"><?= h(format_eur((float)$product['precoAtual'])) ?></div>
             </div>
           </a>
         <?php endforeach; ?>

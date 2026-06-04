@@ -83,7 +83,15 @@ function admin_role_key(?array $admin = null): string
 {
     // Converts admin job titles into simple permission roles used by admin_can().
     $role = strtolower(trim((string)($admin['cargo'] ?? $_SESSION['admin_role'] ?? '')));
-    $role = str_replace(['ç', 'ã', 'á', 'à', 'â', 'é', 'ê', 'í', 'ó', 'õ', 'ô', 'ú'], ['c', 'a', 'a', 'a', 'a', 'e', 'e', 'i', 'o', 'o', 'o', 'u'], $role);
+    if (str_contains($role, ',')) {
+        $roleParts = array_filter(array_map('trim', explode(',', $role)));
+        if (in_array('administrador', $roleParts, true) || in_array('admin', $roleParts, true)) {
+            return 'admin';
+        }
+        $role = $roleParts[0] ?? $role;
+    }
+    $transliterated = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $role);
+    $role = is_string($transliterated) && $transliterated !== '' ? strtolower($transliterated) : $role;
 
     if ($role === '' || str_contains($role, 'principal') || str_contains($role, 'super')) {
         return str_contains($role, 'principal') || str_contains($role, 'super') ? 'super' : 'admin';
@@ -125,16 +133,27 @@ function admin_can(string $permission, ?array $admin = null): bool
         return true;
     }
 
-    $role = admin_role_key($admin);
     $map = [
-        'admin' => ['products', 'categories', 'releases', 'users', 'messages', 'reports', 'home', 'maintenance', 'settings'],
+        'admin' => ['dashboard', 'products', 'categories', 'releases', 'users', 'messages', 'reports', 'home', 'maintenance', 'settings', 'music'],
         'products' => ['products', 'categories'],
-        'releases' => ['releases'],
+        'releases' => ['releases', 'music'],
         'messages' => ['messages'],
-        'reports' => ['reports'],
+        'reports' => ['dashboard', 'reports', 'music'],
     ];
 
-    return in_array($permission, $map[$role] ?? [], true);
+    $rawRoles = array_filter(array_map('trim', explode(',', (string)($admin['cargo'] ?? $_SESSION['admin_role'] ?? ''))));
+    if (!$rawRoles) {
+        $rawRoles = [(string)($admin['cargo'] ?? $_SESSION['admin_role'] ?? '')];
+    }
+
+    foreach ($rawRoles as $rawRole) {
+        $role = admin_role_key(['cargo' => $rawRole, 'ativo' => $admin['ativo'] ?? 1]);
+        if (in_array($permission, $map[$role] ?? [], true)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function admin_default_page(?array $admin = null): string
@@ -153,6 +172,7 @@ function admin_default_page(?array $admin = null): string
         'releases' => 'releases.php',
         'messages' => 'messages.php',
         'reports' => 'reports.php',
+        'music' => 'music.php',
         'users' => 'users.php',
         'home' => 'home_curator.php',
         'maintenance' => 'page_maintenance.php',

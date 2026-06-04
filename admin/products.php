@@ -12,6 +12,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reason = trim($_POST['reason'] ?? '');
     $reasonSafe = db_escape($conn, $reason);
 
+    if ($feedback === '' && $productId > 0 && $action === 'guardar') {
+        $name = trim((string)($_POST['nomeProduto'] ?? ''));
+        $categoryId = (int)($_POST['idCategoria'] ?? 0);
+        $price = max(0.01, (float)($_POST['precoAtual'] ?? 0));
+        $stock = max(0, (int)($_POST['stock_total'] ?? 0));
+        $state = (string)($_POST['estado'] ?? 'pendente');
+        $allowedProductStates = ['pendente', 'aprovado', 'rejeitado', 'inativo'];
+        if ($name === '' || $categoryId <= 0 || !in_array($state, $allowedProductStates, true)) {
+            $feedback = tr('error.api_invalid_request');
+        } else {
+            $nameSafe = db_escape($conn, $name);
+            $stateSafe = db_escape($conn, $state);
+            $active = $state === 'aprovado' ? 1 : 0;
+            $currentImages = product_images($conn, $productId);
+            $images = [];
+            $requestedExistingImages = $_POST['existing_images'] ?? [];
+            if (is_array($requestedExistingImages)) {
+                foreach ($requestedExistingImages as $requestedImage) {
+                    $cleanImage = clean_product_image_name((string)$requestedImage);
+                    if ($cleanImage !== '' && in_array($cleanImage, $currentImages, true)) {
+                        $images[] = $cleanImage;
+                    }
+                }
+            } else {
+                $images = $currentImages;
+            }
+            $imageFiles = $_FILES['imagens'] ?? null;
+            if ($imageFiles && is_array($imageFiles['name'] ?? null)) {
+                foreach ($imageFiles['name'] as $index => $sourceName) {
+                    if ($sourceName === '') continue;
+                    $file = [
+                        'name' => $sourceName,
+                        'type' => $imageFiles['type'][$index] ?? '',
+                        'tmp_name' => $imageFiles['tmp_name'][$index] ?? '',
+                        'error' => $imageFiles['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                        'size' => $imageFiles['size'][$index] ?? 0,
+                    ];
+                    $imageError = validate_uploaded_image($file);
+                    if ($imageError) {
+                        $feedback = $imageError;
+                        break;
+                    }
+                    [$savedImage, $saveErr] = save_uploaded_file($file, 'img', 'product_admin_' . $productId, ['jpg', 'jpeg', 'png', 'webp'], GREENERRY_MAX_IMAGE_BYTES);
+                    if ($saveErr) {
+                        $feedback = $saveErr;
+                        break;
+                    }
+                    $images[] = $savedImage;
+                }
+            }
+            if ($feedback === '' && !$images) {
+                $feedback = current_lang() === 'en' ? 'Add at least one product image.' : 'Adiciona pelo menos uma imagem do produto.';
+            } elseif ($feedback === '' && count($images) > GREENERRY_MAX_PRODUCT_IMAGES) {
+                $feedback = current_lang() === 'en'
+                    ? 'A product can have at most ' . GREENERRY_MAX_PRODUCT_IMAGES . ' images.'
+                    : 'Um produto pode ter no maximo ' . GREENERRY_MAX_PRODUCT_IMAGES . ' imagens.';
+            }
+        }
+
+        if ($feedback === '') {
+            mysqli_query(
+                $conn,
+                "UPDATE produto
+                 SET nomeProduto = '{$nameSafe}',
+                     idCategoria = {$categoryId},
+                     precoAtual = {$price},
+                     stock_total = {$stock},
+                     estado = '{$stateSafe}',
+                     ativo = {$active}
+                 WHERE idProduto = {$productId}"
+            );
+            save_product_images($conn, $productId, $images);
+            delete_orphan_asset_files($conn, 'img', array_diff($currentImages, $images));
+            cleanup_unused_uploaded_assets($conn);
+            $feedback = tr('success.product_updated');
+        }
+    }
+
     if ($feedback === '' && $productId > 0 && in_array($action, ['aprovar', 'rejeitar', 'inativar', 'reativar'], true)) {
         if ($action === 'aprovar') {
             mysqli_query($conn, "UPDATE produto SET estado = 'aprovado', motivo_rejeicao = NULL, idAdminAprovacao = {$adminId}, aprovado_em = NOW(), ativo = 1 WHERE idProduto = {$productId}");
@@ -59,6 +137,8 @@ $pending = db_all(
      ORDER BY p.criado_em DESC
      LIMIT {$pendingPerPage} OFFSET {$pendingOffset}"
 );
+
+$categories = db_all($conn, "SELECT idCategoria, nomeCategoria FROM categoria ORDER BY nomeCategoria ASC");
 
 $allProducts = db_all(
     $conn,
@@ -125,7 +205,8 @@ include 'admin_header.php';
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($pending as $product): ?>
-        <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
+        <?php $productImages = product_images($conn, (int)$product['idProduto']); ?>
+            <?php $productImage = $productImages[0] ?? ''; ?>
         <article class="admin-review-card" data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
@@ -142,7 +223,7 @@ include 'admin_header.php';
                   <strong><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</strong>
                 </div>
                 <div class="admin-review-meta-item">
-                  <span>IVA</span>
+                  <span data-admin-t="label_vat">IVA</span>
                   <strong><?= number_format((float)$product['iva_percentual'], 2, ',', '.') ?>%</strong>
                 </div>
                 <div class="admin-review-meta-item">
@@ -181,7 +262,7 @@ include 'admin_header.php';
       <?php $otherPageParam = isset($_GET['page']) ? '&page=' . (int)$_GET['page'] : ''; ?>
       <nav class="pager" aria-label="Pending Pagination">
         <?= $pendingPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage - 1) . $otherPageParam . '#products-search" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-        <span class="pager-status">Página <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$pendingPage ?>" data-page-total="<?= (int)$pendingTotalPages ?>">Pagina <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
         <?= $pendingPage < $pendingTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage + 1) . $otherPageParam . '#products-search" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>
@@ -209,17 +290,18 @@ include 'admin_header.php';
           <tr>
             <th>ID</th>
             <th data-admin-t="products_image">Imagem</th>
-            <th>Produto</th>
-            <th>Artista</th>
-            <th>Categoria</th>
-            <th>Preco</th>
-            <th>Estado</th>
-            <th>Acao</th>
+            <th data-admin-t="label_product">Produto</th>
+            <th data-admin-t="label_artist">Artista</th>
+            <th data-admin-t="label_category">Categoria</th>
+            <th data-admin-t="label_price">Preco</th>
+            <th data-admin-t="categories_state">Estado</th>
+            <th data-admin-t="orders_action">Acao</th>
           </tr>
         </thead>
         <tbody>
           <?php foreach ($allProducts as $product): ?>
-            <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
+            <?php $productImages = product_images($conn, (int)$product['idProduto']); ?>
+            <?php $productImage = $productImages[0] ?? ''; ?>
             <tr data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
               <td>#<?= (int)$product['idProduto'] ?></td>
               <td>
@@ -242,6 +324,44 @@ include 'admin_header.php';
               <td><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</td>
               <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
               <td>
+                <div class="admin-row-actions">
+                <details class="admin-inline-editor">
+                  <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
+                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
+                    <label><span data-admin-t="label_product">Produto</span><input name="nomeProduto" class="finput" value="<?= h($product['nomeProduto']) ?>" required></label>
+                    <label><span data-admin-t="label_category">Categoria</span><select name="idCategoria" class="finput">
+                      <?php foreach ($categories as $category): ?>
+                        <option value="<?= (int)$category['idCategoria'] ?>" <?= (int)$category['idCategoria'] === (int)$product['idCategoria'] ? 'selected' : '' ?>><?= h($category['nomeCategoria']) ?></option>
+                      <?php endforeach; ?>
+                    </select></label>
+                    <div class="admin-inline-edit-pair">
+                      <label><span data-admin-t="label_price">Preco</span><input type="number" step="0.01" min="0.01" name="precoAtual" class="finput" value="<?= h((string)$product['precoAtual']) ?>" required></label>
+                      <label><span data-admin-t="label_total_stock">Stock total</span><input type="number" min="0" name="stock_total" class="finput" value="<?= (int)$product['stock_total'] ?>"></label>
+                    </div>
+                    <label><span data-admin-t="categories_state">Estado</span><select name="estado" class="finput">
+                      <?php foreach (['pendente', 'aprovado', 'rejeitado', 'inativo'] as $state): ?>
+                        <option value="<?= h($state) ?>" <?= $state === (string)$product['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
+                      <?php endforeach; ?>
+                    </select></label>
+                    <div>
+                      <span class="admin-modal-label" data-admin-t="products_image">Imagem</span>
+                      <div class="admin-inline-media-grid">
+                        <?php foreach ($productImages as $image): ?>
+                          <label class="admin-inline-media-item">
+                            <img src="../assets/img/<?= h($image) ?>" alt="">
+                            <span><input type="checkbox" name="existing_images[]" value="<?= h($image) ?>" checked> <span data-admin-t="btn_keep">Manter</span></span>
+                          </label>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                    <label><span data-admin-t="btn_add_images">Adicionar imagens</span><input type="file" name="imagens[]" class="finput" accept=".jpg,.jpeg,.png,.webp" multiple></label>
+                    <div class="admin-action-buttons">
+                      <button type="submit" name="action" value="guardar" class="btn btn-dark btn-sm" data-admin-t="btn_save_changes">Guardar alteracoes</button>
+                    </div>
+                  </form>
+                </details>
                 <form method="post">
                   <?= csrf_input() ?>
                   <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
@@ -250,9 +370,10 @@ include 'admin_header.php';
                   <?php elseif ($product['estado'] !== 'pendente'): ?>
                     <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
                   <?php else: ?>
-                    <span class="color-text3" data-admin-t="state_in_review">Em revisão</span>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
                   <?php endif; ?>
                 </form>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -263,7 +384,7 @@ include 'admin_header.php';
       <?php $otherPendingPageParam = isset($_GET['pending_page']) ? '&pending_page=' . (int)$_GET['pending_page'] : ''; ?>
       <nav class="pager" aria-label="Pagination">
         <?= $adminProductsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage - 1) . $otherPendingPageParam . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-        <span class="pager-status">Página <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$adminProductsPage ?>" data-page-total="<?= (int)$adminProductsTotalPages ?>">Pagina <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
         <?= $adminProductsPage < $adminProductsTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage + 1) . $otherPendingPageParam . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>

@@ -10,14 +10,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
     $userId = (int)($_POST['user_id'] ?? 0);
     $state = (string)($_POST['estado'] ?? '');
+    $name = trim((string)($_POST['nome'] ?? ''));
+    $email = trim((string)($_POST['email'] ?? ''));
 
-    if ($error === '' && ($userId <= 0 || !in_array($state, $allowedStates, true))) {
+    if ($error === '' && ($userId <= 0 || !in_array($state, $allowedStates, true) || $name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL))) {
         $error = tr('error.api_invalid_request');
     }
 
     if ($error === '') {
         $stateSafe = db_escape($conn, $state);
-        if (mysqli_query($conn, "UPDATE cliente SET estado = '{$stateSafe}' WHERE idCliente = {$userId}")) {
+        $nameSafe = db_escape($conn, $name);
+        $emailSafe = db_escape($conn, $email);
+        if (mysqli_query($conn, "UPDATE cliente SET nome = '{$nameSafe}', email = '{$emailSafe}', estado = '{$stateSafe}' WHERE idCliente = {$userId}")) {
             $feedback = tr('success.user_state_updated');
         } else {
             $error = tr('error.user_update');
@@ -113,7 +117,7 @@ include 'admin_header.php';
           <tr>
             <th>ID</th>
             <th data-admin-t="users_name">Nome</th>
-            <th>Email</th>
+            <th data-admin-t="label_email">Email</th>
             <th data-admin-t="nav_products">Produtos</th>
             <th data-admin-t="nav_releases">Lançamentos</th>
             <th data-admin-t="card_orders">Encomendas</th>
@@ -126,23 +130,39 @@ include 'admin_header.php';
             <?php $isArtist = (int)$user['total_products'] > 0 || (int)$user['total_releases'] > 0; ?>
             <tr data-admin-state="<?= h((string)$user['estado'] . ($isArtist ? ' artista' : '')) ?>">
               <td>#<?= (int)$user['idCliente'] ?></td>
-              <td><strong><?= h($user['nome']) ?></strong><br><span><?= h($user['slug'] ?? '') ?></span></td>
+              <td>
+                <div class="admin-user-cell">
+                  <span class="admin-user-avatar">
+                    <?php if (!empty($user['foto'])): ?>
+                      <img src="<?= h(asset_url('img', $user['foto'])) ?>" alt="">
+                    <?php else: ?>
+                      <?= h(mb_strtoupper(mb_substr((string)$user['nome'], 0, 1))) ?>
+                    <?php endif; ?>
+                  </span>
+                  <strong><?= h($user['nome']) ?></strong>
+                </div>
+              </td>
               <td><?= h($user['email']) ?></td>
               <td><?= (int)$user['total_products'] ?></td>
               <td><?= (int)$user['total_releases'] ?></td>
               <td><?= (int)$user['total_orders'] ?></td>
               <td><span class="badge <?= h(state_badge_class((string)$user['estado'])) ?>"><?= h(order_status_label((string)$user['estado'])) ?></span></td>
               <td>
-                <form method="post" class="admin-table-form admin-table-form--single">
-                  <?= csrf_input() ?>
-                  <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
-                  <select name="estado" class="finput">
-                    <?php foreach ($allowedStates as $state): ?>
-                      <option value="<?= h($state) ?>" <?= $state === (string)$user['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                  <button type="submit" class="btn btn-ghost btn-sm" data-admin-t="categories_save">Guardar</button>
-                </form>
+                <details class="admin-inline-editor">
+                  <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
+                  <form method="post" class="admin-inline-edit-form">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
+                    <label><span data-admin-t="users_name">Nome</span><input name="nome" class="finput" value="<?= h($user['nome']) ?>" required></label>
+                    <label><span data-admin-t="label_email">Email</span><input type="email" name="email" class="finput" value="<?= h($user['email']) ?>" required></label>
+                    <label><span data-admin-t="categories_state">Estado</span><select name="estado" class="finput">
+                      <?php foreach ($allowedStates as $state): ?>
+                        <option value="<?= h($state) ?>" <?= $state === (string)$user['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
+                      <?php endforeach; ?>
+                    </select></label>
+                    <button type="submit" class="btn btn-dark btn-sm" data-admin-t="btn_save_changes">Guardar alterações</button>
+                  </form>
+                </details>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -152,9 +172,9 @@ include 'admin_header.php';
   <?php endif; ?>
   <?php if ($totalPages > 1): ?>
     <nav class="pager" aria-label="Pagination">
-      <?= $page > 1 ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page - 1) . '" data-users-pager data-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>' ?>
-      <span class="pager-status"><span data-t="pagination_page">Página</span> <?= (int)$page ?> <span data-t="pagination_of">de</span> <?= (int)$totalPages ?></span>
-      <?= $page < $totalPages ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page + 1) . '" data-users-pager data-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>' ?>
+      <?= $page > 1 ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page - 1) . '" data-users-pager data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+      <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$page ?>" data-page-total="<?= (int)$totalPages ?>">P?gina <?= (int)$page ?> de <?= (int)$totalPages ?></span>
+      <?= $page < $totalPages ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page + 1) . '" data-users-pager data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
     </nav>
   <?php endif; ?>
 </section>

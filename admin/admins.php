@@ -47,6 +47,29 @@ $roles = [
     ],
 ];
 
+function admin_selected_roles(array $roles): array
+{
+    $selected = $_POST['cargos'] ?? $_POST['cargo'] ?? ['Administrador'];
+    if (!is_array($selected)) {
+        $selected = explode(',', (string)$selected);
+    }
+    $selected = array_values(array_unique(array_filter(array_map('trim', $selected))));
+    $selected = array_values(array_filter($selected, static fn($role) => isset($roles[$role])));
+    if (!$selected) {
+        $selected = ['Administrador'];
+    }
+    if (in_array('Administrador', $selected, true)) {
+        return ['Administrador'];
+    }
+    return $selected;
+}
+
+function admin_role_values(?string $stored): array
+{
+    $values = array_values(array_filter(array_map('trim', explode(',', (string)$stored))));
+    return $values ?: ['Administrador'];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
     $action = (string)($_POST['action'] ?? '');
@@ -55,12 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim((string)($_POST['nome'] ?? ''));
         $email = trim((string)($_POST['email'] ?? ''));
         $password = (string)($_POST['password'] ?? '');
-        $role = (string)($_POST['cargo'] ?? 'Administrador');
+        $roleValues = admin_selected_roles($roles);
+        $role = implode(',', $roleValues);
 
         $error = validate_nome($name) ?? validate_email($email) ?? validate_password($password) ?? '';
-        if ($error === '' && !isset($roles[$role])) {
-            $error = tr('error.api_invalid_request');
-        }
         if ($error === '' && db_one_prepared($conn, "SELECT idAdmin FROM admin WHERE email = ? LIMIT 1", 's', [$email])) {
             $error = tr('error.admin_email_exists');
         }
@@ -76,11 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($error === '' && $action === 'update') {
         $adminId = (int)($_POST['admin_id'] ?? 0);
-        $role = (string)($_POST['cargo'] ?? 'Administrador');
+        $roleValues = admin_selected_roles($roles);
+        $role = implode(',', $roleValues);
         $active = (int)($_POST['ativo'] ?? 0) === 1 ? 1 : 0;
         $target = db_one($conn, "SELECT * FROM admin WHERE idAdmin = {$adminId} LIMIT 1");
 
-        if (!$target || !isset($roles[$role])) {
+        if (!$target) {
             $error = tr('error.api_invalid_request');
         } elseif (is_super_admin($target) && ((string)$target['cargo'] !== $role || $active !== 1)) {
             $error = tr('error.super_admin_locked');
@@ -146,7 +168,7 @@ include 'admin_header.php';
         <input type="text" name="nome" class="finput" required>
       </div>
       <div class="fg">
-        <label class="flabel">Email</label>
+        <label class="flabel" data-admin-t="label_email">Email</label>
         <input type="email" name="email" class="finput" required>
       </div>
       <div class="fg">
@@ -155,11 +177,11 @@ include 'admin_header.php';
       </div>
       <div class="fg admin-role-field">
         <label class="flabel" data-admin-t="admins_role">Cargo</label>
-        <select name="cargo" class="finput">
+        <div class="admin-role-checks">
           <?php foreach ($roles as $value => $labels): ?>
-            <option value="<?= h($value) ?>" data-admin-t="<?= h($labels['key']) ?>"><?= h($labels[current_lang()] ?? $labels['pt']) ?></option>
+            <label class="admin-role-check"><input type="checkbox" name="cargos[]" value="<?= h($value) ?>" <?= $value === 'Administrador' ? 'checked' : '' ?>> <span data-admin-t="<?= h($labels['key']) ?>"><?= h($labels[current_lang()] ?? $labels['pt']) ?></span></label>
           <?php endforeach; ?>
-        </select>
+        </div>
       </div>
     </div>
     <div class="admin-role-guide">
@@ -193,7 +215,7 @@ include 'admin_header.php';
         <tr>
           <th>ID</th>
           <th data-admin-t="users_name">Nome</th>
-          <th>Email</th>
+          <th data-admin-t="label_email">Email</th>
           <th data-admin-t="admins_role">Cargo</th>
           <th data-admin-t="categories_state">Estado</th>
           <th data-admin-t="orders_action">Acao</th>
@@ -204,20 +226,24 @@ include 'admin_header.php';
           <?php
           $state = (int)$row['ativo'] === 1 ? 'ativo' : 'inativo';
           $rowIsSuper = is_super_admin($row);
-          $roleKey = $roles[(string)$row['cargo']]['key'] ?? '';
-          $roleHelpKey = $roles[(string)$row['cargo']]['help_key'] ?? '';
-          $roleLabel = $rowIsSuper
-              ? (current_lang() === 'en' ? 'Super admin' : 'Admin principal')
-              : ($roles[(string)$row['cargo']][current_lang()] ?? $row['cargo']);
+          $roleValues = admin_role_values((string)$row['cargo']);
           $roleKey = admin_role_key($row);
           $isLimited = !in_array($roleKey, ['super', 'admin'], true);
+          $roleStateText = implode(' ', $roleValues);
           ?>
-          <tr data-admin-state="<?= h($state . ' ' . $roleKey . ' ' . $row['cargo'] . ($isLimited ? ' limitado' : '')) ?>">
+          <tr data-admin-state="<?= h($state . ' ' . $roleKey . ' ' . $roleStateText . ($isLimited ? ' limitado' : '')) ?>">
             <td>#<?= (int)$row['idAdmin'] ?></td>
             <td><strong><?= h($row['nome']) ?></strong><br><span><?= h(date('d/m/Y', strtotime($row['criado_em']))) ?></span></td>
             <td><?= h($row['email']) ?></td>
             <td>
-              <span class="badge badge-light" <?= $rowIsSuper ? 'data-admin-t="admins_role_super"' : ($roleKey ? 'data-admin-t="' . h($roleKey) . '"' : '') ?>><?= h($roleLabel) ?></span>
+              <?php if ($rowIsSuper): ?>
+                <span class="badge badge-light" data-admin-t="admins_role_super">Admin principal</span>
+              <?php else: ?>
+                <?php foreach ($roleValues as $value): ?>
+                  <?php $labels = $roles[$value] ?? null; ?>
+                  <span class="badge badge-light" <?= $labels ? 'data-admin-t="' . h($labels['key']) . '"' : '' ?>><?= h($labels[current_lang()] ?? $value) ?></span>
+                <?php endforeach; ?>
+              <?php endif; ?>
               <?php if ($rowIsSuper): ?>
                 <small class="admin-role-note" data-admin-t="admins_owner_account">Conta dona</small>
               <?php elseif (!in_array(admin_role_key($row), ['super', 'admin'], true)): ?>
@@ -236,11 +262,11 @@ include 'admin_header.php';
                   <?= csrf_input() ?>
                   <input type="hidden" name="action" value="update">
                   <input type="hidden" name="admin_id" value="<?= (int)$row['idAdmin'] ?>">
-                  <select name="cargo" class="finput">
+                  <div class="admin-role-checks admin-role-checks--inline">
                     <?php foreach ($roles as $value => $labels): ?>
-                      <option value="<?= h($value) ?>" <?= $value === (string)$row['cargo'] ? 'selected' : '' ?> data-admin-t="<?= h($labels['key']) ?>"><?= h($labels[current_lang()] ?? $labels['pt']) ?></option>
+                      <label class="admin-role-check"><input type="checkbox" name="cargos[]" value="<?= h($value) ?>" <?= in_array($value, $roleValues, true) ? 'checked' : '' ?>> <span data-admin-t="<?= h($labels['key']) ?>"><?= h($labels[current_lang()] ?? $labels['pt']) ?></span></label>
                     <?php endforeach; ?>
-                  </select>
+                  </div>
                   <select name="ativo" class="finput">
                     <option value="1" <?= (int)$row['ativo'] === 1 ? 'selected' : '' ?> data-admin-t="state_active">Ativo</option>
                     <option value="0" <?= (int)$row['ativo'] !== 1 ? 'selected' : '' ?> data-admin-t="state_inactive">Inativo</option>

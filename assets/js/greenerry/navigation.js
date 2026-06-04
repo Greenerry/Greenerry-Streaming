@@ -14,11 +14,24 @@ const _softNavPages = new Set([
   'notifications.php',
   'receipt.php',
   'artist_dashboard.php',
+  'artist_analytics.php',
+  'artist_releases.php',
+  'artist_products.php',
+  'artist_messages.php',
+  'artist_customers.php',
   'upload_music.php',
   'upload_merch.php',
   'orders.php',
   'revenue.php',
   'contact_admin.php'
+]);
+const _softNavBlockedPages = new Set([
+  'login.php',
+  'registar.php',
+  'forgot_password.php',
+  'reset_password.php',
+  'verify_email.php',
+  'logout.php'
 ]);
 let _softNavBusy = false;
 
@@ -37,7 +50,11 @@ function _canSoftNavigate(link, event) {
   if (url.origin !== window.location.origin) return false;
   if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return false;
 
-  return _softNavPages.has(_pageNameFromUrl(url));
+  const currentPage = _pageNameFromUrl(new URL(window.location.href));
+  const targetPage = _pageNameFromUrl(url);
+  if (_softNavBlockedPages.has(currentPage) || _softNavBlockedPages.has(targetPage)) return false;
+
+  return _softNavPages.has(targetPage);
 }
 
 function _runPageScripts(root) {
@@ -88,7 +105,7 @@ async function _softNavigate(url, push = true) {
   _softNavBusy = true;
 
   try {
-    // Fetch the next page, copy its .page-body, then re-run page scripts.
+    // Fetch the next page, copy the app chrome and page body, then re-run page scripts.
     _saveState();
     const response = await fetch(url.href, { headers: { 'X-Requested-With': 'fetch' } });
     if (!response.ok) throw new Error('Navigation failed');
@@ -97,15 +114,36 @@ async function _softNavigate(url, push = true) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const nextBody = doc.querySelector('.page-body');
     const currentBody = document.querySelector('.page-body');
+    const nextSidebar = doc.querySelector('#sl');
+    const currentSidebar = document.querySelector('#sl');
+    const nextNav = doc.querySelector('#main-nav');
+    const currentNav = document.querySelector('#main-nav');
     if (!nextBody || !currentBody) throw new Error('Missing page body');
 
+    document.body.classList.toggle('artist-sidebar-mode', doc.body.classList.contains('artist-sidebar-mode'));
+    if (nextSidebar && currentSidebar) currentSidebar.replaceWith(nextSidebar);
+    if (nextNav && currentNav) currentNav.replaceWith(nextNav);
     currentBody.innerHTML = nextBody.innerHTML;
+    const rightSidebarOpen = document.getElementById('sr')?.classList.contains('open');
+    document.querySelector('.main')?.classList.toggle('sr-open', !!rightSidebarOpen);
+    document.getElementById('main-nav')?.classList.toggle('sr-open', !!rightSidebarOpen);
+    document.getElementById('player-bar')?.classList.toggle('sr-open', !!rightSidebarOpen);
+    [document.querySelector('#sl'), document.querySelector('#main-nav'), currentBody].forEach((element) => {
+      element?.style.removeProperty('opacity');
+      element?.style.removeProperty('transform');
+      element?.style.removeProperty('will-change');
+    });
     _runPageScripts(currentBody);
     document.title = doc.title || document.title;
 
     if (push) history.pushState({ greenerrySoftNav: true }, '', url.href);
     window.scrollTo(0, 0);
+    document.body.classList.remove('artist-mode-switching');
+    document.querySelectorAll('[data-artist-mode-toggle]').forEach((item) => {
+      item.disabled = false;
+    });
 
+    if (typeof initThemeToggle === 'function') initThemeToggle();
     setLang(lang);
     closeMobileSidebar();
     updateCartBadgeGlobal();
@@ -137,4 +175,14 @@ function _bindSoftNavigation() {
   window.addEventListener('popstate', () => {
     _softNavigate(new URL(window.location.href), false);
   });
+}
+
+function _bindScrollState() {
+  const sync = () => {
+    const scrolled = window.scrollY > 8;
+    document.body.classList.toggle('is-scrolled', scrolled);
+    document.getElementById('main-nav')?.classList.toggle('solid', scrolled);
+  };
+  sync();
+  window.addEventListener('scroll', sync, { passive: true });
 }

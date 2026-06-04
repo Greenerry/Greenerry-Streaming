@@ -105,10 +105,10 @@ $breakdownTotal = max(
     (float)($finance['paid_revenue'] ?? 0) + (float)($finance['commission'] ?? 0) + (float)($finance['artist_value'] ?? 0) + (float)($finance['blocked_value'] ?? 0)
 );
 $incomeBreakdown = [
-    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#c9d0db'],
-    ['label' => 'Comissão', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#9dafaa'],
-    ['label' => 'Base artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#8b98aa'],
-    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#d7b676'],
+    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#2563eb'],
+    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#16a34a'],
+    ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#f59e0b'],
+    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#e11d48'],
 ];
 $breakdownStops = [];
 $breakdownCursor = 0.0;

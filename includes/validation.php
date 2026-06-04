@@ -54,11 +54,6 @@ function validate_phone(?string $phone): ?string
     return null;
 }
 
-function validate_postal_code(string $postalCode): ?string
-{
-    return preg_match('/^\\d{4}-\\d{3}$/', trim($postalCode)) ? null : tr('error.invalid_postal');
-}
-
 function validate_nif(?string $nif): ?string
 {
     $nif = trim((string)$nif);

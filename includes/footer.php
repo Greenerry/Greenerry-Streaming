@@ -33,7 +33,7 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
       <div class="foot-grid">
         <div>
           <div class="foot-brand">GREENERRY.</div>
-          <p class="foot-desc" data-t="foot_desc">Independent music streaming, artist discovery, and merch in one organized website.</p>
+          <p class="foot-desc" data-t="foot_desc">Music streaming, artist discovery, and products in one organized website.</p>
         </div>
         <div class="foot-col">
           <h5 data-t="foot_discover">Discover</h5>
@@ -98,9 +98,16 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
           <div class="np-track" id="np-track">-</div>
           <div class="np-artist" id="np-artist"></div>
         </div>
-        <button class="fav-btn" id="fav-btn" onclick="toggleFav()" title="Favorite" aria-label="Favorite">
-          <svg id="fav-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
+        <div class="player-action-row">
+          <button class="fav-btn" id="fav-btn" onclick="toggleFav()" title="Favorite" aria-label="Favorite">
+            <svg class="fav-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <?php if (is_user_logged_in()): ?>
+            <button class="player-playlist-btn" id="np-playlist-btn" type="button" onclick="openCurrentPlaylistPicker()" title="Add to playlist" aria-label="Add to playlist">
+              <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            </button>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
 
@@ -142,6 +149,16 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
       <div class="pb-title" id="pb-title">-</div>
       <div class="pb-artist" id="pb-artist"></div>
     </div>
+    <div class="player-action-row player-action-row--bar">
+      <button class="fav-btn pb-fav-btn" type="button" onclick="toggleFav()" title="Favorite" aria-label="Favorite">
+        <svg class="fav-icon" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+      <?php if (is_user_logged_in()): ?>
+        <button class="player-playlist-btn pb-playlist-btn" id="pb-playlist-btn" type="button" onclick="openCurrentPlaylistPicker()" title="Add to playlist" aria-label="Add to playlist">
+          <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        </button>
+      <?php endif; ?>
+    </div>
   </div>
 
   <div class="pb-center">
@@ -174,7 +191,40 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
 
 </div><!-- end .shell -->
 <audio id="g-audio" class="media-hidden"></audio>
+<?php if (is_user_logged_in()): ?>
+<dialog class="playlist-picker-dialog" id="playlist-picker">
+  <form method="dialog" class="playlist-picker-card">
+    <div class="playlist-picker-head">
+      <h3 data-t="playlist_add_title">Adicionar à playlist</h3>
+      <button type="submit" class="playlist-picker-close" aria-label="Close">×</button>
+    </div>
+    <label class="playlist-picker-search">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="playlist-picker-search" data-tp="playlist_find_placeholder" placeholder="Encontrar playlist">
+    </label>
+    <button type="button" class="playlist-new-row" id="playlist-picker-new-toggle">
+      <span>+</span>
+      <strong data-t="playlist_new">Nova playlist</strong>
+    </button>
+    <div class="playlist-create-inline" id="playlist-picker-create-row" hidden>
+      <label class="playlist-cover-field playlist-cover-field--compact">
+        <input type="file" id="playlist-picker-cover" accept=".jpg,.jpeg,.png,.webp">
+        <span>+</span>
+        <strong data-t="playlist_cover">Capa</strong>
+      </label>
+      <input type="text" id="playlist-picker-new" maxlength="140" data-tp="playlist_create_placeholder" placeholder="Nova playlist">
+      <button type="button" id="playlist-picker-create" data-t="playlist_create">Criar</button>
+    </div>
+    <p class="playlist-picker-label" data-t="playlist_saved_in">Guardada em</p>
+    <div id="playlist-picker-list" class="playlist-picker-list"></div>
+    <div class="playlist-picker-actions">
+      <button type="submit" class="playlist-cancel" data-t="cancel">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+<?php endif; ?>
 <script id="greenerry-translations" type="application/json"><?= $translationsJson ?></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
 <?php
 $greenerryScripts = [
     'core',

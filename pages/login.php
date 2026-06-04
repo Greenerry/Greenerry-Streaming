@@ -66,9 +66,7 @@ include '../includes/header.php';
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
-        <span class="slabel" data-t="<?= $isAdminLogin ? 'nav_admin' : 'login_label' ?>"><?= $isAdminLogin ? 'Administração' : 'Acesso' ?></span>
         <h2 data-t="<?= $isAdminLogin ? 'login_admin_type' : 'login_title' ?>"><?= $isAdminLogin ? 'Administração' : 'Aceder a conta' ?></h2>
-        <p data-t="<?= $isAdminLogin ? 'login_admin_card_intro' : 'login_card_intro' ?>"><?= $isAdminLogin ? 'Usa o acesso reservado da equipa Greenerry.' : 'Bem-vindo de volta. Entra com os teus dados.' ?></p>
       </div>
 
       <?php if ($err): ?>

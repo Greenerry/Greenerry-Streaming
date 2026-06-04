@@ -3,9 +3,25 @@ require_once '../includes/config.php';
 
 // Filters arrive through the URL, for example: music.php?q=rock&tipo=EP&page=2
 $type = trim($_GET['tipo'] ?? '');
+$genre = trim($_GET['genero'] ?? '');
 $search = trim($_GET['q'] ?? '');
 $perPage = 18;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
+
+$genreOptions = db_all(
+    $conn,
+    "SELECT DISTINCT genero
+     FROM faixa
+     WHERE genero IS NOT NULL
+       AND TRIM(genero) <> ''
+       AND estado = 'aprovada'
+       AND ativo = 1
+     ORDER BY genero ASC"
+);
+$validGenres = array_map(static fn($row) => (string)$row['genero'], $genreOptions);
+if ($genre !== '' && !in_array($genre, $validGenres, true)) {
+    $genre = '';
+}
 
 $whereParts = ["r.estado = 'aprovado'", 'r.ativo = 1', "c.estado = 'ativo'"];
 $types = '';
@@ -17,12 +33,32 @@ if ($type !== '' && in_array($type, ['Single', 'EP', 'Album'], true)) {
     $types .= 's';
     $params[] = $type;
 }
+if ($genre !== '') {
+    $whereParts[] = "EXISTS (
+        SELECT 1
+        FROM faixa fg
+        WHERE fg.idRelease = r.idRelease
+          AND fg.estado = 'aprovada'
+          AND fg.ativo = 1
+          AND fg.genero = ?
+    )";
+    $types .= 's';
+    $params[] = $genre;
+}
 if ($search !== '') {
     // Search checks release title, artist name, and approved track titles.
     $searchLike = '%' . $search . '%';
     $whereParts[] = "(
         r.titulo LIKE ?
         OR c.nome LIKE ?
+        OR EXISTS (
+            SELECT 1
+            FROM faixa fsg
+            WHERE fsg.idRelease = r.idRelease
+              AND fsg.estado = 'aprovada'
+              AND fsg.ativo = 1
+              AND fsg.genero LIKE ?
+        )
         OR EXISTS (
             SELECT 1
             FROM faixa fs
@@ -32,8 +68,8 @@ if ($search !== '') {
               AND fs.titulo LIKE ?
         )
     )";
-    $types .= 'sss';
-    array_push($params, $searchLike, $searchLike, $searchLike);
+    $types .= 'ssss';
+    array_push($params, $searchLike, $searchLike, $searchLike, $searchLike);
 }
 $where = 'WHERE ' . implode(' AND ', $whereParts);
 
@@ -112,6 +148,9 @@ if ($search !== '') {
 if ($type !== '') {
     $paginationQuery['tipo'] = $type;
 }
+if ($genre !== '') {
+    $paginationQuery['genero'] = $genre;
+}
 $pageUrl = static function (int $targetPage) use ($paginationQuery): string {
     // Keeps the current filters when the user changes page.
     return 'music.php?' . http_build_query($paginationQuery + ['page' => $targetPage]);
@@ -120,22 +159,108 @@ $pageUrl = static function (int $targetPage) use ($paginationQuery): string {
 include '../includes/header.php';
 ?>
 
+<style>
+@media (min-width: 901px) {
+  .content-shell--music-page-cloud .catalog-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(500px, 540px) !important;
+    align-items: end !important;
+    gap: 24px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .content-shell--music-page-cloud .catalog-hero h1 {
+    max-width: none !important;
+    white-space: nowrap !important;
+    font-size: clamp(3.35rem, 4.25vw, 4rem) !important;
+    line-height: .98 !important;
+    margin: 0 !important;
+  }
+
+  .content-shell--music-page-cloud .catalog-filter {
+    width: 100% !important;
+    max-width: 540px !important;
+    justify-self: end !important;
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1fr) 126px 126px !important;
+    align-items: end !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  .content-shell--music-page-cloud .catalog-search-field {
+    min-width: 0 !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1260px) {
+  .content-shell--music-page-cloud .catalog-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .content-shell--music-page-cloud .catalog-filter {
+    justify-self: start !important;
+    width: min(640px, 100%) !important;
+    max-width: 640px !important;
+    grid-template-columns: minmax(220px, 1fr) 140px 140px !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .main.sr-open .content-shell--music-page-cloud .catalog-hero {
+    grid-template-columns: minmax(0, max-content) minmax(430px, 500px) !important;
+    justify-content: space-between !important;
+    align-items: end !important;
+    gap: 22px !important;
+  }
+
+  .main.sr-open .content-shell--music-page-cloud .catalog-hero h1 {
+    max-width: none !important;
+    white-space: nowrap !important;
+    font-size: clamp(2.85rem, 3.2vw, 3.55rem) !important;
+  }
+
+  .main.sr-open .content-shell--music-page-cloud .catalog-filter {
+    width: min(500px, 100%) !important;
+    max-width: 500px !important;
+    justify-self: end !important;
+    grid-template-columns: minmax(170px, 1fr) 112px 112px !important;
+    gap: 8px !important;
+  }
+
+  .main.sr-open .content-shell--music-page-cloud .catalog-filter select.finput {
+    min-width: 0 !important;
+    padding-left: 14px !important;
+    padding-right: 30px !important;
+  }
+}
+</style>
+
 <section class="content-shell content-shell--cloud content-shell--catalog-cloud content-shell--music-page-cloud">
   <div class="section-media-cloud section-media-cloud--catalog section-media-cloud--music-page" data-media-cloud='<?= h(json_encode($musicMediaCloud, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>' aria-hidden="true"></div>
   <div class="wrap">
     <div class="catalog-hero">
       <div>
-        <span class="slabel" data-t="music_label">Music catalog</span>
         <h1 data-t="music_title">Discover music</h1>
       </div>
 
       <form method="get" class="catalog-filter" data-instant-filter>
-        <input type="text" name="q" class="finput" value="<?= h($search) ?>" data-tp="music_search_placeholder" placeholder="Search track, release, or artist" autocomplete="off">
+        <label class="catalog-search-field">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" name="q" class="finput" value="<?= h($search) ?>" data-tp="music_search_placeholder" placeholder="Search track, release, or artist" autocomplete="off">
+        </label>
         <select name="tipo" class="finput">
           <option value="" data-t="music_all_formats">All formats</option>
           <option value="Single" data-t="release_type_single" <?= $type === 'Single' ? 'selected' : '' ?>><?= h(release_type_label('Single')) ?></option>
           <option value="EP" data-t="release_type_ep" <?= $type === 'EP' ? 'selected' : '' ?>><?= h(release_type_label('EP')) ?></option>
           <option value="Album" data-t="release_type_album" <?= $type === 'Album' ? 'selected' : '' ?>><?= h(release_type_label('Album')) ?></option>
+        </select>
+        <select name="genero" class="finput">
+          <option value="" data-t="music_all_genres">All genres</option>
+          <?php foreach ($genreOptions as $genreOption): ?>
+            <?php $genreName = (string)$genreOption['genero']; ?>
+            <option value="<?= h($genreName) ?>" <?= $genre === $genreName ? 'selected' : '' ?>><?= h($genreName) ?></option>
+          <?php endforeach; ?>
         </select>
       </form>
     </div>
@@ -173,7 +298,9 @@ include '../includes/header.php';
               <?php endif; ?>
               <div class="cover-ov">
                 <?php if (!empty($release['first_track_audio'])): ?>
-                  <button type="button" class="pbt" data-t="release_play_track" onclick="event.preventDefault(); event.stopPropagation(); playTrack('<?= h(addslashes($release['first_track_title'])) ?>','<?= h(addslashes($release['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$release['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$release['first_track_id'] ?>)">Play</button>
+                  <button type="button" class="pbt" aria-label="<?= h(current_lang() === 'en' ? 'Play' : 'Tocar') ?>" onclick="event.preventDefault(); event.stopPropagation(); playTrack('<?= h(addslashes($release['first_track_title'])) ?>','<?= h(addslashes($release['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$release['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$release['first_track_id'] ?>)">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                  </button>
                 <?php endif; ?>
               </div>
             </div>
@@ -185,9 +312,6 @@ include '../includes/header.php';
                 <div class="sub"><?= h($release['first_track_genre']) ?></div>
               <?php endif; ?>
               <div class="sub" data-count-type="track" data-count-value="<?= (int)$release['total_faixas'] ?>"><?= h(count_label((int)$release['total_faixas'], 'track')) ?></div>
-              <?php if (is_user_logged_in() && !empty($release['first_track_id'])): ?>
-                <button type="button" class="btn btn-ghost btn-sm playlist-add-trigger" data-track-id="<?= (int)$release['first_track_id'] ?>" onclick="event.preventDefault(); event.stopPropagation(); openPlaylistPicker(this)" data-t="playlist_add">Adicionar à playlist</button>
-              <?php endif; ?>
             </div>
           </a>
         <?php endforeach; ?>
@@ -215,33 +339,4 @@ include '../includes/header.php';
     </div>
   </div>
 </section>
-
-<?php if (is_user_logged_in()): ?>
-<dialog class="playlist-picker-dialog" id="playlist-picker">
-  <form method="dialog" class="playlist-picker-card">
-    <div class="playlist-picker-head">
-      <h3 data-t="playlist_add_title">Adicionar à playlist</h3>
-      <button type="submit" class="playlist-picker-close" aria-label="Close">×</button>
-    </div>
-    <label class="playlist-picker-search">
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" id="playlist-picker-search" data-tp="playlist_find_placeholder" placeholder="Encontrar playlist">
-    </label>
-    <button type="button" class="playlist-new-row" id="playlist-picker-new-toggle">
-      <span>+</span>
-      <strong data-t="playlist_new">Nova playlist</strong>
-    </button>
-    <div class="playlist-create-inline" id="playlist-picker-create-row" hidden>
-      <input type="text" id="playlist-picker-new" maxlength="140" data-tp="playlist_create_placeholder" placeholder="Nova playlist">
-      <button type="button" id="playlist-picker-create" data-t="playlist_create">Criar</button>
-    </div>
-    <p class="playlist-picker-label" data-t="playlist_saved_in">Guardada em</p>
-    <div id="playlist-picker-list" class="playlist-picker-list"></div>
-    <div class="playlist-picker-actions">
-      <button type="submit" class="playlist-cancel" data-t="cancel">Cancelar</button>
-    </div>
-  </form>
-</dialog>
-<?php endif; ?>
-
 <?php include '../includes/footer.php'; ?>

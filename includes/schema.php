@@ -34,10 +34,31 @@ function greenerry_index_exists(mysqli $conn, string $table, string $index): boo
     return (bool)$row;
 }
 
+function greenerry_column_type(mysqli $conn, string $table, string $column): ?string
+{
+    $row = db_one_prepared(
+        $conn,
+        "SELECT COLUMN_TYPE
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND COLUMN_NAME = ?
+         LIMIT 1",
+        'ss',
+        [$table, $column]
+    );
+
+    return $row ? strtolower((string)$row['COLUMN_TYPE']) : null;
+}
+
 function greenerry_ensure_schema(mysqli $conn): void
 {
     if (!greenerry_column_exists($conn, 'faixa', 'genero')) {
         mysqli_query($conn, "ALTER TABLE faixa ADD genero VARCHAR(80) NULL AFTER titulo");
+    }
+
+    if (greenerry_column_exists($conn, 'playlist', 'nome') && !greenerry_column_exists($conn, 'playlist', 'capa')) {
+        mysqli_query($conn, "ALTER TABLE playlist ADD capa VARCHAR(255) NULL AFTER descricao");
     }
 
     mysqli_query(
@@ -47,6 +68,7 @@ function greenerry_ensure_schema(mysqli $conn): void
             idCliente INT NOT NULL,
             nome VARCHAR(140) NOT NULL,
             descricao TEXT NULL,
+            capa VARCHAR(255) NULL,
             visibilidade ENUM('privada', 'publica') NOT NULL DEFAULT 'privada',
             criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -84,7 +106,7 @@ function greenerry_ensure_schema(mysqli $conn): void
             idCliente INT NOT NULL,
             idEncomenda INT NOT NULL,
             rating TINYINT NOT NULL,
-            comentario TEXT NULL,
+            comentario VARCHAR(180) NULL,
             criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             CONSTRAINT uq_produto_review_cliente UNIQUE (idProduto, idCliente),
@@ -155,6 +177,26 @@ function greenerry_ensure_schema(mysqli $conn): void
 
     if (!greenerry_index_exists($conn, 'faixa', 'idx_faixa_genero')) {
         mysqli_query($conn, "CREATE INDEX idx_faixa_genero ON faixa (genero)");
+    }
+
+    mysqli_query(
+        $conn,
+        "UPDATE produto
+         SET descricaoProduto = CONCAT(TRIM(SUBSTRING(descricaoProduto, 1, 107)), '...')
+         WHERE descricaoProduto IS NOT NULL
+           AND CHAR_LENGTH(descricaoProduto) > 110"
+    );
+
+    mysqli_query(
+        $conn,
+        "UPDATE produto_review
+         SET comentario = CONCAT(TRIM(SUBSTRING(comentario, 1, 177)), '...')
+         WHERE comentario IS NOT NULL
+           AND CHAR_LENGTH(comentario) > 180"
+    );
+
+    if (greenerry_column_type($conn, 'produto_review', 'comentario') !== 'varchar(180)') {
+        mysqli_query($conn, "ALTER TABLE produto_review MODIFY comentario VARCHAR(180) NULL");
     }
 }
 

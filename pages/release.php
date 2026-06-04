@@ -131,7 +131,9 @@ include '../includes/header.php';
               <strong><?= h($track['titulo']) ?></strong>
               <span><?= h($release['artist_nome']) ?></span>
             </div>
-            <button type="button" class="btn btn-ghost btn-sm" data-t="release_play_track" onclick="playTrack('<?= h(addslashes($track['titulo'])) ?>','<?= h(addslashes($release['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$release['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$track['idFaixa'] ?>)">Play</button>
+            <button type="button" class="icon-play-btn" aria-label="<?= h(current_lang() === 'en' ? 'Play' : 'Tocar') ?>" onclick="playTrack('<?= h(addslashes($track['titulo'])) ?>','<?= h(addslashes($release['artist_nome'])) ?>','<?= h($cover) ?>','<?= h($audio) ?>',<?= (int)$release['artistId'] ?>,'<?= h($artistFoto) ?>',<?= (int)$track['idFaixa'] ?>)">
+              <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            </button>
           </article>
         <?php endforeach; ?>
       </div>

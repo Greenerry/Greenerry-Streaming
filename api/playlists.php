@@ -21,13 +21,13 @@ if ($action === 'list') {
     $trackId = (int)($_GET['trackId'] ?? 0);
     $playlists = db_all_prepared(
         $conn,
-        "SELECT p.idPlaylist, p.nome, p.descricao, COUNT(pf.idPlaylistFaixa) AS total_faixas" . ($trackId > 0 ? ",
+        "SELECT p.idPlaylist, p.nome, p.descricao, p.capa, COUNT(pf.idPlaylistFaixa) AS total_faixas" . ($trackId > 0 ? ",
                 MAX(CASE WHEN pf.idFaixa = ? THEN 1 ELSE 0 END) AS in_playlist" : ",
                 0 AS in_playlist") . "
          FROM playlist p
          LEFT JOIN playlist_faixa pf ON pf.idPlaylist = p.idPlaylist
          WHERE p.idCliente = ?
-         GROUP BY p.idPlaylist, p.nome, p.descricao
+         GROUP BY p.idPlaylist, p.nome, p.descricao, p.capa
          ORDER BY p.atualizado_em DESC",
         $trackId > 0 ? 'ii' : 'i',
         $trackId > 0 ? [$trackId, $uid] : [$uid]
@@ -45,8 +45,25 @@ if ($action === 'create') {
         exit;
     }
 
-    db_prepared($conn, "INSERT INTO playlist (idCliente, nome) VALUES (?, ?)", 'is', [$uid, $name]);
-    echo json_encode(['success' => true, 'idPlaylist' => mysqli_insert_id($conn)], JSON_UNESCAPED_UNICODE);
+    $cover = '';
+    if (!empty($_FILES['cover']) && ($_FILES['cover']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $imageErr = validate_uploaded_image($_FILES['cover']);
+        if ($imageErr) {
+            http_response_code(400);
+            echo json_encode(['error' => $imageErr], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        [$cover, $saveErr] = save_uploaded_file($_FILES['cover'], 'img', 'playlist_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], GREENERRY_MAX_IMAGE_BYTES);
+        if ($saveErr) {
+            http_response_code(400);
+            echo json_encode(['error' => $saveErr], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    db_prepared($conn, "INSERT INTO playlist (idCliente, nome, capa) VALUES (?, ?, ?)", 'iss', [$uid, $name, $cover ?: null]);
+    echo json_encode(['success' => true, 'idPlaylist' => mysqli_insert_id($conn), 'cover' => $cover], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -103,6 +120,13 @@ if ($action === 'remove_track') {
         'iii',
         [$playlistId, $trackId, $uid]
     );
+    echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($action === 'delete') {
+    $playlistId = (int)($_POST['playlistId'] ?? 0);
+    db_prepared($conn, "DELETE FROM playlist WHERE idPlaylist = ? AND idCliente = ?", 'ii', [$playlistId, $uid]);
     echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
     exit;
 }

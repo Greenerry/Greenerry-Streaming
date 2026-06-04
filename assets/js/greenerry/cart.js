@@ -294,7 +294,7 @@ function initCartPage(root = document) {
       subtotal += lineTotal;
 
       return `
-        <article class="cart-item-card">
+        <article class="cart-item-card" style="--cart-delay:${Math.min(index * 70, 420)}ms">
           <a href="produto.php?id=${Number(item.id || 0)}" class="cart-item-media">
             ${item.img ? `<img src="${window.SITE_BASE || ''}/assets/img/${commerceEscape(item.img)}" alt="">` : `<span>Merch</span>`}
           </a>

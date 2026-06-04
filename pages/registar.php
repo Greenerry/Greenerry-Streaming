@@ -65,9 +65,7 @@ include '../includes/header.php';
   <div class="auth-panel auth-panel--form auth-panel--form-only">
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
-        <span class="slabel" data-t="register_label">Registo</span>
         <h2 data-t="register_title">Criar conta</h2>
-        <p data-t="register_card_intro">Começa com uma conta de listener. Depois podes publicar música e merch pelo teu perfil.</p>
       </div>
 
       <?php if ($err): ?>

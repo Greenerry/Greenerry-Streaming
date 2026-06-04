@@ -143,7 +143,7 @@ include 'admin_header.php';
     <div class="settings-panel-summary settings-panel-summary--static">
       <div>
         <h4 data-admin-t="settings_featured_artist">Artista em destaque</h4>
-        <span data-admin-t="home_curator_artist_note">Procura pelo nome, slug ou atividade do artista.</span>
+    <span data-admin-t="home_curator_artist_note">Procura pelo nome ou atividade do artista.</span>
       </div>
       <label class="sbar admin-section-search">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -168,7 +168,7 @@ include 'admin_header.php';
             <?php endif; ?>
           </span>
           <strong><?= h($artist['nome']) ?></strong>
-          <small><?= h($artist['slug'] ?? '') ?> &middot; <?= (int)$artist['total_releases'] ?> releases &middot; <?= (int)$artist['total_products'] ?> products</small>
+          <small><?= (int)$artist['total_releases'] ?> releases &middot; <?= (int)$artist['total_products'] ?> products</small>
         </label>
       <?php endforeach; ?>
     </div>

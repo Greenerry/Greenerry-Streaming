@@ -5,7 +5,9 @@ if (!isset($conn)) {
 
 $page = basename($_SERVER['PHP_SELF']);
 $displayName = '';
+$displayAvatar = '';
 $pendingArtistOrders = 0;
+$pendingArtistMessages = 0;
 $unreadNotifications = 0;
 $recentNotifications = [];
 if (is_user_logged_in() && !active_user_session($conn)) {
@@ -14,6 +16,7 @@ if (is_user_logged_in() && !active_user_session($conn)) {
 
 if (is_user_logged_in()) {
     $displayName = $currentUser['nome'] ?? ($_SESSION['user_name'] ?? '');
+    $displayAvatar = asset_url('img', $currentUser['foto'] ?? '');
     $unreadNotifications = (int)(db_one(
         $conn,
         "SELECT COUNT(*) AS total FROM notificacao WHERE idCliente = " . (int)current_user_id() . " AND lida = 0"
@@ -35,9 +38,20 @@ if (is_user_logged_in()) {
            AND ei.estado_item = 'pendente'
            AND p.idCliente = " . (int)current_user_id()
     )['total'] ?? 0);
+    $pendingArtistMessages = (int)(db_one(
+        $conn,
+        "SELECT COUNT(DISTINCT CONCAT(idEncomenda, '-', idProduto, '-', idComprador)) AS total
+         FROM encomenda_mensagem
+         WHERE idArtista = " . (int)current_user_id() . "
+           AND remetente = 'comprador'
+           AND lida = 0"
+    )['total'] ?? 0);
 } elseif (is_admin_logged_in()) {
     $displayName = $currentAdmin['nome'] ?? ($_SESSION['admin_name'] ?? '');
 }
+
+$artistPages = ['artist_dashboard.php', 'artist_analytics.php', 'artist_releases.php', 'artist_products.php', 'artist_messages.php', 'artist_customers.php', 'upload_music.php', 'upload_merch.php', 'orders.php', 'revenue.php'];
+$isArtistAreaPage = in_array($page, $artistPages, true);
 
 $showMaintenanceContent = false;
 $clientPagesDir = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '')));
@@ -61,7 +75,7 @@ if (str_ends_with($clientPagesDir, '/pages') && page_under_maintenance($page) &&
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $_base ?>/assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 </head>
-<body data-user-id="<?= (int)$jsUserId ?>">
+<body data-user-id="<?= (int)$jsUserId ?>" class="<?= $isArtistAreaPage ? 'artist-sidebar-mode' : '' ?>">
 <script>
 window.SITE_BASE='<?= $_base ?>';
 window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
@@ -74,7 +88,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
   <aside class="sl" id="sl">
     <a href="<?= $_base ?>/pages/index.php" class="sl-brand"><span class="sl-brand-dot"></span>Greenerry</a>
     <nav class="sl-nav">
-      <div class="sl-sec">
+      <div class="sl-sec sl-main-nav">
         <span class="sl-lbl" data-t="nav_discover">Descobrir</span>
         <a href="<?= $_base ?>/pages/index.php" class="sl-link <?= $page === 'index.php' ? 'on' : '' ?>">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -95,7 +109,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
       </div>
 
       <?php if (is_user_logged_in()): ?>
-        <div class="sl-sec">
+        <div class="sl-sec sl-main-nav">
           <span class="sl-lbl" data-t="nav_account">Conta</span>
           <a href="<?= $_base ?>/pages/profile.php" class="sl-link <?= $page === 'profile.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -115,11 +129,55 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
           </a>
         </div>
 
-        <div class="sl-sec">
-          <span class="sl-lbl" data-t="nav_artist_area">�rea de artista</span>
-          <a href="<?= $_base ?>/pages/artist_dashboard.php" class="sl-link sl-link--artist <?= in_array($page, ['artist_dashboard.php', 'upload_music.php', 'upload_merch.php', 'orders.php', 'revenue.php'], true) ? 'on' : '' ?>">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M17 8H9.5a3.5 3.5 0 0 0 0 7H15a3 3 0 0 1 0 6H7"/><path d="M6 3h12"/></svg>
-            <span data-t="nav_artist_side">Artist side</span><span class="orders-badge" style="<?= $pendingArtistOrders > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistOrders ?></span>
+        <div class="sl-sec sl-artist-nav">
+          <span class="sl-lbl" data-t="nav_artist_area">Área de artista</span>
+          <a href="<?= $_base ?>/pages/artist_dashboard.php" class="sl-link <?= $page === 'artist_dashboard.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M8 19V9"/><path d="M12 19V3"/><path d="M16 19v-7"/><path d="M20 19V8"/></svg>
+            <span data-t="nav_artist_overview">Overview</span>
+          </a>
+          <a href="<?= $_base ?>/pages/artist_messages.php" class="sl-link <?= $page === 'artist_messages.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+            <span data-t="nav_artist_messages">Messages</span><span class="orders-badge" style="<?= $pendingArtistMessages > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistMessages ?></span>
+          </a>
+          <a href="<?= $_base ?>/pages/artist_analytics.php" class="sl-link <?= $page === 'artist_analytics.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-3"/></svg>
+            <span data-t="nav_artist_analytics">Analytics</span>
+          </a>
+          <a href="<?= $_base ?>/pages/artist_releases.php" class="sl-link <?= $page === 'artist_releases.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span data-t="nav_artist_releases">Releases</span>
+          </a>
+          <a href="<?= $_base ?>/pages/artist_products.php" class="sl-link <?= $page === 'artist_products.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/></svg>
+            <span data-t="nav_artist_products">Products</span>
+          </a>
+          <a href="<?= $_base ?>/pages/artist_customers.php" class="sl-link <?= $page === 'artist_customers.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span data-t="nav_artist_customers">Customers</span>
+          </a>
+        </div>
+
+        <div class="sl-sec sl-artist-nav">
+          <span class="sl-lbl" data-t="nav_artist_create">Create</span>
+          <a href="<?= $_base ?>/pages/upload_music.php" class="sl-link <?= $page === 'upload_music.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span data-t="nav_upload_music">Upload music</span>
+          </a>
+          <a href="<?= $_base ?>/pages/upload_merch.php" class="sl-link <?= $page === 'upload_merch.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/></svg>
+            <span data-t="nav_upload_merch">Upload product</span>
+          </a>
+        </div>
+
+        <div class="sl-sec sl-artist-nav">
+          <span class="sl-lbl" data-t="nav_artist_commerce">Commerce</span>
+          <a href="<?= $_base ?>/pages/orders.php" class="sl-link <?= $page === 'orders.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M8 12h8M8 16h8"/></svg>
+            <span data-t="nav_orders">Orders</span><span class="orders-badge" style="<?= $pendingArtistOrders > 0 ? 'display:inline-block' : '' ?>"><?= (int)$pendingArtistOrders ?></span>
+          </a>
+          <a href="<?= $_base ?>/pages/revenue.php" class="sl-link <?= $page === 'revenue.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-7"/></svg>
+            <span data-t="nav_revenue">Revenue</span>
           </a>
         </div>
       <?php elseif (is_admin_logged_in()): ?>
@@ -145,6 +203,15 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         </button>
       </div>
       <?php if (is_user_logged_in() || is_admin_logged_in()): ?>
+        <?php if (is_user_logged_in()): ?>
+          <button type="button" class="artist-mode-switch" data-artist-mode-toggle aria-pressed="<?= $isArtistAreaPage ? 'true' : 'false' ?>">
+            <span class="artist-mode-icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M17 8H9.5a3.5 3.5 0 0 0 0 7H15a3 3 0 0 1 0 6H7"/><path d="M6 3h12"/></svg>
+            </span>
+            <span data-t="nav_artist_side">Artist side</span>
+            <span class="artist-mode-cue">→</span>
+          </button>
+        <?php endif; ?>
         <a href="<?= $_base ?>/pages/logout.php" class="sl-link sl-link--muted">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           <span data-t="nav_logout">Sair</span>
@@ -213,7 +280,26 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
           <?php endif; ?>
           <?php if ($displayName): ?>
             <?php if (is_user_logged_in()): ?>
-              <a href="<?= $_base ?>/pages/profile.php" class="nav-user-name"><?= h($displayName) ?></a>
+              <div class="nav-account-menu" data-account-menu>
+                <button type="button" class="nav-account-toggle" data-account-toggle aria-expanded="false">
+                  <span class="nav-avatar">
+                    <?php if ($displayAvatar !== ''): ?>
+                      <img src="<?= h($displayAvatar) ?>" alt="">
+                    <?php else: ?>
+                      <?= h(mb_strtoupper(mb_substr($displayName, 0, 1))) ?>
+                    <?php endif; ?>
+                  </span>
+                  <span class="nav-user-name"><?= h($displayName) ?></span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="account-popover" hidden>
+                  <a href="<?= $_base ?>/pages/profile.php" data-t="nav_profile">Profile</a>
+                  <a href="<?= $_base ?>/pages/favourites.php" data-t="nav_library">Library</a>
+                  <a href="<?= $_base ?>/pages/my_orders.php" data-t="nav_my_orders">My orders</a>
+                  <button type="button" data-theme-toggle data-t="account_theme">Theme</button>
+                  <a href="<?= $_base ?>/pages/logout.php" data-t="nav_logout">Sign out</a>
+                </div>
+              </div>
             <?php else: ?>
               <span class="nav-user-name"><?= h($displayName) ?></span>
             <?php endif; ?>

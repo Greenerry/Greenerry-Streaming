@@ -71,9 +71,7 @@ include '../includes/header.php';
 <section class="content-shell">
   <div class="wrap">
     <div class="page-intro">
-      <span class="slabel" data-t="my_orders_label">Compras</span>
       <h2 data-t="my_orders_title">As minhas encomendas</h2>
-      <p data-t="my_orders_intro">Acompanha o estado, abre o recibo e fala com o vendedor sobre cada artigo.</p>
     </div>
 
     <?php if ($ok): ?><div class="alert alert-ok"><?= h($ok) ?></div><?php endif; ?>
@@ -83,9 +81,27 @@ include '../includes/header.php';
       <div class="cart-empty-state">
         <div class="cart-empty-icon">Bag</div>
         <h3 data-t="profile_orders_empty">Ainda não fizeste compras.</h3>
-        <a href="shop.php" class="btn btn-ghost btn-sm" data-t="shop_title">Merch de artistas</a>
+        <a href="shop.php" class="btn btn-ghost btn-sm" data-t="shop_title">Artist products</a>
       </div>
     <?php else: ?>
+      <div class="orders-filter-bar my-orders-filter-bar">
+        <label class="orders-search-field">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="orders-search" data-tp="my_orders_search_placeholder" placeholder="Procurar por produto, artista ou encomenda">
+        </label>
+        <div class="orders-filter-tabs" role="group" aria-label="Order filters">
+          <button type="button" class="on" data-order-filter="all" data-t="filter_all">Todas</button>
+          <button type="button" data-order-filter="pendente" data-status-label="pendente">Pendente</button>
+          <button type="button" data-order-filter="em_preparacao" data-status-label="em_preparacao">Em preparação</button>
+          <button type="button" data-order-filter="enviada" data-status-label="enviada">Enviada</button>
+          <button type="button" data-order-filter="entregue" data-status-label="entregue">Entregue</button>
+          <button type="button" data-order-filter="cancelada" data-status-label="cancelada">Cancelada</button>
+        </div>
+      </div>
+      <div id="orders-filter-empty" class="cart-empty-state is-hidden">
+        <div class="cart-empty-icon">Search</div>
+        <h3 data-t="my_orders_no_results">Nenhuma encomenda encontrada.</h3>
+      </div>
       <div class="order-stack">
         <?php foreach ($orders as $order): ?>
           <?php
@@ -101,13 +117,30 @@ include '../includes/header.php';
               'i',
               [(int)$order['idEncomenda']]
           );
+          $orderSearchParts = [
+              '#' . (int)$order['idEncomenda'],
+              (string)$order['estado_encomenda'],
+              date('d/m/Y', strtotime($order['criado_em'])),
+              format_eur((float)$order['total_final']),
+          ];
+          foreach ($items as $itemForSearch) {
+              $orderSearchParts[] = (string)$itemForSearch['nome_produto'];
+              $orderSearchParts[] = (string)$itemForSearch['artista_nome'];
+              $orderSearchParts[] = (string)($itemForSearch['etiqueta'] ?? '');
+          }
+          $orderSearch = mb_strtolower(implode(' ', $orderSearchParts));
+          $orderFilterStatus = match ((string)$order['estado_encomenda']) {
+              'enviado' => 'enviada',
+              'cancelado' => 'cancelada',
+              default => (string)$order['estado_encomenda'],
+          };
           ?>
-          <details class="order-accordion card surface-card order-shell" open>
+          <details class="order-accordion card surface-card order-shell" data-order-card data-order-status="<?= h($orderFilterStatus) ?>" data-order-search="<?= h($orderSearch) ?>">
             <summary class="order-accordion-summary">
               <div class="order-accordion-summary-main">
                 <span class="badge badge-dark"><span data-t="orders_order_label">Encomenda</span> #<?= (int)$order['idEncomenda'] ?></span>
                 <h3 class="order-accordion-title"><?= h(format_eur((float)$order['total_final'])) ?></h3>
-                <p class="order-accordion-meta"><?= date('d/m/Y', strtotime($order['criado_em'])) ?></p>
+                <p class="order-accordion-meta"><?= date('d/m/Y', strtotime($order['criado_em'])) ?> · <?= count($items) ?> <?= count($items) === 1 ? 'artigo' : 'artigos' ?></p>
               </div>
               <div class="order-accordion-summary-side">
                 <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
@@ -134,6 +167,7 @@ include '../includes/header.php';
                 <?php foreach ($items as $item): ?>
                   <?php
                   $productImage = product_main_image($conn, (int)$item['idProduto']);
+                  $isDeliveredItem = (string)$order['estado_encomenda'] === 'entregue' && (string)$item['estado_item'] === 'entregue';
                   $messages = db_all_prepared(
                       $conn,
                       "SELECT * FROM encomenda_mensagem
@@ -156,24 +190,31 @@ include '../includes/header.php';
                           <p><?= h($item['artista_nome']) ?> · <?= h(count_label((int)$item['quantidade'], 'unit')) ?><?= $item['etiqueta'] ? ' · ' . h($item['etiqueta']) : '' ?></p>
                         </div>
                       </div>
-                      <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>" data-status-label="<?= h($item['estado_item']) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
+                      <div class="buyer-order-actions">
+                        <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>" data-status-label="<?= h($item['estado_item']) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
+                        <?php if ($isDeliveredItem): ?>
+                          <a href="produto.php?id=<?= (int)$item['idProduto'] ?>#product-reviews" class="btn btn-dark btn-sm" data-t="product_review_submit">Review</a>
+                        <?php endif; ?>
+                      </div>
                     </div>
 
-                    <div class="order-message-thread">
-                      <?php foreach ($messages as $messageRow): ?>
-                        <div class="order-message-bubble <?= $messageRow['remetente'] === 'comprador' ? 'from-me' : '' ?>">
-                          <span data-t="<?= $messageRow['remetente'] === 'comprador' ? 'message_you' : 'message_seller' ?>"><?= $messageRow['remetente'] === 'comprador' ? 'Tu' : 'Vendedor' ?></span>
-                          <p><?= nl2br(h($messageRow['mensagem'])) ?></p>
-                        </div>
-                      <?php endforeach; ?>
-                      <form method="post" class="order-message-form">
-                        <?= csrf_input() ?>
-                        <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                        <input type="hidden" name="product_id" value="<?= (int)$item['idProduto'] ?>">
-                        <textarea name="message" class="finput" rows="2" maxlength="1200" data-tp="my_orders_message_placeholder" placeholder="Pergunta ao vendedor sobre esta encomenda"></textarea>
-                        <button type="submit" class="btn btn-dark btn-sm" data-t="my_orders_contact_seller">Contactar vendedor</button>
-                      </form>
-                    </div>
+                    <?php if (!$isDeliveredItem): ?>
+                      <div class="order-message-thread">
+                        <?php foreach ($messages as $messageRow): ?>
+                          <div class="order-message-bubble <?= $messageRow['remetente'] === 'comprador' ? 'from-me' : '' ?>">
+                            <span data-t="<?= $messageRow['remetente'] === 'comprador' ? 'message_you' : 'message_seller' ?>"><?= $messageRow['remetente'] === 'comprador' ? 'Tu' : 'Vendedor' ?></span>
+                            <p><?= nl2br(h($messageRow['mensagem'])) ?></p>
+                          </div>
+                        <?php endforeach; ?>
+                        <form method="post" class="order-message-form">
+                          <?= csrf_input() ?>
+                          <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
+                          <input type="hidden" name="product_id" value="<?= (int)$item['idProduto'] ?>">
+                          <textarea name="message" class="finput" rows="2" maxlength="1200" data-tp="my_orders_message_placeholder" placeholder="Pergunta ao vendedor sobre esta encomenda"></textarea>
+                          <button type="submit" class="btn btn-dark btn-sm" data-t="my_orders_contact_seller">Contactar vendedor</button>
+                        </form>
+                      </div>
+                    <?php endif; ?>
                   </div>
                 <?php endforeach; ?>
               </div>

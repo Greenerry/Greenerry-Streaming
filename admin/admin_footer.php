@@ -20,6 +20,15 @@
       preview_store: 'Loja',
       preview_artists: 'Artistas',
       theme_label: 'Tema',
+      theme_toggle: 'Alternar tema',
+      menu_label: 'Menu',
+      btn_edit: 'Editar',
+      btn_close: 'Fechar',
+      btn_save_changes: 'Guardar alterações',
+      btn_keep: 'Manter',
+      btn_add_images: 'Adicionar imagens',
+      btn_replace_cover: 'Substituir capa',
+      btn_replace_audio: 'Substituir áudio',
       nav_summary: 'Resumo',
       nav_dashboard: 'Painel',
       nav_manage: 'Gestao',
@@ -29,12 +38,22 @@
       nav_operations: 'Operacoes',
       nav_users: 'Utilizadores',
       nav_system: 'Sistema',
-      nav_reports: 'Relatórios',
+      nav_reports: 'Relatório financeiro',
       nav_home_curator: 'Homepage',
       nav_maintenance: 'Manutencao',
       nav_settings: 'Definicoes',
       nav_admins: 'Admins',
       nav_messages: 'Mensagens',
+      nav_music_listening: 'Relatório musical',
+      music_kicker: 'Relatório musical',
+      music_title: 'Relatório musical',
+      music_intro: 'Performance de faixas, artistas e ouvintes ativos da plataforma.',
+      music_total_plays: 'Reproduções',
+      music_unique_listeners: 'Ouvintes únicos',
+      music_tracks_played: 'Faixas tocadas',
+      music_hours: 'Horas ouvidas',
+      music_track_table: 'Performance por faixa',
+      artist_table_track: 'Faixa',
       nav_logout: 'Sair',
       login_password: 'Password',
       filter_all: 'Todos',
@@ -68,6 +87,16 @@
       card_pending_releases: 'Lançamentos pendentes',
       card_open_messages: 'Mensagens abertas',
       card_orders: 'Encomendas',
+      card_music_listens: 'Reproduções',
+      card_unique_listeners: 'ouvintes únicos',
+      card_active_artists: 'artistas ativos',
+      dash_music_listening: 'Relatório musical',
+      dash_listening_leaders: 'Líderes de escuta',
+      dash_activity: 'Atividade',
+      dash_no_listening: 'Sem atividade de escuta neste período.',
+      dash_no_recent_activity: 'Sem atividade recente.',
+      dash_plays_lower: 'reproduções',
+      dash_listeners_lower: 'ouvintes',
       box_order_states: 'Estado das encomendas',
       box_recent_performance: 'Performance recente',
       box_last_six_months: 'Ultimos 6 meses',
@@ -109,6 +138,7 @@
       releases_tracks: 'Faixas',
       releases_no_tracks: 'Sem faixas',
       releases_reason_placeholder: 'Motivo de rejeição.',
+      profile_table_type: 'Tipo',
       pagination_previous: 'Anterior',
       pagination_next: 'Seguinte',
       pagination_page_of: 'Página {current} de {total}',
@@ -143,6 +173,13 @@
       label_total_stock: 'Stock total',
       label_tracks: 'Faixas',
       label_release_date: 'Lançamento',
+      label_email: 'Email',
+      label_product: 'Produto',
+      label_category: 'Categoria',
+      label_vat: 'IVA',
+      label_title: 'Título',
+      label_description: 'Descrição',
+      label_genre: 'Género',
       btn_deactivate: 'Inativar',
       btn_reactivate: 'Reativar',
       messages_open: 'Em aberto',
@@ -205,7 +242,7 @@
       admins_role_reports: 'Relatórios',
       admins_role_reports_help: 'Consulta dashboards, vendas e exportações.',
       reports_kicker: 'Analitica',
-      reports_title: 'Relatórios',
+      reports_title: 'Relatório financeiro',
       reports_intro: 'Receita, categorias, artistas e exportação executiva num só lugar.',
       reports_export_excel: 'Exportar Excel',
       reports_export_label: 'Relatorio executivo',
@@ -251,7 +288,7 @@
       home_curator_intro: 'Escolhe os destaques que aparecem na entrada publica da Greenerry.',
       home_curator_note: 'Usa Automatico para deixar o site escolher pelo conteúdo mais recente.',
       home_curator_save_note: 'Os destaques atualizam a homepage publica.',
-      home_curator_artist_note: 'Procura pelo nome, slug ou atividade do artista.',
+      home_curator_artist_note: 'Procura pelo nome ou atividade do artista.',
       home_curator_release_note: 'Procura por titulo, artista, tipo ou data.',
       home_curator_product_note: 'Procura por produto, artista, categoria ou preço.',
       home_curator_artist_search: 'Pesquisar artista...',
@@ -314,6 +351,15 @@
       preview_store: 'Store',
       preview_artists: 'Artists',
       theme_label: 'Theme',
+      theme_toggle: 'Toggle theme',
+      menu_label: 'Menu',
+      btn_edit: 'Edit',
+      btn_close: 'Close',
+      btn_save_changes: 'Save changes',
+      btn_keep: 'Keep',
+      btn_add_images: 'Add images',
+      btn_replace_cover: 'Replace cover',
+      btn_replace_audio: 'Replace audio',
       nav_summary: 'Summary',
       nav_dashboard: 'Dashboard',
       nav_manage: 'Manage',
@@ -323,12 +369,22 @@
       nav_operations: 'Operations',
       nav_users: 'Users',
       nav_system: 'System',
-      nav_reports: 'Reports',
+      nav_reports: 'Money report',
       nav_home_curator: 'Homepage',
       nav_maintenance: 'Maintenance',
       nav_settings: 'Settings',
       nav_admins: 'Admins',
       nav_messages: 'Messages',
+      nav_music_listening: 'Music report',
+      music_kicker: 'Music report',
+      music_title: 'Music report',
+      music_intro: 'Track, artist, and active listener performance on the platform.',
+      music_total_plays: 'Plays',
+      music_unique_listeners: 'Unique listeners',
+      music_tracks_played: 'Tracks played',
+      music_hours: 'Listening hours',
+      music_track_table: 'Track performance',
+      artist_table_track: 'Track',
       nav_logout: 'Logout',
       login_password: 'Password',
       filter_all: 'All',
@@ -362,6 +418,16 @@
       card_pending_releases: 'Pending releases',
       card_open_messages: 'Open messages',
       card_orders: 'Orders',
+      card_music_listens: 'Music listens',
+      card_unique_listeners: 'unique listeners',
+      card_active_artists: 'active artists',
+      dash_music_listening: 'Music report',
+      dash_listening_leaders: 'Listening leaders',
+      dash_activity: 'Activity',
+      dash_no_listening: 'No listening activity in this range.',
+      dash_no_recent_activity: 'No recent activity.',
+      dash_plays_lower: 'plays',
+      dash_listeners_lower: 'listeners',
       box_order_states: 'Order states',
       box_recent_performance: 'Recent performance',
       box_last_six_months: 'Last 6 months',
@@ -403,6 +469,7 @@
       releases_tracks: 'Tracks',
       releases_no_tracks: 'No tracks',
       releases_reason_placeholder: 'Rejection reason.',
+      profile_table_type: 'Type',
       pagination_previous: 'Previous',
       pagination_next: 'Next',
       pagination_page_of: 'Page {current} of {total}',
@@ -437,6 +504,13 @@
       label_total_stock: 'Total stock',
       label_tracks: 'Tracks',
       label_release_date: 'Release date',
+      label_email: 'Email',
+      label_product: 'Product',
+      label_category: 'Category',
+      label_vat: 'VAT',
+      label_title: 'Title',
+      label_description: 'Description',
+      label_genre: 'Genre',
       btn_deactivate: 'Deactivate',
       btn_reactivate: 'Reactivate',
       messages_open: 'Open',
@@ -499,7 +573,7 @@
       admins_role_reports: 'Reports',
       admins_role_reports_help: 'Views dashboards, sales, and exports.',
       reports_kicker: 'Analytics',
-      reports_title: 'Reports',
+      reports_title: 'Money report',
       reports_intro: 'Revenue, categories, artists, and executive export in one place.',
       reports_export_excel: 'Export Excel',
       reports_export_label: 'Executive report',
@@ -545,7 +619,7 @@
       home_curator_intro: 'Choose the highlights shown on the public Greenerry homepage.',
       home_curator_note: 'Use Automatic to let the site pick from the newest content.',
       home_curator_save_note: 'These highlights update the public homepage.',
-      home_curator_artist_note: 'Search by artist name, slug, or activity.',
+      home_curator_artist_note: 'Search by artist name or activity.',
       home_curator_release_note: 'Search by title, artist, type, or date.',
       home_curator_product_note: 'Search by product, artist, category, or price.',
       home_curator_artist_search: 'Search artist...',
@@ -671,6 +745,16 @@
       if (strings[key] !== undefined) el.placeholder = strings[key];
     });
 
+    document.querySelectorAll('[data-admin-taria]').forEach((el) => {
+      const key = el.dataset.adminTaria;
+      if (strings[key] !== undefined) el.setAttribute('aria-label', strings[key]);
+    });
+
+    document.querySelectorAll('[data-admin-ttitle]').forEach((el) => {
+      const key = el.dataset.adminTtitle;
+      if (strings[key] !== undefined) el.setAttribute('title', strings[key]);
+    });
+
     document.querySelectorAll('[data-admin-page-status]').forEach((el) => {
       const current = el.dataset.pageCurrent || '1';
       const total = el.dataset.pageTotal || '1';
@@ -696,7 +780,10 @@
 
   applyAdminLang(currentLang);
 
-  document.querySelectorAll('[data-users-pager]').forEach((link) => {
+  function bindUsersPager(root = document) {
+  root.querySelectorAll('[data-users-pager]').forEach((link) => {
+    if (link.dataset.usersPagerReady === '1') return;
+    link.dataset.usersPagerReady = '1';
     link.addEventListener('click', async (e) => {
       e.preventDefault();
       const url = link.getAttribute('href');
@@ -715,9 +802,8 @@
           section.innerHTML = newSection.innerHTML;
           history.pushState({}, '', url);
           if (window.GreenerryApplyAdminLang) window.GreenerryApplyAdminLang(currentLang);
-          document.querySelectorAll('[data-users-pager]').forEach((newLink) => {
-            newLink.addEventListener('click', arguments.callee);
-          });
+          if (window.GreenerryInitAdminSearch) window.GreenerryInitAdminSearch(section);
+          bindUsersPager(section);
         }
       } catch (err) {
         console.error('Pagination error:', err);
@@ -726,6 +812,9 @@
       }
     });
   });
+  }
+
+  bindUsersPager();
 
   const adminSidebar = document.getElementById('admin-sidebar');
   const adminMenuButton = document.getElementById('admin-mobile-menu');
@@ -772,13 +861,18 @@
     });
   });
 
-  document.querySelectorAll('[data-admin-search]').forEach((input) => {
+  const normalizeAdminSearchText = (value = '') => String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  function filterAdminScope(input) {
+    if (!input || !input.dataset.adminSearch) return;
     const scope = document.getElementById(input.dataset.adminSearch);
     if (!scope) return;
 
-    const items = Array.from(scope.querySelectorAll('tbody tr, .admin-card-list > *, .curator-option-grid > *, .simple-list > *, .admin-size-row, .admin-bar-row'));
-    const filters = Array.from(document.querySelectorAll(`[data-admin-filter="${input.dataset.adminSearch}"]`));
-    const statFilters = Array.from(document.querySelectorAll(`[data-admin-stat-filter="${input.dataset.adminSearch}"]`));
+    const filters = Array.from(document.querySelectorAll('[data-admin-filter="' + input.dataset.adminSearch + '"]'));
+    const statFilters = Array.from(document.querySelectorAll('[data-admin-stat-filter="' + input.dataset.adminSearch + '"]'));
     let empty = scope.querySelector('.admin-empty-filter');
     if (!empty) {
       empty = document.createElement('p');
@@ -789,43 +883,205 @@
       scope.appendChild(empty);
     }
 
-    const applyFilters = () => {
-      const needle = input.value.trim().toLowerCase();
-      const activeStatValue = input.dataset.activeFilter || '';
-      const hasActiveFilter = activeStatValue !== '' || filters.some((filter) => (filter.value || '') !== '');
-      const hasActiveSearch = needle !== '';
-      const activeValues = [
-        activeStatValue,
-        ...filters.map((filter) => filter.value || '')
-      ].filter(Boolean);
-      let visible = 0;
-      items.forEach((item) => {
-        const textMatch = needle === '' || item.textContent.toLowerCase().includes(needle);
-        const stateValues = (item.dataset.adminState || '').split(' ');
-        const stateMatch = activeValues.every((value) => stateValues.includes(value));
-        const match = textMatch && stateMatch;
-        item.style.display = match ? '' : 'none';
-        if (match) visible += 1;
-      });
-      statFilters.forEach((button) => {
-        const value = button.dataset.filterValue || '';
-        button.classList.toggle('is-active', value !== '' && value === activeStatValue);
-      });
-      empty.style.display = (hasActiveSearch || hasActiveFilter) && visible === 0 && items.length > 0 ? 'block' : 'none';
-    };
+    const items = Array.from(scope.querySelectorAll('tbody tr, .admin-card-list > *, .curator-option-grid > *, .simple-list > *, .admin-size-row, .admin-bar-row, .dash-review-list > *, .admin-music-leaders > *'));
+    const needle = normalizeAdminSearchText(input.value.trim());
+    const activeStatValue = input.dataset.activeFilter || '';
+    const hasActiveFilter = activeStatValue !== '' || filters.some((filter) => (filter.value || '') !== '');
+    const hasActiveSearch = needle !== '';
+    const activeValues = [
+      activeStatValue,
+      ...filters.map((filter) => filter.value || '')
+    ].filter(Boolean);
+    let visible = 0;
 
-    input.addEventListener('input', applyFilters);
-    filters.forEach((filter) => filter.addEventListener('change', applyFilters));
-    statFilters.forEach((button) => {
-      button.addEventListener('click', () => {
-        const value = button.dataset.filterValue || '';
-        input.dataset.activeFilter = input.dataset.activeFilter === value ? '' : value;
-        applyFilters();
-        scope.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
+    items.forEach((item) => {
+      const haystack = normalizeAdminSearchText((item.textContent || '') + ' ' + (item.dataset.adminState || ''));
+      const textMatch = needle === '' || haystack.includes(needle);
+      const stateValues = normalizeAdminSearchText(item.dataset.adminState || '').split(' ');
+      const stateMatch = activeValues.every((value) => stateValues.includes(normalizeAdminSearchText(value)));
+      const match = textMatch && stateMatch;
+      item.style.display = match ? '' : 'none';
+      if (match) visible += 1;
     });
-    applyFilters();
+
+    statFilters.forEach((button) => {
+      const value = button.dataset.filterValue || '';
+      button.classList.toggle('is-active', value !== '' && value === activeStatValue);
+    });
+    empty.style.display = (hasActiveSearch || hasActiveFilter) && visible === 0 && items.length > 0 ? 'block' : 'none';
+  }
+
+  function initAdminSearch(root = document) {
+    root.querySelectorAll('[data-admin-search]').forEach((input) => {
+      filterAdminScope(input);
+    });
+  }
+
+  document.addEventListener('input', (event) => {
+    if (event.target?.matches?.('[data-admin-search]')) {
+      filterAdminScope(event.target);
+    }
   });
+
+  document.addEventListener('change', (event) => {
+    const filter = event.target?.closest?.('[data-admin-filter]');
+    if (!filter) return;
+    const input = document.querySelector('[data-admin-search="' + filter.dataset.adminFilter + '"]');
+    filterAdminScope(input);
+  });
+
+  document.addEventListener('click', (event) => {
+    const button = event.target?.closest?.('[data-admin-stat-filter]');
+    if (!button) return;
+    const input = document.querySelector('[data-admin-search="' + button.dataset.adminStatFilter + '"]');
+    if (!input) return;
+    const value = button.dataset.filterValue || '';
+    input.dataset.activeFilter = input.dataset.activeFilter === value ? '' : value;
+    filterAdminScope(input);
+    document.getElementById(button.dataset.adminStatFilter)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function ensureAdminEditorCloseButtons(root = document) {
+    root.querySelectorAll('.admin-inline-editor').forEach((details) => {
+      const form = details.querySelector('.admin-inline-edit-form');
+      if (!form || form.querySelector('.admin-inline-close')) return;
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'admin-inline-close';
+      close.setAttribute('aria-label', adminText('btn_close', 'Fechar'));
+      close.setAttribute('title', adminText('btn_close', 'Fechar'));
+      close.innerHTML = '<span aria-hidden="true">×</span>';
+      form.prepend(close);
+    });
+  }
+
+  function restoreAdminEditor(details) {
+    const form = details?._adminDetachedForm;
+    const marker = details?._adminFormMarker;
+    if (form && marker?.parentNode) {
+      form.classList.remove('is-admin-modal-live');
+      marker.replaceWith(form);
+    }
+    details?._adminBackdrop?.remove();
+    if (details) {
+      details._adminDetachedForm = null;
+      details._adminFormMarker = null;
+      details._adminBackdrop = null;
+    }
+    document.body.classList.toggle('admin-modal-open', document.querySelectorAll('.admin-inline-editor[open]').length > 0);
+  }
+
+  function detachAdminEditor(details) {
+    const form = details.querySelector('.admin-inline-edit-form') || details._adminDetachedForm;
+    if (!form || form.classList.contains('is-admin-modal-live')) return;
+    const marker = document.createComment('admin-inline-editor-form');
+    form.parentNode.insertBefore(marker, form);
+    const backdrop = document.createElement('button');
+    backdrop.type = 'button';
+    backdrop.className = 'admin-modal-backdrop';
+    backdrop.setAttribute('aria-label', adminText('btn_close', 'Fechar'));
+    backdrop.addEventListener('click', () => details.removeAttribute('open'));
+    details._adminDetachedForm = form;
+    details._adminFormMarker = marker;
+    details._adminBackdrop = backdrop;
+    form.classList.add('is-admin-modal-live');
+    document.body.append(backdrop, form);
+    document.body.classList.add('admin-modal-open');
+  }
+
+  document.addEventListener('click', (event) => {
+    const close = event.target?.closest?.('.admin-inline-close');
+    if (!close) return;
+    event.preventDefault();
+    const owner = close.closest('.admin-inline-editor') || document.querySelector('.admin-inline-editor[open]');
+    owner?.removeAttribute('open');
+  });
+
+  document.addEventListener('toggle', (event) => {
+    if (!event.target?.matches?.('.admin-inline-editor')) return;
+    ensureAdminEditorCloseButtons(event.target);
+    if (event.target.open) {
+      document.querySelectorAll('.admin-inline-editor[open]').forEach((details) => {
+        if (details !== event.target) details.removeAttribute('open');
+      });
+      detachAdminEditor(event.target);
+    } else {
+      restoreAdminEditor(event.target);
+    }
+  }, true);
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('.admin-inline-editor[open]').forEach((details) => details.removeAttribute('open'));
+    }
+  });
+
+  let adminActiveMiniAudio = null;
+  let adminActiveMiniPlayer = null;
+  function resetAdminMiniPlayer(player) {
+    if (!player) return;
+    player.classList.remove('is-playing');
+    const button = player.querySelector('.admin-mini-play, button');
+    const fill = player.querySelector('.admin-mini-track div');
+    if (button) button.textContent = button.dataset.playLabel || adminText('releases_listen', 'Ouvir');
+    if (fill) fill.style.width = '0%';
+  }
+
+  function initAdminMiniPlayers(root = document) {
+    root.querySelectorAll('.admin-mini-player[data-audio-src]').forEach((player) => {
+      if (player.dataset.releasePlayerBound === '1' || player.dataset.adminMiniPlayerBound === '1') return;
+      player.dataset.adminMiniPlayerBound = '1';
+      const button = player.querySelector('.admin-mini-play, button');
+      const track = player.querySelector('.admin-mini-track');
+      const fill = player.querySelector('.admin-mini-track div');
+      const audio = new Audio(player.dataset.audioSrc);
+      audio.preload = 'metadata';
+      if (button && !button.dataset.playLabel) button.dataset.playLabel = button.textContent.trim() || adminText('releases_listen', 'Ouvir');
+
+      button?.addEventListener('click', async () => {
+        if (adminActiveMiniAudio && adminActiveMiniAudio !== audio) {
+          adminActiveMiniAudio.pause();
+          resetAdminMiniPlayer(adminActiveMiniPlayer);
+        }
+
+        if (audio.paused) {
+          adminActiveMiniAudio = audio;
+          adminActiveMiniPlayer = player;
+          try {
+            await audio.play();
+            player.classList.add('is-playing');
+            button.textContent = 'Pause';
+          } catch (error) {
+            console.warn('Admin audio play:', error);
+          }
+        } else {
+          audio.pause();
+          resetAdminMiniPlayer(player);
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (fill && audio.duration) fill.style.width = `${Math.min(100, (audio.currentTime / audio.duration) * 100)}%`;
+      });
+
+      track?.addEventListener('click', (event) => {
+        if (!audio.duration) return;
+        const box = track.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+        audio.currentTime = ratio * audio.duration;
+        if (fill) fill.style.width = `${ratio * 100}%`;
+      });
+
+      audio.addEventListener('ended', () => resetAdminMiniPlayer(player));
+    });
+  }
+
+  window.GreenerryInitAdminSearch = initAdminSearch;
+  window.GreenerryInitAdminEditors = ensureAdminEditorCloseButtons;
+  window.GreenerryInitAdminMiniPlayers = initAdminMiniPlayers;
+  ensureAdminEditorCloseButtons();
+  initAdminSearch();
+  initAdminMiniPlayers();
 
   document.querySelectorAll('.curator-option input[type="radio"]').forEach((radio) => {
     radio.addEventListener('change', () => {

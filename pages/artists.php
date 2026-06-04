@@ -64,7 +64,6 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="catalog-hero">
       <div>
-        <span class="slabel" data-t="artists_label">Artists</span>
         <h1 data-t="artists_title">Discover artists</h1>
       </div>
 

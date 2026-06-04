@@ -106,6 +106,7 @@ $orderStates = db_one(
 $productRevenue = db_all(
     $conn,
     "SELECT
+        ei.idProduto,
         ei.nome_produto,
         COUNT(DISTINCT ei.idEncomenda) AS orders_count,
         COALESCE(SUM(CASE WHEN ei.estado_item = 'entregue' THEN ei.valor_artista ELSE 0 END), 0) AS artist_value,
@@ -114,7 +115,7 @@ $productRevenue = db_all(
      JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
      WHERE ei.idArtista = {$uid}
        AND e.criado_em >= {$dateFromSql}
-     GROUP BY ei.nome_produto
+     GROUP BY ei.idProduto, ei.nome_produto
      ORDER BY artist_value DESC
      LIMIT 6"
 );
@@ -173,14 +174,12 @@ if ($chartPoints) {
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
+<section class="content-shell artist-animate">
   <div class="wrap">
     <section class="client-revenue-dashboard">
       <header class="client-revenue-top">
         <div>
-          <span class="slabel" data-t="revenue_label">Rendimento</span>
           <h2 data-t="revenue_title">Resumo das vendas</h2>
-          <p data-t="revenue_intro">Os ganhos sao calculados a partir do valor artistico registado em cada item da encomenda.</p>
         </div>
         <nav class="client-revenue-range" aria-label="Revenue range">
           <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
@@ -210,7 +209,7 @@ include '../includes/header.php';
           <small data-t="revenue_commission_note">sobre itens entregues</small>
         </article>
         <article>
-          <span data-t="revenue_avg_order">Ticket medio</span>
+          <span data-t="revenue_avg_order">Ticket m?dio</span>
           <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
           <small data-t="revenue_avg_order_note">por encomenda paga</small>
         </article>
@@ -303,7 +302,6 @@ include '../includes/header.php';
         <article class="client-revenue-card client-revenue-products-card">
           <div class="client-revenue-card-head">
             <div>
-              <span class="slabel" data-t="revenue_products_label">Produtos</span>
               <h3 data-t="revenue_products_chart">Top produtos</h3>
             </div>
           </div>
@@ -312,11 +310,19 @@ include '../includes/header.php';
           <?php else: ?>
             <div class="client-revenue-product-list">
               <?php foreach ($productRevenue as $product): ?>
-                <?php $width = $maxProduct > 0 ? max(8, (int)round(((float)$product['artist_value'] / $maxProduct) * 100)) : 8; ?>
+                <?php
+                $width = $maxProduct > 0 ? max(8, (int)round(((float)$product['artist_value'] / $maxProduct) * 100)) : 8;
+                $productImage = product_main_image($conn, (int)$product['idProduto']);
+                ?>
                 <div class="client-revenue-product-row">
-                  <div>
-                    <strong><?= h($product['nome_produto']) ?></strong>
-                    <p><?= (int)$product['items_count'] ?> <span data-t="revenue_items">itens vendidos</span></p>
+                  <div class="artist-mini-media">
+                    <span class="artist-mini-thumb">
+                      <?php if ($productImage): ?><img src="<?= h(asset_url('img', $productImage)) ?>" alt=""><?php else: ?><span data-t="artist_overview_item">Item</span><?php endif; ?>
+                    </span>
+                    <div>
+                      <strong><?= h($product['nome_produto']) ?></strong>
+                      <p><?= (int)$product['items_count'] ?> <span data-t="revenue_items">itens vendidos</span></p>
+                    </div>
                   </div>
                   <span><?= h(format_eur((float)$product['artist_value'])) ?></span>
                   <div class="client-revenue-product-track"><div style="width: <?= $width ?>%"></div></div>
@@ -330,14 +336,17 @@ include '../includes/header.php';
       <div class="client-revenue-table-card">
         <div class="client-revenue-card-head">
           <div>
-            <span class="slabel" data-t="revenue_recent">Movimentos recentes</span>
             <h3 data-t="revenue_recent">Movimentos recentes</h3>
           </div>
+          <label class="artist-search-field">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" data-artist-search="revenue-sales" data-tp="revenue_search" placeholder="Search revenue">
+          </label>
         </div>
         <?php if (!$sales): ?>
           <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
         <?php else: ?>
-          <div class="tbl-wrap">
+          <div class="tbl-wrap" data-artist-search-scope="revenue-sales">
             <table>
               <thead>
                 <tr>
@@ -352,7 +361,7 @@ include '../includes/header.php';
               </thead>
               <tbody>
                 <?php foreach ($sales as $sale): ?>
-                  <tr>
+                  <tr data-artist-search-row>
                     <td><strong>#<?= (int)$sale['idEncomenda'] ?></strong></td>
                     <td><?= h($sale['nome_produto']) ?></td>
                     <td><?= (int)$sale['quantidade'] ?></td>

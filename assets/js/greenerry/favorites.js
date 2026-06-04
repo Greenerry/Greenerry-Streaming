@@ -70,12 +70,14 @@ function toggleFav() {
 }
 
 function _updateFavIcon() {
-  const icon = document.getElementById('fav-icon');
-  if (!icon || !_cur) return;
+  const icons = document.querySelectorAll('.fav-icon');
+  if (!icons.length || !_cur) return;
 
   const isFav = favGet().some((fav) => fav.title === _cur.title && fav.artist === _cur.artist);
-  icon.setAttribute('fill', isFav ? '#e5383b' : 'none');
-  icon.setAttribute('stroke', isFav ? '#e5383b' : 'currentColor');
+  icons.forEach((icon) => {
+    icon.setAttribute('fill', isFav ? '#e5383b' : 'none');
+    icon.setAttribute('stroke', isFav ? '#e5383b' : 'currentColor');
+  });
 }
 
 /* Favourites page */
@@ -150,9 +152,10 @@ function _renderPlaylistPicker() {
   list.innerHTML = playlists.map((playlist) => {
     const saved = Number(playlist.in_playlist || 0) > 0;
     const count = Number(playlist.total_faixas || 0);
+    const cover = playlist.capa ? _imgPath(playlist.capa) : '';
     return `
     <button type="button" class="playlist-picker-option ${saved ? 'is-saved' : ''}" data-playlist-id="${Number(playlist.idPlaylist)}" data-playlist-saved="${saved ? '1' : '0'}">
-      <span class="playlist-picker-art">${saved ? '&#10003;' : '&#9835;'}</span>
+      <span class="playlist-picker-art">${cover ? `<img src="${_escapeHtml(cover)}" alt="">` : (saved ? '&#10003;' : '&#9835;')}</span>
       <span class="playlist-picker-copy"><strong>${_escapeHtml(playlist.nome || '')}</strong><small>${count} ${_playlistText(count === 1 ? 'faixa' : 'faixas', count === 1 ? 'track' : 'tracks')}</small></span>
       <span class="playlist-picker-check" aria-hidden="true">&#10003;</span>
     </button>
@@ -175,6 +178,15 @@ async function openPlaylistPicker(button) {
   document.getElementById('playlist-picker')?.showModal();
 }
 
+function openCurrentPlaylistPicker() {
+  if (!_cur?.id) {
+    toast(_playlistText('Escolhe uma musica primeiro.', 'Choose a song first.'));
+    return;
+  }
+
+  openPlaylistPicker({ dataset: { trackId: String(_cur.id) } });
+}
+
 async function _toggleTrackInPlaylist(playlistId, saved) {
   const body = new URLSearchParams();
   body.set('action', saved ? 'remove_track' : 'add_track');
@@ -195,7 +207,7 @@ async function _toggleTrackInPlaylist(playlistId, saved) {
 
   await _loadPlaylistCache();
   _renderPlaylistPicker();
-  toast(saved ? _playlistText('Musica removida da playlist.', 'Song removed from playlist.') : _playlistText('Musica adicionada a playlist.', 'Song added to playlist.'));
+  if (!saved) toast(_playlistText('Musica adicionada a playlist.', 'Song added to playlist.'));
 }
 
 function initPlaylistPicker(root = document) {
@@ -203,6 +215,7 @@ function initPlaylistPicker(root = document) {
   const search = root.getElementById?.('playlist-picker-search') || document.getElementById('playlist-picker-search');
   const newToggle = root.getElementById?.('playlist-picker-new-toggle') || document.getElementById('playlist-picker-new-toggle');
   const createRow = root.getElementById?.('playlist-picker-create-row') || document.getElementById('playlist-picker-create-row');
+  const coverInput = root.getElementById?.('playlist-picker-cover') || document.getElementById('playlist-picker-cover');
 
   if (search && search.dataset.playlistReady !== '1') {
     search.dataset.playlistReady = '1';
@@ -221,6 +234,20 @@ function initPlaylistPicker(root = document) {
     });
   }
 
+  if (coverInput && coverInput.dataset.playlistReady !== '1') {
+    coverInput.dataset.playlistReady = '1';
+    coverInput.addEventListener('change', () => {
+      const field = coverInput.closest('.playlist-cover-field');
+      const file = coverInput.files?.[0];
+      if (!field || !file || !file.type.startsWith('image/')) return;
+      if (field.dataset.previewUrl) URL.revokeObjectURL(field.dataset.previewUrl);
+      const previewUrl = URL.createObjectURL(file);
+      field.dataset.previewUrl = previewUrl;
+      field.style.backgroundImage = `url("${previewUrl}")`;
+      field.classList.add('has-preview');
+    });
+  }
+
   if (!createButton || createButton.dataset.playlistReady === '1') return;
   createButton.dataset.playlistReady = '1';
   createButton.addEventListener('click', async () => {
@@ -228,20 +255,31 @@ function initPlaylistPicker(root = document) {
     const name = (input?.value || '').trim();
     if (!name) return;
 
-    const body = new URLSearchParams();
+    const cover = document.getElementById('playlist-picker-cover');
+    const body = new FormData();
     body.set('action', 'create');
     body.set('name', name);
     if (window.CSRF_TOKEN) body.set('csrf_token', window.CSRF_TOKEN);
+    if (cover?.files?.[0]) body.set('cover', cover.files[0]);
 
     const response = await fetch((window.SITE_BASE || '') + '/api/playlists.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
+      body
     });
     const result = await response.json();
 
     if (result.success) {
       if (input) input.value = '';
+      if (cover) {
+        const field = cover.closest('.playlist-cover-field');
+        if (field?.dataset.previewUrl) URL.revokeObjectURL(field.dataset.previewUrl);
+        if (field) {
+          field.style.removeProperty('background-image');
+          field.classList.remove('has-preview');
+          delete field.dataset.previewUrl;
+        }
+        cover.value = '';
+      }
       if (createRow) createRow.hidden = true;
       await _loadPlaylistCache();
       _renderPlaylistPicker();
@@ -500,6 +538,7 @@ function _displayFavGrid(favs, grid) {
     : favs;
 
   if (!filteredFavs.length) {
+    window.__greenerryFavTracks = [];
     grid.innerHTML = '';
     if (searchEmpty) searchEmpty.classList.toggle('is-hidden', !query);
     _renderFavPager(0, 1);
@@ -515,37 +554,51 @@ function _displayFavGrid(favs, grid) {
   }
 
   const visibleFavs = filteredFavs.slice((currentPage - 1) * FAVS_PER_PAGE, currentPage * FAVS_PER_PAGE);
-  grid.innerHTML = visibleFavs.map((fav) => {
+  window.__greenerryFavTracks = filteredFavs.map((fav) => {
+    const track = _norm(fav);
+    return {
+      id: track.id || track.idMusica || 0,
+      title: track.title || '',
+      artist: track.artist || '',
+      cover: track.cover || '',
+      audio: track.audioSrc || track.audio || '',
+      artistId: track.artistId || 0,
+      artistFoto: track.artistFoto || ''
+    };
+  }).filter((track) => track.audio);
+  const rows = visibleFavs.map((fav, index) => {
     const track = _norm(fav);
     const cover = _imgPath(track.cover);
-    const title = (track.title || '').replace(/'/g, "\\'");
-    const artist = (track.artist || '').replace(/'/g, "\\'");
-    const artistPhoto = (track.artistFoto || '').replace(/'/g, "\\'");
-    const audio = track.audioSrc || track.audio || '';
     const musicId = track.id || track.idMusica || 0;
-    const playLabel = _escapeHtml(_tr('release_play_track', 'Play'));
     const removeLabel = _escapeHtml(_tr('remove', lang === 'pt' ? 'Remover' : 'Remove'));
+    const collectionIndex = ((currentPage - 1) * FAVS_PER_PAGE) + index;
 
-    return `<div class="mcard" onclick="playTrack('${title}','${artist}','${track.cover || ''}','${audio}',${track.artistId || 0},'${artistPhoto}',${musicId})">
-      <div class="cover">
-        ${cover ? `<img src="${cover}" alt="" onerror="this.style.display='none'">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg4);"><div class="wv"><span></span><span></span><span></span><span></span><span></span></div></div>'}
-        <div class="cover-ov"><button type="button" class="pbt">${playLabel}</button></div>
-      </div>
-      <div class="meta">
-        <h4>${track.title || ''}</h4>
-        <div class="sub" style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
-          <span style="font-size:.75rem;color:var(--text3);">${track.artist || ''}</span>
-          <button onclick="event.stopPropagation();removeFav(${musicId})" style="background:transparent;border:none;cursor:pointer;padding:4px;" title="${removeLabel}" aria-label="${removeLabel}">
-            <svg width="12" height="12" fill="#e5383b" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          </button>
-        </div>
-      </div>
+    return `<div class="library-track-row">
+      <span class="library-track-index">${((currentPage - 1) * FAVS_PER_PAGE) + index + 1}</span>
+      <button type="button" class="library-track-main" onclick="playCurrentFavCollection(${collectionIndex})">
+        <span class="library-track-cover">${cover ? `<img src="${cover}" alt="" onerror="this.style.display='none'">` : ''}</span>
+        <span><strong>${_escapeHtml(track.title || '')}</strong><small>${_escapeHtml(track.artist || '')}</small></span>
+      </button>
+      <span>${_playlistText('Músicas curtidas', 'Liked Songs')}</span>
+      <span>${_playlistText('Guardada', 'Saved')}</span>
+      <button type="button" class="cart-remove-btn" onclick="event.stopPropagation();removeFav(${musicId})" title="${removeLabel}" aria-label="${removeLabel}">${removeLabel}</button>
     </div>`;
   }).join('');
+
+  grid.innerHTML = `<div class="library-track-head"><span>#</span><span>${_playlistText('Titulo', 'Title')}</span><span>Album</span><span>${_playlistText('Adicionada', 'Date added')}</span><span></span></div>${rows}`;
 
   _renderFavPager(filteredFavs.length, currentPage);
   updateFavBadge();
   _registerMotion(grid);
+}
+
+function playCurrentFavCollection(startIndex = 0) {
+  const tracks = Array.isArray(window.__greenerryFavTracks) ? window.__greenerryFavTracks : [];
+  if (tracks.length && typeof playTrackCollection === 'function') {
+    playTrackCollection(tracks, startIndex);
+    return;
+  }
+  document.querySelector('#favs-grid .library-track-main')?.click();
 }
 
 function removeFav(musicId) {

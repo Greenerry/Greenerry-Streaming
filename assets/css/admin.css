@@ -5246,6 +5246,37 @@ body:has(.admin-shell) .admin-sl a:not(.brand)::after {
   color:rgba(246,245,241,.58) !important;
 }
 
+.admin-music-bars-card {
+  grid-column:1 / -1;
+}
+
+.admin-dashboard-ranked-list a,
+.admin-dashboard-activity-list span {
+  min-height:58px;
+}
+
+.admin-dashboard-ranked-list strong,
+.admin-dashboard-activity-list strong {
+  font-size:.92rem;
+}
+
+.admin-dashboard-activity-list span {
+  cursor:default;
+}
+
+.admin-dashboard-activity-list span::before {
+  content:"";
+  width:8px;
+  height:8px;
+  align-self:center;
+  border-radius:999px;
+  background:linear-gradient(135deg, var(--admin-accent), var(--admin-good));
+}
+
+.admin-dashboard-activity-list span {
+  grid-template-columns:8px minmax(0,1fr);
+}
+
 @media (max-width:560px) {
   #releases-search .admin-review-card--release .admin-review-main {
     grid-template-columns:1fr;
@@ -5428,4 +5459,1968 @@ body:has(.admin-shell) {
     margin-right:-10px;
     border-radius:0 !important;
   }
+}
+
+/* Admin makeover: align the admin area with the cleaner artist/client shell. */
+body:has(.admin-shell),
+body:has(.admin-shell) .admin-shell,
+body:has(.admin-shell) .admin-main,
+body:has(.admin-shell) .admin-main-scroll {
+  background:var(--bg) !important;
+  color:var(--text) !important;
+}
+
+body:has(.admin-shell) .admin-sl,
+:root[data-theme="light"] body:has(.admin-shell) .admin-sl {
+  background:var(--bg2) !important;
+  border-right:1px solid var(--border) !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-commandbar,
+body:has(.admin-shell) .admin-commandbar.is-solid,
+body.admin-scrolled:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  background:var(--bg) !important;
+  border-bottom:0 !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+body:has(.admin-shell) .admin-main-scroll {
+  padding-top:calc(var(--nav) + 26px) !important;
+}
+
+body:has(.admin-shell) .admin-top,
+body:has(.admin-shell) .dash-v4-top {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:22px;
+  margin:0 0 22px !important;
+  padding:0 0 22px !important;
+  border:0 !important;
+  border-bottom:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-page-kicker,
+body:has(.admin-shell) .admin-top > div > p,
+body:has(.admin-shell) .dash-v4-top > div > .admin-kicker,
+body:has(.admin-shell) .dash-v4-top > div > p {
+  display:none !important;
+}
+
+body:has(.admin-shell) .admin-top h2,
+body:has(.admin-shell) .dash-v4-top h2,
+body:has(.admin-shell) .dash-v4-title {
+  margin:0;
+  font-family:var(--display) !important;
+  font-size:clamp(2.7rem, 4.1vw, 4.6rem) !important;
+  font-weight:400 !important;
+  line-height:.98 !important;
+  letter-spacing:0 !important;
+  color:var(--text) !important;
+}
+
+body:has(.admin-shell) .admin-top-stats {
+  align-self:center;
+}
+
+body:has(.admin-shell) .stat,
+body:has(.admin-shell) .dash-v4-kpi-link,
+body:has(.admin-shell) .dash-v4-kpis article,
+body:has(.admin-shell) .dash-v4-card,
+body:has(.admin-shell) .acard-box,
+body:has(.admin-shell) .admin-review-card,
+body:has(.admin-shell) .tbl-wrap,
+body:has(.admin-shell) .settings-panel,
+body:has(.admin-shell) .admin-team-card,
+body:has(.admin-shell) .simple-list-item,
+body:has(.admin-shell) .message-reply-box,
+body:has(.admin-shell) .admin-size-create-form,
+body:has(.admin-shell) .admin-size-row {
+  border:1px solid var(--border) !important;
+  border-radius:12px !important;
+  background:var(--bg2) !important;
+  color:var(--text) !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .stat:hover,
+body:has(.admin-shell) .dash-v4-kpi-link:hover,
+body:has(.admin-shell) .admin-review-card:hover,
+body:has(.admin-shell) .simple-list-item:hover {
+  transform:none !important;
+  border-color:var(--border2) !important;
+}
+
+body:has(.admin-shell) .stat-val,
+body:has(.admin-shell) .dash-v4-kpis strong {
+  font-family:var(--display) !important;
+  font-weight:400 !important;
+  letter-spacing:0 !important;
+  color:var(--text) !important;
+}
+
+body:has(.admin-shell) .stat-lbl,
+body:has(.admin-shell) .dash-v4-kpis span,
+body:has(.admin-shell) .dash-v4-kpis small,
+body:has(.admin-shell) .admin-card-note,
+body:has(.admin-shell) .admin-kicker,
+body:has(.admin-shell) .slabel,
+body:has(.admin-shell) thead th {
+  color:var(--text3) !important;
+  letter-spacing:.08em !important;
+  text-transform:uppercase !important;
+}
+
+body:has(.admin-shell) .tbl-wrap {
+  overflow-x:auto;
+}
+
+body:has(.admin-shell) .tbl-wrap table {
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+body:has(.admin-shell) .tbl-wrap th,
+body:has(.admin-shell) .tbl-wrap td {
+  padding:18px 20px !important;
+  border-bottom:1px solid var(--border) !important;
+}
+
+body:has(.admin-shell) .tbl-wrap tbody tr:last-child td {
+  border-bottom:0 !important;
+}
+
+body:has(.admin-shell) .admin-section-search,
+body:has(.admin-shell) .admin-search-row .sbar {
+  width:min(100%, 360px);
+  min-height:42px;
+  border:1px solid var(--border) !important;
+  border-radius:999px !important;
+  background:var(--bg2) !important;
+  color:var(--text2) !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-section-search input,
+body:has(.admin-shell) .admin-search-row .sbar input {
+  min-width:0;
+  color:var(--text) !important;
+  background:transparent !important;
+}
+
+body:has(.admin-shell) .finput,
+body:has(.admin-shell) select.finput,
+body:has(.admin-shell) textarea.finput,
+body:has(.admin-shell) .admin-table-form .finput {
+  border:1px solid var(--border) !important;
+  border-radius:12px !important;
+  background:color-mix(in srgb, var(--bg2) 86%, var(--bg3)) !important;
+  color:var(--text) !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .btn {
+  border-radius:999px;
+}
+
+body:has(.admin-shell) .admin-card-list,
+body:has(.admin-shell) .admin-dashboard-v4,
+body:has(.admin-shell) .dash-v4-grid,
+body:has(.admin-shell) .dash-review-grid,
+body:has(.admin-shell) .admin-workspace-grid,
+body:has(.admin-shell) .settings-grid {
+  gap:18px !important;
+}
+
+body:has(.admin-shell) .admin-top,
+body:has(.admin-shell) .dash-v4-top,
+body:has(.admin-shell) .stat,
+body:has(.admin-shell) .dash-v4-kpi-link,
+body:has(.admin-shell) .dash-v4-card,
+body:has(.admin-shell) .acard-box,
+body:has(.admin-shell) .admin-review-card,
+body:has(.admin-shell) .tbl-wrap,
+body:has(.admin-shell) .settings-panel,
+body:has(.admin-shell) .simple-list-item {
+  animation:none !important;
+}
+
+body:has(.admin-shell) .stat:nth-child(2),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(2),
+body:has(.admin-shell) .admin-card-list > *:nth-child(2) {
+  animation-delay:.04s;
+}
+
+body:has(.admin-shell) .stat:nth-child(3),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(3),
+body:has(.admin-shell) .admin-card-list > *:nth-child(3) {
+  animation-delay:.08s;
+}
+
+body:has(.admin-shell) .stat:nth-child(4),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(4),
+body:has(.admin-shell) .admin-card-list > *:nth-child(4) {
+  animation-delay:.12s;
+}
+
+@keyframes adminSoftIn {
+  from {
+    opacity:0;
+    transform:translateY(12px);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  body:has(.admin-shell) .admin-top,
+  body:has(.admin-shell) .dash-v4-top,
+  body:has(.admin-shell) .stat,
+  body:has(.admin-shell) .dash-v4-kpi-link,
+  body:has(.admin-shell) .dash-v4-card,
+  body:has(.admin-shell) .acard-box,
+  body:has(.admin-shell) .admin-review-card,
+  body:has(.admin-shell) .tbl-wrap,
+  body:has(.admin-shell) .settings-panel,
+  body:has(.admin-shell) .simple-list-item {
+    animation:none !important;
+  }
+}
+
+/* Last-mile admin report cleanup. */
+:root[data-theme="light"] body:has(.admin-shell) .admin-top,
+:root[data-theme="light"] body:has(.admin-shell) .dash-v4-top,
+:root[data-theme="light"] body:has(.admin-shell) .admin-top > *,
+:root[data-theme="light"] body:has(.admin-shell) .dash-v4-top > *,
+:root[data-theme="light"] body:has(.admin-shell) .admin-top h2,
+:root[data-theme="light"] body:has(.admin-shell) .dash-v4-top h2 {
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) .admin-top,
+:root[data-theme="light"] body:has(.admin-shell) .dash-v4-top {
+  border:0 !important;
+  padding:0 !important;
+}
+
+body:has(.admin-shell) .admin-music-hero,
+body:has(.admin-shell) .admin-music-leaders {
+  display:none !important;
+}
+
+body:has(.admin-shell) .admin-music-report-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.75fr);
+  gap:18px;
+  margin:0 0 18px;
+}
+
+body:has(.admin-shell) .admin-music-side {
+  display:grid;
+  gap:18px;
+}
+
+body:has(.admin-shell) .admin-music-line-card,
+body:has(.admin-shell) .admin-music-top-card,
+body:has(.admin-shell) .admin-music-genre-card {
+  background:var(--bg2) !important;
+  border-color:var(--border) !important;
+}
+
+body:has(.admin-shell) .admin-music-line-chart {
+  width:100%;
+  min-height:260px;
+  margin-top:10px;
+  color:var(--text);
+}
+
+body:has(.admin-shell) .admin-music-line-chart .chart-grid-lines line {
+  stroke:var(--border);
+  stroke-dasharray:3 7;
+}
+
+body:has(.admin-shell) .admin-music-line-chart polyline {
+  stroke:var(--text);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+body:has(.admin-shell) .admin-music-line-chart circle {
+  fill:var(--bg2);
+  stroke:var(--text);
+  stroke-width:4;
+}
+
+body:has(.admin-shell) .admin-music-top-track {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding-top:4px;
+}
+
+body:has(.admin-shell) .admin-music-top-track > span {
+  width:58px;
+  height:58px;
+  flex:0 0 58px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg3);
+}
+
+body:has(.admin-shell) .admin-music-top-track img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+body:has(.admin-shell) .admin-music-top-track strong,
+body:has(.admin-shell) .admin-music-top-track small {
+  display:block;
+}
+
+body:has(.admin-shell) .admin-music-top-track strong {
+  color:var(--text);
+}
+
+body:has(.admin-shell) .admin-music-top-track small {
+  margin-top:4px;
+  color:var(--text3);
+}
+
+body:has(.admin-shell) .admin-music-genre-list > div {
+  padding:10px 0 !important;
+  border:0 !important;
+  border-bottom:1px solid var(--border) !important;
+  border-radius:0 !important;
+  background:transparent !important;
+}
+
+body:has(.admin-shell) .admin-music-genre-list > div:last-child {
+  border-bottom:0 !important;
+}
+
+body:has(.admin-shell) .admin-music-genre-list i {
+  height:7px !important;
+  background:var(--bg3) !important;
+}
+
+body:has(.admin-shell) .admin-music-genre-list i span {
+  background:var(--text) !important;
+}
+
+@media (max-width:980px) {
+  body:has(.admin-shell) .admin-music-report-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+/* Final admin overrides: floating titles and full-screen edit dialogs. */
+html body:has(.admin-shell) .admin-top,
+html body:has(.admin-shell) .dash-v4-top,
+html body:has(.admin-shell) .admin-top::before,
+html body:has(.admin-shell) .admin-top::after,
+html body:has(.admin-shell) .dash-v4-top::before,
+html body:has(.admin-shell) .dash-v4-top::after,
+html body:has(.admin-shell) .admin-top > div:first-child,
+html body:has(.admin-shell) .dash-v4-top > div:first-child,
+html body:has(.admin-shell) .admin-top h2,
+html body:has(.admin-shell) .dash-v4-top h2 {
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+html body:has(.admin-shell) .admin-top,
+html body:has(.admin-shell) .dash-v4-top {
+  padding:0 !important;
+  border:0 !important;
+}
+
+html body:has(.admin-shell) .admin-top h2,
+html body:has(.admin-shell) .dash-v4-top h2 {
+  display:inline !important;
+  padding:0 !important;
+  margin:0 !important;
+  line-height:.98 !important;
+}
+
+body.admin-modal-open {
+  overflow:hidden !important;
+}
+
+body:has(.admin-shell) .admin-modal-backdrop {
+  position:fixed;
+  inset:0;
+  z-index:19990;
+  border:0;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  cursor:default;
+  animation:adminFadeIn .18s ease both;
+}
+
+body:has(.admin-shell) .admin-inline-edit-form.is-admin-modal-live {
+  position:fixed !important;
+  top:50vh !important;
+  left:50vw !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:20000 !important;
+  width:min(860px, calc(100vw - 48px)) !important;
+  max-height:min(820px, calc(100vh - 64px)) !important;
+  overflow:auto !important;
+  transform:translate(-50%, -50%) !important;
+  border-radius:18px !important;
+  background:var(--bg2) !important;
+  box-shadow:0 34px 110px rgba(0,0,0,.56) !important;
+  animation:adminModalIn .22s cubic-bezier(.2,.8,.2,1) both !important;
+}
+
+body:has(.admin-shell) .admin-inline-editor[open]::before {
+  display:none !important;
+}
+
+body:has(.admin-shell) .admin-music-hero {
+  position:relative;
+  overflow:hidden;
+  grid-template-columns:92px minmax(0,1fr) minmax(110px,.22fr) minmax(110px,.22fr) !important;
+  min-height:138px;
+  border-color:color-mix(in srgb, var(--border2) 70%, transparent) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bg2) 82%, #8ab4ff 18%), color-mix(in srgb, var(--bg2) 88%, #a6e6cf 12%) 56%, color-mix(in srgb, var(--bg2) 90%, #f0dfaa 10%)) !important;
+}
+
+body:has(.admin-shell) .admin-music-hero::after {
+  content:"";
+  position:absolute;
+  inset:auto 22px 18px 120px;
+  height:1px;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 22%, transparent), transparent);
+  pointer-events:none;
+}
+
+body:has(.admin-shell) .admin-music-hero-cover {
+  width:78px;
+  height:78px;
+  border-radius:16px;
+  box-shadow:0 16px 42px rgba(0,0,0,.18);
+}
+
+body:has(.admin-shell) .admin-music-hero h3 {
+  font-size:clamp(1.4rem,2vw,2.05rem) !important;
+  line-height:1.05;
+}
+
+body:has(.admin-shell) .admin-music-hero-stats {
+  min-height:86px;
+  border:1px solid color-mix(in srgb, var(--border2) 70%, transparent);
+  background:color-mix(in srgb, var(--bg2) 72%, transparent) !important;
+}
+
+body:has(.admin-shell) .admin-music-insights {
+  grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr) !important;
+  align-items:stretch;
+}
+
+body:has(.admin-shell) .admin-music-chart-card,
+body:has(.admin-shell) .admin-music-genre-card {
+  border-color:color-mix(in srgb, var(--border2) 58%, transparent) !important;
+}
+
+body:has(.admin-shell) .admin-music-chart {
+  min-height:250px;
+  align-items:end;
+  padding:20px 8px 4px;
+  border-top:1px solid var(--border);
+}
+
+body:has(.admin-shell) .admin-music-chart > div {
+  min-width:46px;
+}
+
+body:has(.admin-shell) .admin-music-chart i {
+  max-width:34px !important;
+  background:linear-gradient(180deg,#8ab4ff 0%,#a6e6cf 62%,#f0dfaa 100%) !important;
+  box-shadow:0 12px 28px color-mix(in srgb, #8ab4ff 24%, transparent);
+}
+
+body:has(.admin-shell) .admin-music-genre-list > div {
+  background:color-mix(in srgb, var(--bg2) 82%, var(--bg3)) !important;
+}
+
+body:has(.admin-shell) .admin-music-leaders {
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+
+body:has(.admin-shell) .admin-music-artist-card {
+  min-height:92px;
+  border-color:color-mix(in srgb, var(--border2) 58%, transparent) !important;
+}
+
+body:has(.admin-shell) .admin-music-artist-card b {
+  min-width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:var(--text);
+  color:var(--bg);
+  font-weight:900;
+}
+
+@media (max-width:1100px) {
+  body:has(.admin-shell) .admin-music-leaders {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+
+@media (max-width:900px) {
+  body:has(.admin-shell) .admin-music-hero,
+  body:has(.admin-shell) .admin-music-insights,
+  body:has(.admin-shell) .admin-music-leaders {
+    grid-template-columns:1fr !important;
+  }
+
+  body:has(.admin-shell) .admin-music-hero::after {
+    display:none;
+  }
+}
+
+@media (max-width:900px) {
+  body:has(.admin-shell) .admin-top,
+  body:has(.admin-shell) .dash-v4-top {
+    align-items:stretch !important;
+    flex-direction:column !important;
+  }
+
+  body:has(.admin-shell) .admin-top h2,
+  body:has(.admin-shell) .dash-v4-top h2,
+  body:has(.admin-shell) .dash-v4-title {
+    font-size:clamp(2.8rem, 13vw, 4.2rem) !important;
+  }
+}
+
+body:has(.admin-shell) .admin-user-cell {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:180px;
+}
+
+body:has(.admin-shell) .admin-user-avatar {
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:var(--bg3);
+  color:var(--text);
+  font-weight:800;
+}
+
+body:has(.admin-shell) .admin-user-avatar img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+body:has(.admin-shell) .admin-inline-editor {
+  min-width:118px;
+}
+
+body:has(.admin-shell) .admin-inline-editor summary {
+  list-style:none;
+  cursor:pointer;
+}
+
+body:has(.admin-shell) .admin-inline-editor summary::-webkit-details-marker {
+  display:none;
+}
+
+body:has(.admin-shell) .admin-inline-edit-form {
+  position:fixed;
+  top:50vh !important;
+  left:50vw !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:10000 !important;
+  width:min(760px, calc(100vw - 40px));
+  max-height:min(760px, calc(100vh - 80px));
+  overflow:auto;
+  display:grid;
+  gap:16px;
+  padding:22px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--bg2);
+  box-shadow:0 34px 90px rgba(0,0,0,.52);
+  transform:translate(-50%,-50%);
+}
+
+body:has(.admin-shell) .admin-inline-editor[open]::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9990;
+  background:rgba(0,0,0,.58);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+body:has(.admin-shell) .admin-inline-editor[open] summary {
+  position:relative;
+  z-index:1201;
+}
+
+body:has(.admin-shell) .admin-inline-edit-form label {
+  display:grid;
+  gap:6px;
+  color:var(--text3);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body:has(.admin-shell) .admin-modal-label {
+  display:block;
+  margin:0 0 8px;
+  color:var(--text3);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+body:has(.admin-shell) .admin-inline-edit-form textarea {
+  min-height:88px;
+  resize:vertical;
+}
+
+body:has(.admin-shell) .admin-inline-edit-pair {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+body:has(.admin-shell) .admin-inline-media-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+  gap:10px;
+}
+
+body:has(.admin-shell) .admin-inline-media-item {
+  display:grid;
+  gap:8px;
+  padding:8px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg);
+}
+
+body:has(.admin-shell) .admin-inline-media-item img {
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+body:has(.admin-shell) .admin-track-edit-list {
+  display:grid;
+  gap:12px;
+}
+
+body:has(.admin-shell) .admin-track-edit-row {
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1fr);
+  gap:10px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg);
+}
+
+body:has(.admin-shell) .admin-row-actions {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+body:has(.admin-shell) .admin-row-actions form {
+  margin:0;
+}
+
+body:has(.admin-shell) .dash-v4-kpis {
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  gap:12px !important;
+}
+
+body:has(.admin-shell) .dash-v4-kpi-link {
+  min-height:126px !important;
+  padding:16px !important;
+}
+
+body:has(.admin-shell) .dash-v4-kpis strong {
+  font-size:clamp(1.9rem,2.9vw,3.1rem) !important;
+  line-height:1.02 !important;
+  overflow-wrap:anywhere;
+}
+
+body:has(.admin-shell) .dash-v4-grid {
+  grid-template-columns:minmax(0,1.55fr) minmax(320px,.75fr) !important;
+  align-items:stretch;
+}
+
+body:has(.admin-shell) .admin-music-bars-card {
+  grid-column:1 / -1;
+}
+
+body:has(.admin-shell) .dash-v4-queue,
+body:has(.admin-shell) .dash-review-grid {
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:18px !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-main,
+body:has(.admin-inline-editor[open]) .admin-main-scroll,
+body:has(.admin-inline-editor[open]) .tbl-wrap,
+body:has(.admin-inline-editor[open]) .acard-box {
+  overflow:visible !important;
+  transform:none !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-commandbar,
+body:has(.admin-inline-editor[open]) .admin-sl {
+  z-index:1 !important;
+}
+
+body:has(.admin-shell) .dash-review-list a,
+body:has(.admin-shell) .dash-review-list > span {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  min-height:54px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+
+body:has(.admin-shell) .dash-review-list a:last-child,
+body:has(.admin-shell) .dash-review-list > span:last-child {
+  border-bottom:0;
+}
+
+body:has(.admin-shell) .dash-review-list small {
+  color:var(--text3);
+  line-height:1.35;
+}
+
+body:has(.admin-shell) .admin-report-grid {
+  grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr) !important;
+  align-items:stretch;
+}
+
+body:has(.admin-shell) .admin-top,
+body:has(.admin-shell) .dash-v4-top {
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-top h2,
+body:has(.admin-shell) .dash-v4-top h2,
+body:has(.admin-shell) .dash-v4-title {
+  font-size:clamp(2.45rem, 3.8vw, 4.15rem) !important;
+}
+
+body:has(.admin-shell) .dash-v4-kpi-link {
+  min-height:108px !important;
+  padding:14px 16px !important;
+}
+
+body:has(.admin-shell) .dash-v4-kpis strong {
+  font-size:clamp(1.65rem, 2.35vw, 2.55rem) !important;
+}
+
+body:has(.admin-shell) .dash-v4-kpis small {
+  max-width:100%;
+  font-size:.76rem !important;
+  line-height:1.35;
+}
+
+body:has(.admin-shell) .dash-review-list a,
+body:has(.admin-shell) .dash-review-list > span,
+body:has(.admin-shell) .admin-dashboard-ranked-list a {
+  grid-template-columns:minmax(0,1fr) max-content !important;
+}
+
+body:has(.admin-shell) .admin-dashboard-activity-list span {
+  align-items:start;
+}
+
+body:has(.admin-shell) .admin-dashboard-activity-list strong {
+  text-align:left !important;
+}
+
+body:has(.admin-shell) .admin-row-actions,
+body:has(.admin-shell) .admin-team-action-form {
+  display:flex !important;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+body:has(.admin-shell) .admin-row-actions .btn,
+body:has(.admin-shell) .admin-row-actions summary {
+  min-width:96px;
+  justify-content:center;
+}
+
+body:has(.admin-shell) .admin-role-checks {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:8px;
+}
+
+body:has(.admin-shell) .admin-role-checks--inline {
+  grid-template-columns:repeat(2,minmax(130px,1fr));
+  min-width:280px;
+}
+
+body:has(.admin-shell) .admin-role-check {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:color-mix(in srgb, var(--bg2) 84%, var(--bg3));
+  color:var(--text2);
+  font-size:.82rem;
+  font-weight:800;
+}
+
+body:has(.admin-shell) .admin-role-check input {
+  accent-color:var(--text);
+}
+
+body:has(.admin-inline-editor[open]) {
+  overflow:hidden !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-shell,
+body:has(.admin-inline-editor[open]) .admin-main,
+body:has(.admin-inline-editor[open]) .admin-main-scroll,
+body:has(.admin-inline-editor[open]) .tbl-wrap,
+body:has(.admin-inline-editor[open]) .acard-box,
+body:has(.admin-inline-editor[open]) .dash-v4-card,
+body:has(.admin-inline-editor[open]) .admin-review-card {
+  overflow:visible !important;
+  transform:none !important;
+  contain:none !important;
+  filter:none !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open]::before {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:9990 !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open] .admin-inline-edit-form {
+  position:fixed !important;
+  top:50vh !important;
+  left:50vw !important;
+  width:min(820px, calc(100vw - 42px)) !important;
+  max-height:min(780px, calc(100vh - 70px)) !important;
+  transform:translate(-50%, -50%) !important;
+  z-index:10000 !important;
+}
+
+body:has(.admin-shell) .admin-music-leaders {
+  margin:0 0 18px;
+}
+
+body:has(.admin-shell) .admin-music-artist-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  min-height:82px;
+  text-decoration:none;
+}
+
+body:has(.admin-shell) .admin-donut-card {
+  background:linear-gradient(145deg, color-mix(in srgb, var(--bg2) 86%, #8ab4ff 14%), var(--bg2)) !important;
+}
+
+body:has(.admin-shell) .admin-donut {
+  width:min(260px,70vw);
+  margin:10px auto 24px;
+  box-shadow:inset 0 0 0 1px var(--border), 0 18px 50px rgba(0,0,0,.16);
+}
+
+body:has(.admin-shell) .admin-donut > div {
+  background:var(--bg2) !important;
+  box-shadow:0 0 0 1px var(--border), 0 12px 30px rgba(0,0,0,.18);
+}
+
+body:has(.admin-shell) .admin-donut-legend {
+  gap:10px;
+}
+
+body:has(.admin-shell) .admin-donut-legend div {
+  min-height:42px;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:color-mix(in srgb, var(--bg2) 84%, var(--bg3));
+}
+
+body:has(.admin-shell) .admin-donut-legend span {
+  width:12px;
+  height:12px;
+  box-shadow:0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+body:has(.admin-shell) .admin-donut-legend em {
+  color:var(--text);
+  font-style:normal;
+  font-weight:800;
+}
+
+body:has(.admin-shell) .admin-report-bars-card {
+  background:linear-gradient(145deg, color-mix(in srgb, var(--bg2) 88%, #a6e6cf 12%), var(--bg2)) !important;
+}
+
+body:has(.admin-shell) .admin-bar-row {
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg2);
+}
+
+body:has(.admin-shell) .admin-bar-row > span {
+  color:var(--text);
+  font-weight:800;
+}
+
+body:has(.admin-shell) .admin-bar-track {
+  height:12px;
+  background:var(--bg3);
+}
+
+body:has(.admin-shell) .admin-bar-track div {
+  background:linear-gradient(90deg, #8ab4ff, #a6e6cf, #f0dfaa) !important;
+}
+
+@media (max-width:700px) {
+  body:has(.admin-shell) .admin-inline-edit-form {
+    left:12px;
+    right:12px;
+    top:50%;
+    width:auto;
+  }
+
+  body:has(.admin-shell) .admin-inline-edit-pair {
+    grid-template-columns:1fr;
+  }
+
+  body:has(.admin-shell) .admin-track-edit-row {
+    grid-template-columns:1fr;
+  }
+
+  body:has(.admin-shell) .dash-v4-kpis,
+  body:has(.admin-shell) .dash-v4-grid,
+  body:has(.admin-shell) .dash-v4-queue,
+  body:has(.admin-shell) .dash-review-grid {
+    grid-template-columns:1fr !important;
+  }
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open] .admin-inline-edit-form {
+  top:50vh !important;
+  left:50vw !important;
+  right:auto !important;
+  width:min(820px, calc(100vw - 42px)) !important;
+  transform:translate(-50%, -50%) !important;
+}
+
+/* Final admin cleanup overrides. Keep this block last so it wins over older experiments. */
+body:has(.admin-shell),
+body:has(.admin-shell) .admin-shell,
+body:has(.admin-shell) .admin-main,
+body:has(.admin-shell) .admin-main-scroll {
+  background:#f4f6f8 !important;
+  background-image:none !important;
+}
+
+:root:not([data-theme="light"]) body:has(.admin-shell),
+:root:not([data-theme="light"]) body:has(.admin-shell) .admin-shell,
+:root:not([data-theme="light"]) body:has(.admin-shell) .admin-main,
+:root:not([data-theme="light"]) body:has(.admin-shell) .admin-main-scroll {
+  background:#15171a !important;
+}
+
+body:has(.admin-shell) .admin-commandbar,
+body:has(.admin-shell) .admin-commandbar.is-solid,
+body.admin-scrolled:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  border:0 !important;
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+body:has(.admin-shell) .admin-top,
+body:has(.admin-shell) .dash-v4-top {
+  margin:0 0 20px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-top > div:first-child,
+body:has(.admin-shell) .dash-v4-top > div:first-child {
+  max-width:760px;
+}
+
+body:has(.admin-shell) .admin-top h2,
+body:has(.admin-shell) .dash-v4-top h2,
+body:has(.admin-shell) .dash-v4-title {
+  font-size:clamp(2rem, 3vw, 3.2rem) !important;
+  line-height:1.02 !important;
+}
+
+body:has(.admin-shell) .admin-top p,
+body:has(.admin-shell) .dash-v4-top p {
+  max-width:640px;
+}
+
+body:has(.admin-shell) .admin-row-actions,
+body:has(.admin-shell) .admin-team-action-form {
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:nowrap !important;
+  gap:8px !important;
+}
+
+body:has(.admin-shell) .admin-row-actions form,
+body:has(.admin-shell) .admin-inline-editor {
+  margin:0 !important;
+  flex:0 0 auto !important;
+}
+
+body:has(.admin-shell) .admin-row-actions .btn,
+body:has(.admin-shell) .admin-row-actions summary {
+  min-width:116px !important;
+  width:116px !important;
+  height:44px !important;
+  justify-content:center !important;
+  white-space:nowrap !important;
+}
+
+body:has(.admin-shell) .tbl-wrap td:last-child,
+body:has(.admin-shell) .tbl-wrap th:last-child {
+  min-width:260px;
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open] .admin-inline-edit-form,
+body:has(.admin-shell) .admin-inline-edit-form {
+  top:50vh !important;
+  left:50vw !important;
+  right:auto !important;
+  width:min(640px, calc(100vw - 48px)) !important;
+  max-height:min(620px, calc(100vh - 96px)) !important;
+  padding:18px !important;
+  border-radius:14px !important;
+  gap:12px !important;
+  transform:translate(-50%, -50%) !important;
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open]::before {
+  background:rgba(15,17,20,.48) !important;
+  backdrop-filter:blur(6px) !important;
+  -webkit-backdrop-filter:blur(6px) !important;
+}
+
+body:has(.admin-shell) .admin-inline-media-grid {
+  grid-template-columns:repeat(auto-fit,minmax(88px,1fr)) !important;
+}
+
+body:has(.admin-shell) .admin-inline-media-item img {
+  aspect-ratio:4 / 3 !important;
+}
+
+body:has(.admin-shell) .admin-track-edit-row {
+  grid-template-columns:1fr !important;
+}
+
+body:has(.admin-shell) .dash-review-list a,
+body:has(.admin-shell) .dash-review-list > span {
+  grid-template-columns:minmax(0,1fr) !important;
+  min-height:64px;
+  padding:12px 0;
+}
+
+body:has(.admin-shell) .admin-dashboard-media {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+body:has(.admin-shell) .admin-dashboard-media > span:last-child {
+  min-width:0;
+  display:grid;
+  gap:3px;
+}
+
+body:has(.admin-shell) .admin-dashboard-thumb {
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg3);
+  color:var(--text);
+  font-weight:900;
+}
+
+body:has(.admin-shell) .admin-dashboard-thumb--avatar {
+  border-radius:50%;
+}
+
+body:has(.admin-shell) .admin-dashboard-thumb img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+body:has(.admin-shell) .admin-music-hero,
+body:has(.admin-shell) .admin-music-insights {
+  display:grid;
+  gap:16px;
+  margin:0 0 18px;
+}
+
+body:has(.admin-shell) .admin-music-hero {
+  grid-template-columns:92px minmax(0,1fr) auto auto;
+  align-items:center;
+  padding:16px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--bg2) 78%, #2563eb 22%), color-mix(in srgb, var(--bg2) 86%, #16a34a 14%));
+}
+
+body:has(.admin-shell) .admin-music-hero-cover {
+  width:92px;
+  height:92px;
+  overflow:hidden;
+  border-radius:14px;
+  background:var(--bg3);
+}
+
+body:has(.admin-shell) .admin-music-hero-cover img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+body:has(.admin-shell) .admin-music-hero h3 {
+  margin:0 0 4px;
+  color:var(--text);
+  font-size:clamp(1.4rem,2.4vw,2.2rem);
+}
+
+body:has(.admin-shell) .admin-music-hero p {
+  margin:0;
+  color:var(--text2);
+}
+
+body:has(.admin-shell) .admin-music-hero-stats {
+  min-width:112px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:color-mix(in srgb, var(--bg2) 72%, transparent);
+  text-align:center;
+}
+
+body:has(.admin-shell) .admin-music-hero-stats strong {
+  display:block;
+  color:var(--text);
+  font-size:1.55rem;
+}
+
+body:has(.admin-shell) .admin-music-hero-stats span {
+  color:var(--text3);
+  font-size:.72rem;
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+body:has(.admin-shell) .admin-music-insights {
+  grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);
+}
+
+body:has(.admin-shell) .admin-music-chart {
+  min-height:230px;
+  display:flex;
+  align-items:end;
+  gap:12px;
+  padding:16px 4px 0;
+  overflow-x:auto;
+}
+
+body:has(.admin-shell) .admin-music-chart > div {
+  min-width:62px;
+  flex:1;
+  display:grid;
+  justify-items:center;
+  align-items:end;
+  gap:8px;
+}
+
+body:has(.admin-shell) .admin-music-chart i {
+  width:100%;
+  max-width:46px;
+  display:block;
+  border-radius:999px 999px 8px 8px;
+  background:linear-gradient(180deg,#2563eb,#16a34a 58%,#f59e0b);
+}
+
+body:has(.admin-shell) .admin-music-chart span,
+body:has(.admin-shell) .admin-music-chart strong {
+  color:var(--text3);
+  font-size:.72rem;
+  font-weight:900;
+}
+
+body:has(.admin-shell) .admin-music-genre-list {
+  display:grid;
+  gap:12px;
+}
+
+body:has(.admin-shell) .admin-music-genre-list > div {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px 12px;
+  align-items:center;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--bg);
+}
+
+body:has(.admin-shell) .admin-music-genre-list strong,
+body:has(.admin-shell) .admin-music-genre-list em {
+  color:var(--text);
+  font-style:normal;
+  font-weight:900;
+}
+
+body:has(.admin-shell) .admin-music-genre-list span {
+  color:var(--text3);
+  font-size:.76rem;
+}
+
+body:has(.admin-shell) .admin-music-genre-list i {
+  grid-column:1 / -1;
+  height:9px;
+  overflow:hidden;
+  border-radius:999px;
+  background:var(--bg3);
+}
+
+body:has(.admin-shell) .admin-music-genre-list i span {
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#2563eb,#16a34a,#f59e0b);
+}
+
+body:has(.admin-shell) .admin-donut {
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.12), 0 18px 50px rgba(0,0,0,.12) !important;
+}
+
+body:has(.admin-shell) .admin-donut-legend span {
+  width:14px !important;
+  height:14px !important;
+  box-shadow:none !important;
+}
+
+@media (max-width:900px) {
+  body:has(.admin-shell) .admin-row-actions {
+    flex-wrap:wrap !important;
+  }
+
+  body:has(.admin-shell) .admin-music-hero,
+  body:has(.admin-shell) .admin-music-insights {
+    grid-template-columns:1fr;
+  }
+
+  body:has(.admin-shell) .admin-music-hero {
+    justify-items:start;
+  }
+
+  body:has(.admin-shell) .admin-music-hero-stats {
+    width:100%;
+  }
+}
+
+/* Final polish pass: closeable modals, motion, cleaner sidebar, and fully transparent page titles. */
+body:has(.admin-shell) .admin-sl .brand,
+body:has(.admin-shell) .admin-profile-chip,
+body:has(.admin-shell) .admin-sidebar-logout {
+  border-top:0 !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-sidebar-logout {
+  padding-top:8px !important;
+}
+
+body:has(.admin-shell) .admin-top,
+body:has(.admin-shell) .dash-v4-top,
+body:has(.admin-shell) .admin-top::before,
+body:has(.admin-shell) .admin-top::after,
+body:has(.admin-shell) .dash-v4-top::before,
+body:has(.admin-shell) .dash-v4-top::after,
+body:has(.admin-shell) .admin-top > div:first-child,
+body:has(.admin-shell) .dash-v4-top > div:first-child,
+body:has(.admin-shell) .admin-top h2,
+body:has(.admin-shell) .dash-v4-top h2 {
+  border:0 !important;
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  outline:0 !important;
+}
+
+body:has(.admin-shell) .admin-top h2,
+body:has(.admin-shell) .dash-v4-top h2 {
+  display:inline-block;
+  padding:0 !important;
+}
+
+body:has(.admin-shell) .admin-inline-edit-form {
+  animation:adminModalIn .22s cubic-bezier(.2,.8,.2,1) both;
+  transform-origin:center;
+}
+
+body:has(.admin-inline-editor[open]) .admin-inline-editor[open]::before {
+  animation:adminFadeIn .18s ease both;
+}
+
+body:has(.admin-shell) .admin-inline-close {
+  position:sticky;
+  top:0;
+  justify-self:end;
+  z-index:2;
+  width:34px;
+  height:34px;
+  min-height:34px;
+  display:grid;
+  place-items:center;
+  margin:-6px -6px -4px auto;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:color-mix(in srgb, var(--bg2) 88%, var(--bg3));
+  color:var(--text);
+  font-size:1.35rem;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+body:has(.admin-shell) .admin-inline-close:hover,
+body:has(.admin-shell) .admin-inline-close:focus-visible {
+  transform:scale(1.06);
+  border-color:var(--border2);
+  background:var(--bg3);
+}
+
+body:has(.admin-shell) .admin-inline-close span {
+  transform:translateY(-1px);
+}
+
+body:has(.admin-shell) .stat,
+body:has(.admin-shell) .dash-v4-kpi-link,
+body:has(.admin-shell) .dash-v4-card,
+body:has(.admin-shell) .acard-box,
+body:has(.admin-shell) .tbl-wrap,
+body:has(.admin-shell) .admin-review-card,
+body:has(.admin-shell) .admin-music-hero {
+  animation:adminSurfaceIn .34s cubic-bezier(.2,.8,.2,1) both !important;
+}
+
+body:has(.admin-shell) .stat:nth-child(2),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(2),
+body:has(.admin-shell) .admin-music-insights > :nth-child(2) {
+  animation-delay:.04s !important;
+}
+
+body:has(.admin-shell) .stat:nth-child(3),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(3) {
+  animation-delay:.08s !important;
+}
+
+body:has(.admin-shell) .stat:nth-child(4),
+body:has(.admin-shell) .dash-v4-kpi-link:nth-child(4) {
+  animation-delay:.12s !important;
+}
+
+body:has(.admin-shell) .dash-v4-card:hover,
+body:has(.admin-shell) .acard-box:hover,
+body:has(.admin-shell) .admin-music-hero:hover {
+  border-color:var(--border2) !important;
+}
+
+body:has(.admin-shell) .admin-music-hero {
+  background:var(--bg2) !important;
+  box-shadow:none !important;
+}
+
+body:has(.admin-shell) .admin-music-chart-card,
+body:has(.admin-shell) .admin-music-genre-card,
+body:has(.admin-shell) .admin-music-leaders .dash-v4-card {
+  background:var(--bg2) !important;
+}
+
+body:has(.admin-shell) .admin-music-chart i,
+body:has(.admin-shell) .admin-music-genre-list i span {
+  background:linear-gradient(180deg,#8ab4ff,#a6e6cf 58%,#f0dfaa) !important;
+}
+
+body:has(.admin-shell) .admin-music-genre-list i span {
+  background:linear-gradient(90deg,#8ab4ff,#a6e6cf,#f0dfaa) !important;
+}
+
+@keyframes adminSurfaceIn {
+  from {
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@keyframes adminModalIn {
+  from {
+    opacity:0;
+    transform:translate(-50%, -48%) scale(.97);
+  }
+  to {
+    opacity:1;
+    transform:translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes adminFadeIn {
+  from { opacity:0; }
+  to { opacity:1; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  body:has(.admin-shell) .stat,
+  body:has(.admin-shell) .dash-v4-kpi-link,
+  body:has(.admin-shell) .dash-v4-card,
+  body:has(.admin-shell) .acard-box,
+  body:has(.admin-shell) .tbl-wrap,
+  body:has(.admin-shell) .admin-review-card,
+  body:has(.admin-shell) .admin-music-hero,
+  body:has(.admin-shell) .admin-inline-edit-form,
+  body:has(.admin-inline-editor[open]) .admin-inline-editor[open]::before {
+    animation:none !important;
+  }
+}
+
+/* Final admin report cleanup: keep page titles floating and make music reports minimal. */
+html body:has(.admin-shell) .admin-workspace,
+html body:has(.admin-shell) .admin-dashboard-v4,
+html body:has(.admin-shell) .admin-main,
+html body:has(.admin-shell) .admin-main-scroll {
+  background-image:none !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell),
+:root[data-theme="light"] body:has(.admin-shell) .admin-shell,
+:root[data-theme="light"] body:has(.admin-shell) .admin-workspace,
+:root[data-theme="light"] body:has(.admin-shell) .admin-dashboard-v4,
+:root[data-theme="light"] body:has(.admin-shell) .admin-main,
+:root[data-theme="light"] body:has(.admin-shell) .admin-main-scroll {
+  background:#f4f6f8 !important;
+  background-image:none !important;
+}
+
+html body:has(.admin-shell) .admin-top,
+html body:has(.admin-shell) .dash-v4-top,
+html body:has(.admin-shell) .admin-commandbar {
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+}
+
+html body:has(.admin-shell) .admin-top::before,
+html body:has(.admin-shell) .admin-top::after,
+html body:has(.admin-shell) .dash-v4-top::before,
+html body:has(.admin-shell) .dash-v4-top::after,
+html body:has(.admin-shell) .admin-top > div:first-child,
+html body:has(.admin-shell) .dash-v4-top > div:first-child,
+html body:has(.admin-shell) .admin-top h2,
+html body:has(.admin-shell) .dash-v4-top h2 {
+  border:0 !important;
+  background:transparent !important;
+  background-color:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  outline:0 !important;
+}
+
+html body:has(.admin-shell) .admin-top h2,
+html body:has(.admin-shell) .dash-v4-top h2 {
+  width:auto !important;
+  display:inline-block !important;
+  padding:0 !important;
+}
+
+html body:has(.admin-shell) .admin-music-hero,
+html body:has(.admin-shell) .admin-music-leaders {
+  display:none !important;
+}
+
+html body:has(.admin-shell) .admin-music-report-grid {
+  display:grid;
+  grid-template-columns:minmax(0, 1.7fr) minmax(300px, .85fr);
+  gap:20px;
+  align-items:stretch;
+  margin:20px 0;
+}
+
+html body:has(.admin-shell) .admin-music-side {
+  display:grid;
+  gap:20px;
+  align-content:stretch;
+}
+
+html body:has(.admin-shell) .admin-music-line-card,
+html body:has(.admin-shell) .admin-music-top-card,
+html body:has(.admin-shell) .admin-music-genre-card {
+  background:var(--bg2) !important;
+  border:1px solid var(--border) !important;
+  box-shadow:none !important;
+}
+
+html body:has(.admin-shell) .admin-music-line-card {
+  min-height:390px;
+}
+
+html body:has(.admin-shell) .admin-music-line-chart {
+  width:100%;
+  min-height:280px;
+  margin-top:12px;
+  color:var(--text);
+  overflow:visible;
+}
+
+html body:has(.admin-shell) .admin-music-line-chart .chart-grid-lines line {
+  stroke:var(--border);
+  stroke-dasharray:3 9;
+  opacity:.8;
+}
+
+html body:has(.admin-shell) .admin-music-line-chart polyline {
+  stroke:var(--text);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+html body:has(.admin-shell) .admin-music-line-chart circle {
+  fill:var(--bg2);
+  stroke:var(--text);
+  stroke-width:4;
+}
+
+html body:has(.admin-shell) .admin-music-top-track {
+  display:grid;
+  grid-template-columns:64px minmax(0, 1fr);
+  gap:14px;
+  align-items:center;
+  padding:14px 0 0;
+}
+
+html body:has(.admin-shell) .admin-music-top-track > span {
+  width:64px;
+  height:64px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--bg3);
+  overflow:hidden;
+}
+
+html body:has(.admin-shell) .admin-music-top-track img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+html body:has(.admin-shell) .admin-music-top-track strong,
+html body:has(.admin-shell) .admin-music-top-track small {
+  display:block;
+}
+
+html body:has(.admin-shell) .admin-music-top-track strong {
+  font-size:1.05rem;
+  color:var(--text);
+}
+
+html body:has(.admin-shell) .admin-music-top-track small {
+  margin-top:6px;
+  color:var(--muted);
+}
+
+html body:has(.admin-shell) .admin-music-genre-list {
+  display:grid !important;
+  gap:0 !important;
+}
+
+html body:has(.admin-shell) .admin-music-genre-list > div {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:14px 0 !important;
+  border-bottom:1px solid var(--border);
+  background:transparent !important;
+}
+
+html body:has(.admin-shell) .admin-music-genre-list > div:last-child {
+  border-bottom:0;
+}
+
+html body:has(.admin-shell) .admin-music-genre-list strong,
+html body:has(.admin-shell) .admin-music-genre-list em {
+  color:var(--text);
+  font-style:normal;
+}
+
+html body:has(.admin-shell) .admin-music-genre-list span {
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+}
+
+html body:has(.admin-shell) .admin-music-genre-list i {
+  grid-column:1 / -1;
+  height:6px;
+  border-radius:999px;
+  background:var(--bg3) !important;
+  overflow:hidden;
+}
+
+html body:has(.admin-shell) .admin-music-genre-list i span {
+  height:100%;
+  margin:0;
+  border-radius:inherit;
+  background:var(--text) !important;
+  opacity:.72;
+}
+
+@media (max-width:1100px) {
+  html body:has(.admin-shell) .admin-music-report-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+/* Final topbar/settings and music performance table polish. */
+html body:has(.admin-shell) .admin-command-actions {
+  align-items:center;
+}
+
+html body:has(.admin-shell) .admin-settings-top {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+  padding:0 14px !important;
+  border:1px solid var(--border) !important;
+  border-radius:999px !important;
+  background:var(--bg2) !important;
+  color:var(--text) !important;
+  box-shadow:none !important;
+}
+
+html body:has(.admin-shell) .admin-settings-top.on,
+html body:has(.admin-shell) .admin-settings-top:hover,
+html body:has(.admin-shell) .admin-settings-top:focus-visible {
+  border-color:var(--border2) !important;
+  background:var(--bg3) !important;
+}
+
+html body:has(.admin-shell) .admin-settings-top svg {
+  flex:0 0 auto;
+  color:currentColor;
+}
+
+html body:has(.admin-shell) .admin-music-track-table-card {
+  margin-top:20px;
+  padding:0 !important;
+  overflow:hidden;
+}
+
+html body:has(.admin-shell) .admin-music-track-table-card > .acard-box-head {
+  padding:18px 20px;
+  border-bottom:1px solid var(--border);
+}
+
+html body:has(.admin-shell) .admin-music-track-table-card .admin-card-head-tools {
+  align-items:center;
+}
+
+html body:has(.admin-shell) .admin-music-track-table-card .admin-section-search {
+  width:min(320px, 42vw);
+  min-height:40px;
+}
+
+html body:has(.admin-shell) .admin-music-track-table-wrap {
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+
+html body:has(.admin-shell) .admin-music-track-table {
+  width:100%;
+  min-width:920px;
+  border-collapse:collapse;
+}
+
+html body:has(.admin-shell) .admin-music-track-table th {
+  padding:14px 20px !important;
+  color:var(--muted) !important;
+  font-size:.72rem !important;
+  letter-spacing:.1em !important;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+html body:has(.admin-shell) .admin-music-track-table td {
+  padding:14px 20px !important;
+  vertical-align:middle;
+  border-top:1px solid var(--border);
+  color:var(--text2);
+}
+
+html body:has(.admin-shell) .admin-music-track-table tbody tr {
+  min-height:74px;
+  transition:background .18s ease;
+}
+
+html body:has(.admin-shell) .admin-music-track-table tbody tr:hover {
+  background:color-mix(in srgb, var(--bg3) 54%, transparent);
+}
+
+html body:has(.admin-shell) .admin-music-track-table td:first-child,
+html body:has(.admin-shell) .admin-music-track-table th:first-child {
+  width:88px;
+  min-width:88px;
+}
+
+html body:has(.admin-shell) .admin-music-track-table .thumb-sm {
+  width:46px !important;
+  height:46px !important;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg3);
+}
+
+html body:has(.admin-shell) .admin-music-track-table .thumb-sm:empty::before {
+  content:"";
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:var(--muted);
+  opacity:.45;
+}
+
+html body:has(.admin-shell) .admin-music-track-table .thumb-sm img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+html body:has(.admin-shell) .admin-music-track-table td:nth-child(2) strong {
+  display:block;
+  max-width:260px;
+  overflow:hidden;
+  color:var(--text);
+  font-size:.98rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+html body:has(.admin-shell) .admin-music-track-table td:nth-child(2) span {
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.82rem;
+}
+
+html body:has(.admin-shell) .admin-music-track-table .admin-mini-player {
+  display:inline-flex !important;
+  grid-template-columns:none !important;
+  align-items:center;
+  width:auto;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+}
+
+html body:has(.admin-shell) .admin-music-track-table .admin-mini-player button {
+  min-height:36px;
+  padding:0 14px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--bg2);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+
+html body:has(.admin-shell) .admin-music-track-table .admin-mini-player button:hover,
+html body:has(.admin-shell) .admin-music-track-table .admin-mini-player button:focus-visible {
+  border-color:var(--border2);
+  background:var(--bg3);
+}
+
+@media (max-width:760px) {
+  html body:has(.admin-shell) .admin-settings-top span {
+    display:none;
+  }
+
+  html body:has(.admin-shell) .admin-settings-top {
+    width:40px;
+    min-width:40px;
+    padding:0 !important;
+    justify-content:center;
+  }
+
+  html body:has(.admin-shell) .admin-music-track-table-card .acard-box-head {
+    align-items:flex-start;
+  }
+
+  html body:has(.admin-shell) .admin-music-track-table-card .admin-section-search {
+    width:100%;
+  }
+}
+
+/* Final admin topbar spacing and music play state. */
+html body:has(.admin-shell) .admin-commandbar {
+  padding-right:22px !important;
+}
+
+html body:has(.admin-shell) .admin-command-actions {
+  transform:translateX(-12px);
+}
+
+html body:has(.admin-shell) .admin-music-track-table .admin-mini-player.is-playing button {
+  background:var(--text) !important;
+  border-color:var(--text) !important;
+  color:var(--bg) !important;
+}
+
+@media (max-width:760px) {
+  html body:has(.admin-shell) .admin-commandbar {
+    padding-right:14px !important;
+  }
+
+  html body:has(.admin-shell) .admin-command-actions {
+    transform:none;
+  }
+}
+
+/* Final admin topbar surface: match the client-side nav instead of transparent. */
+html body:has(.admin-shell) .admin-commandbar,
+html body:has(.admin-shell) .admin-commandbar.is-solid,
+html body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  padding-right:22px !important;
+  border-bottom:1px solid var(--border) !important;
+  background:color-mix(in srgb, var(--bg) 88%, transparent) !important;
+  background-image:none !important;
+  box-shadow:0 14px 40px rgba(0,0,0,.12) !important;
+  backdrop-filter:blur(18px) !important;
+  -webkit-backdrop-filter:blur(18px) !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar.is-solid,
+:root[data-theme="light"] body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  border-bottom-color:rgba(20,28,40,.10) !important;
+  background:rgba(255,255,255,.86) !important;
+  box-shadow:0 14px 36px rgba(20,28,40,.08) !important;
+}
+
+/* Final admin nav colour: same surface as the page, no separated strip. */
+html body:has(.admin-shell) .admin-commandbar,
+html body:has(.admin-shell) .admin-commandbar.is-solid,
+html body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  border-bottom:0 !important;
+  background:var(--bg) !important;
+  background-color:var(--bg) !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar,
+:root[data-theme="light"] body:has(.admin-shell) .admin-commandbar.is-solid,
+:root[data-theme="light"] body.admin-scrolled:has(.admin-shell) .admin-commandbar {
+  background:#f4f6f8 !important;
+  background-color:#f4f6f8 !important;
+  box-shadow:none !important;
 }

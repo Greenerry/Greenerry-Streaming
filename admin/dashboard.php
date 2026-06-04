@@ -35,7 +35,10 @@ $stats = [
     'produtos_pendentes' => db_one($conn, "SELECT COUNT(*) AS total FROM produto WHERE estado = 'pendente'")['total'] ?? 0,
     'releases_pendentes' => db_one($conn, "SELECT COUNT(*) AS total FROM release_musical WHERE estado = 'pendente'")['total'] ?? 0,
     'mensagens_abertas' => db_one($conn, "SELECT COUNT(*) AS total FROM mensagem_admin WHERE estado = 'aberta'")['total'] ?? 0,
-    'encomendas' => db_one($conn, "SELECT COUNT(*) AS total FROM encomenda")['total'] ?? 0
+    'encomendas' => db_one($conn, "SELECT COUNT(*) AS total FROM encomenda")['total'] ?? 0,
+    'listens' => db_one($conn, "SELECT COUNT(*) AS total FROM faixa_listen")['total'] ?? 0,
+    'listeners' => db_one($conn, "SELECT COUNT(DISTINCT idCliente) AS total FROM faixa_listen WHERE idCliente IS NOT NULL")['total'] ?? 0,
+    'active_artists' => db_one($conn, "SELECT COUNT(DISTINCT idArtista) AS total FROM faixa_listen WHERE criado_em >= DATE_SUB(NOW(), INTERVAL 30 DAY)")['total'] ?? 0
 ];
 $attentionTotal = (int)$stats['produtos_pendentes'] + (int)$stats['releases_pendentes'] + (int)$stats['mensagens_abertas'];
 
@@ -115,7 +118,7 @@ $pendingProducts = db_all(
 
 $pendingReleases = db_all(
     $conn,
-    "SELECT r.idRelease, r.titulo, r.tipo, c.nome AS artista
+    "SELECT r.idRelease, r.titulo, r.tipo, r.capa, c.nome AS artista
      FROM release_musical r
      JOIN cliente c ON c.idCliente = r.idCliente
      WHERE r.estado = 'pendente'
@@ -131,6 +134,54 @@ $openMessages = db_all(
      WHERE m.estado = 'aberta'
      ORDER BY m.criado_em DESC
      LIMIT 5"
+);
+
+$topArtists = db_all(
+    $conn,
+    "SELECT c.idCliente, c.nome, c.foto, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners
+     FROM faixa_listen fl
+     JOIN cliente c ON c.idCliente = fl.idArtista
+     WHERE fl.criado_em >= {$dateFromSql}
+     GROUP BY c.idCliente, c.nome, c.foto
+     ORDER BY listens DESC
+     LIMIT 5"
+);
+
+$musicPerformance = db_all(
+    $conn,
+    "SELECT
+        " . (in_array($range, ['7d', '30d'], true) ? "DATE_FORMAT(criado_em, '%Y-%m-%d')" : "DATE_FORMAT(criado_em, '%Y-%m')") . " AS period_key,
+        " . (in_array($range, ['7d', '30d'], true) ? "DATE_FORMAT(criado_em, '%d/%m')" : "DATE_FORMAT(criado_em, '%m/%Y')") . " AS period_label,
+        COUNT(*) AS listens,
+        COUNT(DISTINCT idCliente) AS listeners
+     FROM faixa_listen
+     WHERE criado_em >= {$dateFromSql}
+     GROUP BY period_key, period_label
+     ORDER BY period_key ASC"
+);
+$maxMusicListens = 0;
+foreach ($musicPerformance as $entry) {
+    $maxMusicListens = max($maxMusicListens, (int)$entry['listens']);
+}
+
+$recentPlatformActivity = db_all(
+    $conn,
+    "SELECT *
+     FROM (
+        SELECT 'release' AS kind, r.titulo AS title, c.nome AS actor, r.estado AS status, r.criado_em AS created_at
+        FROM release_musical r
+        JOIN cliente c ON c.idCliente = r.idCliente
+        UNION ALL
+        SELECT 'product' AS kind, p.nomeProduto AS title, c.nome AS actor, p.estado AS status, p.criado_em AS created_at
+        FROM produto p
+        JOIN cliente c ON c.idCliente = p.idCliente
+        UNION ALL
+        SELECT 'message' AS kind, m.assunto AS title, c.nome AS actor, m.estado AS status, m.criado_em AS created_at
+        FROM mensagem_admin m
+        JOIN cliente c ON c.idCliente = m.idCliente
+     ) activity
+     ORDER BY created_at DESC
+     LIMIT 6"
 );
 
 $chartTipLabels = current_lang() === 'en'
@@ -162,22 +213,22 @@ include 'admin_header.php';
     <a href="reports.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
       <span data-admin-t="stat_paid_revenue">Receita paga</span>
       <strong><?= h(format_eur((float)($finance['total_revenue'] ?? 0))) ?></strong>
-      <small><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?> <span data-admin-t="dash_paid_orders_note">paid orders</span></small>
     </a>
     <a href="#review-queue" class="dash-v4-kpi-link">
       <span data-admin-t="stat_attention">Por rever</span>
       <strong><?= $attentionTotal ?></strong>
-      <small data-admin-t="dash_review_queue_note">Products, releases, messages</small>
     </a>
     <a href="reports.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
       <span data-admin-t="stat_platform_commission">Comissão da plataforma</span>
       <strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong>
-      <small data-admin-t="dash_platform_margin_note">Platform margin</small>
     </a>
     <a href="reports.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
       <span data-admin-t="stat_average_order">Ticket medio</span>
       <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
-      <small data-admin-t="dash_average_order_note">Average paid order</small>
+    </a>
+    <a href="music.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
+      <span data-admin-t="card_music_listens">Reproduções</span>
+      <strong><?= (int)($stats['listens'] ?? 0) ?></strong>
     </a>
   </div>
 
@@ -265,15 +316,86 @@ include 'admin_header.php';
       </div>
     </section>
 
+    <section class="dash-v4-card dash-v4-bars-card admin-music-bars-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_music_listening">Relatório musical</span>
+          <h3><?= (int)($stats['listens'] ?? 0) ?> <span data-admin-t="dash_plays_lower">reproduções</span></h3>
+        </div>
+        <span class="admin-card-note" data-admin-t="<?= h($rangeLabels[$range]['key']) ?>"><?= h($rangeLabels[$range]['label']) ?></span>
+      </div>
+      <?php if (!$musicPerformance): ?>
+        <p data-admin-t="dash_no_listening">Sem atividade de escuta neste período.</p>
+      <?php else: ?>
+        <div class="dash-v4-bars">
+          <?php foreach ($musicPerformance as $entry): ?>
+            <?php $height = $maxMusicListens > 0 ? max(14, (int)round(((int)$entry['listens'] / $maxMusicListens) * 100)) : 14; ?>
+            <div class="admin-chart-tip" data-chart-tip="<?= h($entry['period_label'] . ' | Plays: ' . (int)$entry['listens'] . ' | Listeners: ' . (int)$entry['listeners']) ?>">
+              <span><?= (int)$entry['listens'] ?></span>
+              <i style="height: <?= $height ?>%"></i>
+              <strong><?= h($entry['period_label']) ?></strong>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </section>
+
   </div>
 
   <section class="dash-v4-queue" id="review-queue">
-    <a href="products.php"><span data-admin-t="nav_products">Produtos</span><strong><?= (int)$stats['produtos_pendentes'] ?></strong><small data-admin-t="dash_need_review">precisam de revisão</small></a>
-    <a href="releases.php"><span data-admin-t="nav_releases">Lançamentos</span><strong><?= (int)$stats['releases_pendentes'] ?></strong><small data-admin-t="dash_need_review">precisam de revisão</small></a>
-    <a href="messages.php"><span data-admin-t="nav_messages">Mensagens</span><strong><?= (int)$stats['mensagens_abertas'] ?></strong><small data-admin-t="dash_need_reply">por responder</small></a>
+    <a href="products.php"><span data-admin-t="nav_products">Produtos</span><strong><?= (int)$stats['produtos_pendentes'] ?></strong></a>
+    <a href="releases.php"><span data-admin-t="nav_releases">Lançamentos</span><strong><?= (int)$stats['releases_pendentes'] ?></strong></a>
+    <a href="messages.php"><span data-admin-t="nav_messages">Mensagens</span><strong><?= (int)$stats['mensagens_abertas'] ?></strong></a>
   </section>
 
   <section class="dash-review-grid">
+    <div class="dash-v4-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_listening_leaders">Líderes de escuta</span>
+          <h3><?= count($topArtists) ?></h3>
+        </div>
+        <a href="music.php?range=<?= h($range) ?>" class="admin-card-note" data-admin-t="btn_view_all">Ver tudo</a>
+      </div>
+      <div class="dash-review-list admin-dashboard-ranked-list">
+        <?php if (!$topArtists): ?>
+          <span><small data-admin-t="dash_no_listening">Sem atividade de escuta neste período.</small></span>
+        <?php else: ?>
+          <?php foreach ($topArtists as $index => $artist): ?>
+            <a href="music.php?range=<?= h($range) ?>">
+              <span class="admin-dashboard-media">
+                <span class="admin-dashboard-thumb admin-dashboard-thumb--avatar">
+                  <?php if (!empty($artist['foto'])): ?><img src="<?= h(asset_url('img', $artist['foto'])) ?>" alt=""><?php else: ?><?= h(mb_substr((string)$artist['nome'], 0, 1)) ?><?php endif; ?>
+                </span>
+                <span><strong><?= (int)$index + 1 ?>. <?= h($artist['nome']) ?></strong><small><?= (int)$artist['listens'] ?> <span data-admin-t="dash_plays_lower">reproduções</span> / <?= (int)$artist['listeners'] ?> <span data-admin-t="dash_listeners_lower">ouvintes</span></small></span>
+              </span>
+            </a>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <div class="dash-v4-card">
+      <div class="dash-v4-card-head">
+        <div>
+          <span class="admin-kicker" data-admin-t="dash_activity">Atividade</span>
+          <h3><?= count($recentPlatformActivity) ?></h3>
+        </div>
+      </div>
+      <div class="dash-review-list admin-dashboard-activity-list">
+        <?php if (!$recentPlatformActivity): ?>
+          <span><small data-admin-t="dash_no_recent_activity">Sem atividade recente.</small></span>
+        <?php else: ?>
+          <?php foreach ($recentPlatformActivity as $activity): ?>
+            <span>
+              <strong><?= h($activity['title']) ?></strong>
+              <small><?= h($activity['kind']) ?> / <?= h($activity['actor']) ?> / <?= h($activity['status']) ?></small>
+            </span>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+    </div>
+
     <div class="dash-v4-card">
       <div class="dash-v4-card-head">
         <div>
@@ -287,9 +409,14 @@ include 'admin_header.php';
           <span><small data-admin-t="empty_pending_products">Sem produtos pendentes.</small></span>
         <?php else: ?>
           <?php foreach ($pendingProducts as $product): ?>
+            <?php $productImage = product_main_image($conn, (int)$product['idProduto']); ?>
             <a href="products.php">
-              <strong><?= h($product['nomeProduto']) ?></strong>
-              <small><?= h($product['artista']) ?></small>
+              <span class="admin-dashboard-media">
+                <span class="admin-dashboard-thumb">
+                  <?php if ($productImage): ?><img src="<?= h(asset_url('img', $productImage)) ?>" alt=""><?php else: ?><span><?= h(mb_substr((string)$product['nomeProduto'], 0, 1)) ?></span><?php endif; ?>
+                </span>
+                <span><strong><?= h($product['nomeProduto']) ?></strong><small><?= h($product['artista']) ?></small></span>
+              </span>
             </a>
           <?php endforeach; ?>
         <?php endif; ?>
@@ -310,8 +437,12 @@ include 'admin_header.php';
         <?php else: ?>
           <?php foreach ($pendingReleases as $release): ?>
             <a href="releases.php">
-              <strong><?= h($release['titulo']) ?></strong>
-              <small><?= h($release['artista']) ?></small>
+              <span class="admin-dashboard-media">
+                <span class="admin-dashboard-thumb">
+                  <?php if (!empty($release['capa'])): ?><img src="<?= h(asset_url('img', $release['capa'])) ?>" alt=""><?php else: ?><span><?= h(mb_substr((string)$release['titulo'], 0, 1)) ?></span><?php endif; ?>
+                </span>
+                <span><strong><?= h($release['titulo']) ?></strong><small><?= h($release['artista']) ?></small></span>
+              </span>
             </a>
           <?php endforeach; ?>
         <?php endif; ?>

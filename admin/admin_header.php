@@ -17,6 +17,7 @@ $adminPageLabels = [
     'products.php' => ['key' => 'nav_products', 'label' => 'Produtos'],
     'categories.php' => ['key' => 'nav_categories', 'label' => 'Categorias'],
     'releases.php' => ['key' => 'nav_releases', 'label' => 'Lançamentos'],
+    'music.php' => ['key' => 'nav_music_listening', 'label' => 'Relatório musical'],
     'users.php' => ['key' => 'nav_users', 'label' => 'Utilizadores'],
     'messages.php' => ['key' => 'nav_messages', 'label' => 'Mensagens'],
     'reports.php' => ['key' => 'nav_reports', 'label' => 'Relatórios'],
@@ -69,7 +70,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
 </script>
 <div class="theme-wipe" id="theme-wipe" aria-hidden="true"></div>
 <div class="admin-shell">
-  <button type="button" class="admin-mobile-menu" id="admin-mobile-menu" aria-label="Menu" aria-controls="admin-sidebar" aria-expanded="false">
+  <button type="button" class="admin-mobile-menu" id="admin-mobile-menu" aria-label="Menu" data-admin-taria="menu_label" aria-controls="admin-sidebar" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
   <div class="admin-mobile-overlay" id="admin-mobile-overlay"></div>
@@ -149,6 +150,12 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         <span data-admin-t="nav_reports">Relatórios</span>
       </a>
       <?php endif; ?>
+      <?php if (admin_can('music', $adminAccount)): ?>
+      <a href="music.php" class="<?= $page === 'music.php' ? 'on' : '' ?>">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span data-admin-t="nav_music_listening">Relatório musical</span>
+      </a>
+      <?php endif; ?>
       <?php if (admin_can('maintenance', $adminAccount)): ?>
       <a href="page_maintenance.php" class="<?= $page === 'page_maintenance.php' ? 'on' : '' ?>">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-3-3z"/></svg>
@@ -159,12 +166,6 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
       <a href="admins.php" class="<?= $page === 'admins.php' ? 'on' : '' ?>">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>
         <span data-admin-t="nav_admins">Admins</span>
-      </a>
-      <?php endif; ?>
-      <?php if (admin_can('settings', $adminAccount)): ?>
-      <a href="settings.php" class="<?= $page === 'settings.php' ? 'on' : '' ?>">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.6.99 1 1.6 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
-        <span data-admin-t="nav_settings">Definicoes</span>
       </a>
       <?php endif; ?>
     </div>
@@ -184,10 +185,16 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         <button type="button" data-l="pt">PT</button>
         <button type="button" data-l="en">EN</button>
       </div>
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Theme" title="Theme">
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Theme" title="Theme" data-admin-taria="theme_toggle" data-admin-ttitle="theme_toggle">
         <svg class="theme-toggle-sun" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
         <svg class="theme-toggle-moon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
       </button>
+      <?php if (admin_can('settings', $adminAccount)): ?>
+      <a href="settings.php" class="btn btn-ghost btn-sm admin-settings-top <?= $page === 'settings.php' ? 'on' : '' ?>">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.6.99 1 1.6 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+        <span data-admin-t="nav_settings">Definicoes</span>
+      </a>
+      <?php endif; ?>
       <a href="<?= h($_base) ?>/pages/index.php" target="_blank" class="btn btn-dark btn-sm admin-open-site" data-admin-t="admin_open_site">Ver site</a>
     </div>
   </header>

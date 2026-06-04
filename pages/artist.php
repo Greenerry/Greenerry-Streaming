@@ -458,12 +458,12 @@ include '../includes/header.php';
 
     <?php if ($showShopArea && $totalProducts > 0): ?>
       <div class="page-intro mt8">
-        <span class="slabel" data-t="artist_merch_label">Merch</span>
-        <h2 data-t="artist_merch_title">Merch</h2>
+        <span class="slabel" data-t="artist_merch_label">Products</span>
+        <h2 data-t="artist_merch_title">Products</h2>
       </div>
 
       <nav class="artist-filter-pills" aria-label="Merch filters">
-        <button type="button" class="on" data-artist-filter="merch" data-filter-value="all" data-t="shop_all_categories">Todas as categorias</button>
+        <button type="button" class="on" data-artist-filter="merch" data-filter-value="all" data-t="shop_all_categories">All</button>
         <?php foreach ($artistCategories as $category): ?>
           <button type="button" data-artist-filter="merch" data-filter-value="<?= (int)$category['idCategoria'] ?>" data-product-category="<?= h($category['nomeCategoria']) ?>"><?= h(category_label($category['nomeCategoria'])) ?></button>
         <?php endforeach; ?>

@@ -1,6 +1,9 @@
 let _cur = null;
 let _allTracks = [];
 let _queue = [];
+let _contextTracks = [];
+let _contextIndex = -1;
+let _contextMode = 'global';
 let _shuffle = true;
 
 function _syncPlayerLayoutVisible(visible = !!_cur) {
@@ -42,6 +45,16 @@ function _pickRandomTrack(excluded = []) {
   return source[Math.floor(Math.random() * source.length)];
 }
 
+function playTrackCollection(tracks, startIndex = 0) {
+  const list = Array.isArray(tracks) ? tracks.map(_norm).filter((track) => track?.audio) : [];
+  if (!list.length) return;
+  const index = Math.max(0, Math.min(Number(startIndex) || 0, list.length - 1));
+  const track = list[index];
+  playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, {
+    contextTracks: list
+  });
+}
+
 const QUEUE_DISPLAY_MAX = 5;
 
 function _fillRandomQueue(minItems = QUEUE_DISPLAY_MAX) {
@@ -67,24 +80,31 @@ function _renderQueue() {
   const list = document.getElementById('queue-list');
   if (!list) return;
 
-  _fillRandomQueue(QUEUE_DISPLAY_MAX);
+  if (_contextMode === 'collection' && _contextTracks.length) {
+    _queue = [];
+    for (let offset = 1; offset <= Math.min(QUEUE_DISPLAY_MAX, _contextTracks.length); offset++) {
+      const next = _contextTracks[(_contextIndex + offset) % _contextTracks.length];
+      if (next && !_sameTrack(next, _cur)) _queue.push(next);
+    }
+  } else {
+    _fillRandomQueue(QUEUE_DISPLAY_MAX);
+  }
 
   if (!_queue.length) {
     list.innerHTML = '';
     return;
   }
 
-  list.innerHTML = _queue.slice(0, QUEUE_DISPLAY_MAX).map((track) => {
+  list.innerHTML = _queue.slice(0, QUEUE_DISPLAY_MAX).map((track, index) => {
     const cover = _imgPath(track.cover);
     const title = (track.title || '').replace(/'/g, '&#39;');
     const artist = (track.artist || '').replace(/'/g, '&#39;');
-    const artistPhoto = (track.artistFoto || '').replace(/'/g, '&#39;');
 
-    return `<button type="button" class="qi" onclick="playTrack('${title}','${artist}','${track.cover || ''}','${track.audio || ''}',${track.artistId || 0},'${artistPhoto}',${track.id || 0})">
+    return `<button type="button" class="qi" onclick="_playQueuedTrack(${index})">
       <span class="qi-thumb">${cover ? `<img src="${cover}" alt="" onerror="this.style.display='none'">` : ''}</span>
       <span class="qi-info">
-        <span class="qi-title">${track.title || ''}</span>
-        <span class="qi-sub">${track.artist || ''}</span>
+        <span class="qi-title">${_escapeHtml(track.title || title)}</span>
+        <span class="qi-sub">${_escapeHtml(track.artist || artist)}</span>
       </span>
       <span class="qi-play" aria-hidden="true">
         <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -93,17 +113,40 @@ function _renderQueue() {
   }).join('');
 }
 
+function _playQueuedTrack(index = 0) {
+  const track = _queue[Number(index) || 0];
+  if (!track) return;
+  if (_contextMode === 'collection' && _contextTracks.length) {
+    const contextIndex = _contextTracks.findIndex((item) => _sameTrack(item, track));
+    playTrackCollection(_contextTracks, contextIndex >= 0 ? contextIndex : 0);
+    return;
+  }
+  playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
+}
+
 /* Navigation */
 async function nextTrack() {
   if (!_allTracks.length) await _loadTracks();
-  _fillRandomQueue(1);
-  const track = _queue.shift();
+  let track = null;
+  if (_contextMode === 'collection' && _contextTracks.length) {
+    _contextIndex = (_contextIndex + 1) % _contextTracks.length;
+    track = _contextTracks[_contextIndex];
+  } else {
+    _fillRandomQueue(1);
+    track = _queue.shift();
+  }
   if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
 }
 
 async function prevTrack() {
   if (!_allTracks.length) await _loadTracks();
-  const track = _pickRandomTrack(_cur ? [_cur] : []);
+  let track = null;
+  if (_contextMode === 'collection' && _contextTracks.length) {
+    _contextIndex = (_contextIndex - 1 + _contextTracks.length) % _contextTracks.length;
+    track = _contextTracks[_contextIndex];
+  } else {
+    track = _pickRandomTrack(_cur ? [_cur] : []);
+  }
   if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
 }
 
@@ -111,6 +154,9 @@ async function playReleaseByKey(key) {
   if (!_allTracks.length) await _loadTracks();
   const tracks = _allTracks.filter((track) => track.releaseKey === key);
   if (!tracks.length) return;
+  _contextTracks = [];
+  _contextIndex = -1;
+  _contextMode = 'global';
   _queue = tracks.slice(1);
   _fillRandomQueue(QUEUE_DISPLAY_MAX);
   const track = tracks[0];
@@ -128,7 +174,18 @@ function toggleShuffle() {
 }
 
 /* Right sidebar */
+let _srAnimationTimer = null;
+
+function _markSidebarAnimating() {
+  document.body?.classList.add('sr-animating');
+  window.clearTimeout(_srAnimationTimer);
+  _srAnimationTimer = window.setTimeout(() => {
+    document.body?.classList.remove('sr-animating');
+  }, 280);
+}
+
 function openSr() {
+  _markSidebarAnimating();
   document.getElementById('sr')?.classList.add('open');
   document.querySelector('.main')?.classList.add('sr-open');
   _syncPlayerLayoutVisible(true);
@@ -142,9 +199,11 @@ function openSr() {
 
   const button = document.getElementById('sr-open-btn');
   if (button) button.classList.remove('visible');
+  _saveState();
 }
 
 function closeSr() {
+  _markSidebarAnimating();
   document.getElementById('sr')?.classList.remove('open');
   document.querySelector('.main')?.classList.remove('sr-open');
   document.getElementById('main-nav')?.classList.remove('sr-open');
@@ -152,6 +211,7 @@ function closeSr() {
 
   const button = document.getElementById('sr-open-btn');
   if (button) button.classList.toggle('visible', !!_cur);
+  _saveState();
 }
 
 /* Mobile sidebar */
@@ -183,6 +243,17 @@ async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, m
 
   if (!_allTracks.length) await _loadTracks();
 
+  if (Array.isArray(options.contextTracks) && options.contextTracks.length) {
+    _contextTracks = options.contextTracks.map(_norm).filter((track) => track?.audio);
+    _contextIndex = _contextTracks.findIndex((track) => _sameTrack(track, _cur));
+    if (_contextIndex < 0) _contextIndex = 0;
+    _contextMode = 'collection';
+  } else if (!options.keepQueue) {
+    _contextTracks = [];
+    _contextIndex = -1;
+    _contextMode = 'global';
+  }
+
   if (!options.keepQueue) {
     _queue = [];
   } else {
@@ -198,9 +269,9 @@ async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, m
   if (playerBar) playerBar.style.display = 'flex';
   _syncPlayerLayoutVisible(true);
 
-  _setText('np-track', title);
+  _setPlayerTitle('np-track', title);
   _setText('np-artist', artist);
-  _setText('pb-title', title);
+  _setPlayerTitle('pb-title', title);
   _setText('pb-artist', artist);
 
   _setCover('np-img', 'np-ph', cover);
@@ -378,6 +449,35 @@ function _setText(id, value) {
   if (el) el.textContent = value;
 }
 
+function _setPlayerTitle(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  el.classList.remove('is-marquee');
+  el.style.removeProperty('--marquee-box');
+  el.style.removeProperty('--marquee-duration');
+  el.innerHTML = `<span>${_escapeHtml(String(value || '-'))}</span>`;
+
+  requestAnimationFrame(() => {
+    const span = el.querySelector('span');
+    if (!span) return;
+    const box = Math.max(1, el.clientWidth);
+    if (span.scrollWidth <= box + 4) return;
+    el.style.setProperty('--marquee-box', `${box}px`);
+    el.style.setProperty('--marquee-duration', `${Math.max(10, Math.min(22, span.scrollWidth / 14))}s`);
+    el.classList.add('is-marquee');
+  });
+}
+
+function _escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function _setFill(id, percent) {
   const el = document.getElementById(id);
   if (el) el.style.width = percent + '%';
@@ -408,7 +508,11 @@ function _saveState() {
     currentTime: hasAudio ? (audio.currentTime || 0) : _fakeT,
     duration: hasAudio ? (audio.duration || _fakeDur) : _fakeDur,
     volume: hasAudio ? audio.volume : 0.7,
-    queue: _queue
+    queue: _queue,
+    contextTracks: _contextTracks,
+    contextIndex: _contextIndex,
+    contextMode: _contextMode,
+    srOpen: !!document.getElementById('sr')?.classList.contains('open')
   };
 
   try {

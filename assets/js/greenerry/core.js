@@ -72,6 +72,8 @@ function initThemeToggle() {
 
   document.querySelectorAll('#theme-toggle, [data-theme-toggle]').forEach((button) => {
     button.setAttribute('aria-pressed', current === 'light' ? 'true' : 'false');
+    if (button.dataset.themeReady === '1') return;
+    button.dataset.themeReady = '1';
     button.addEventListener('click', () => {
       const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
       animateThemeSwitch(button);
@@ -135,6 +137,14 @@ function setLang(nextLang) {
 
   document.querySelectorAll('[data-tp]').forEach((el) => {
     if (T[nextLang]?.[el.dataset.tp]) el.placeholder = T[nextLang][el.dataset.tp];
+  });
+
+  document.querySelectorAll('[data-taria]').forEach((el) => {
+    if (T[nextLang]?.[el.dataset.taria]) el.setAttribute('aria-label', T[nextLang][el.dataset.taria]);
+  });
+
+  document.querySelectorAll('[data-ttitle]').forEach((el) => {
+    if (T[nextLang]?.[el.dataset.ttitle]) el.setAttribute('title', T[nextLang][el.dataset.ttitle]);
   });
 
   document.querySelectorAll('[data-lang-pt][data-lang-en]').forEach((el) => {

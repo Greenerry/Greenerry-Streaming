@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
     }
     $rating = (int)($_POST['rating'] ?? 0);
     $comment = trim((string)($_POST['comment'] ?? ''));
+    if (mb_strlen($comment) > 180) {
+        $comment = rtrim(mb_substr($comment, 0, 177)) . '...';
+    }
     $eligibleOrder = null;
 
     if (!$reviewErr && ($rating < 1 || $rating > 5)) {
@@ -57,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
              WHERE e.idCliente = ?
                AND ei.idProduto = ?
                AND e.estado_pagamento = 'pago'
-               AND ei.estado_item IN ('enviado', 'entregue')
+               AND e.estado_encomenda = 'entregue'
+               AND ei.estado_item = 'entregue'
              ORDER BY e.criado_em DESC
              LIMIT 1",
             'ii',
@@ -149,7 +153,8 @@ if ($viewerId > 0 && !$isOwnProduct) {
          WHERE e.idCliente = ?
            AND ei.idProduto = ?
            AND e.estado_pagamento = 'pago'
-           AND ei.estado_item IN ('enviado', 'entregue')
+           AND e.estado_encomenda = 'entregue'
+           AND ei.estado_item = 'entregue'
            AND pr.idReview IS NULL
          LIMIT 1",
         'ii',
@@ -218,7 +223,7 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
         <div class="card-body">
           <span class="badge badge-dark" data-product-category="<?= h($product['nomeCategoria']) ?>"><?= h(category_label($product['nomeCategoria'])) ?></span>
           <h1 class="product-title"><?= h($product['nomeProduto']) ?></h1>
-          <p class="product-copy"><span data-t="product_official_merch">Merch oficial do artista</span> <a href="artist.php?id=<?= (int)$product['artist_id'] ?>" class="auth-link"><?= h($product['artista_nome']) ?></a>.</p>
+          <p class="product-copy"><span data-t="product_official_merch">Official artist product</span> <a href="artist.php?id=<?= (int)$product['artist_id'] ?>" class="auth-link"><?= h($product['artista_nome']) ?></a>.</p>
 
           <div class="product-price-row">
             <strong><?= h(format_eur((float)$product['precoAtual'])) ?></strong>
@@ -257,13 +262,13 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
             <?php endif; ?>
 
             <div class="product-buy-row">
-              <div class="qty-picker <?= $isOwnProduct ? 'qty-picker--disabled' : '' ?>">
+              <div class="qty-picker product-qty-picker <?= $isOwnProduct ? 'qty-picker--disabled' : '' ?>">
                 <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(-1, this)" <?= $isOwnProduct ? 'disabled' : '' ?>>-</button>
                 <span class="product-qty">1</span>
                 <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(1, this)" <?= $isOwnProduct ? 'disabled' : '' ?>>+</button>
               </div>
 
-              <button type="button" class="btn btn-dark" id="product-add-btn" onclick="handleProductAddToCart()" <?= $isOwnProduct ? 'disabled aria-disabled="true"' : '' ?>>
+              <button type="button" class="btn btn-dark product-add-btn" id="product-add-btn" onclick="handleProductAddToCart()" <?= $isOwnProduct ? 'disabled aria-disabled="true"' : '' ?>>
                 <span data-t="<?= $isOwnProduct ? 'product_own' : 'product_add_to_cart' ?>"><?= $isOwnProduct ? 'Produto teu' : 'Adicionar ao carrinho' ?></span>
               </button>
             </div>
@@ -284,7 +289,7 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
       </div>
     </div>
 
-    <section class="product-reviews-section">
+    <section class="product-reviews-section" id="product-reviews">
       <div class="page-intro mt8">
         <span class="slabel" data-t="product_reviews_label">Avaliações</span>
         <h2 data-t="product_reviews_title">Reviews do produto</h2>
@@ -314,7 +319,7 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
               </div>
               <div class="fg">
                 <label class="flabel" for="comment" data-t="product_review_comment">Comentário</label>
-                <textarea id="comment" name="comment" class="finput" maxlength="1200" data-tp="product_review_placeholder" placeholder="Partilha a tua opinião sobre o produto"></textarea>
+                <textarea id="comment" name="comment" class="finput" maxlength="180" data-tp="product_review_placeholder" placeholder="Partilha a tua opinião sobre o produto"></textarea>
               </div>
             </div>
             <button type="submit" name="submit_review" value="1" class="btn btn-dark" data-t="product_review_submit">Publicar review</button>
@@ -353,7 +358,7 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
 
     <?php if ($relatedProducts): ?>
       <div class="page-intro mt8">
-        <span class="slabel" data-t="product_more_merch">Mais merch</span>
+        <span class="slabel" data-t="product_more_merch">More products</span>
         <h2 data-t="product_related">Produtos relacionados</h2>
       </div>
 

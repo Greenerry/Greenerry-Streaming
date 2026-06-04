@@ -177,9 +177,9 @@ foreach ($featuredProducts as $product) {
     $addHomeMedia($homeStoreCloud, asset_url('img', $productImage), (string)$product['nomeProduto'], 'store');
 }
 $homeMediaCloud = array_values(array_merge(
-    array_slice($homeMusicCloud, 0, 8),
-    array_slice($homeArtistCloud, 0, 8),
-    array_slice($homeStoreCloud, 0, 8)
+    array_slice($homeMusicCloud, 0, 14),
+    array_slice($homeArtistCloud, 0, 14),
+    array_slice($homeStoreCloud, 0, 14)
 ));
 $homeMusicCloud = array_values(array_slice($homeMusicCloud, 0, 18));
 $homeArtistCloud = array_values(array_slice($homeArtistCloud, 0, 18));
@@ -201,11 +201,10 @@ include '../includes/header.php';
           <div class="home-hero-grid">
             <div class="home-hero-copy home-hero-copy--fresh home-hero-copy--editorial">
               <div class="home-hero-stack">
-                <h1 data-t="home_title">Uma plataforma independente para música e merch.</h1>
-                <p data-t="home_intro">Ouve lançamentos, descobre artistas e compra merch oficial.</p>
+                <h1 data-t="home_title">Uma plataforma independente para musica e produtos de artistas.</h1>
                 <div class="hero-actions">
                   <?php if ($showMusicArea): ?><a href="music.php" class="btn btn-dark btn-lg" data-t="home_cta_music">Explore music</a><?php endif; ?>
-                  <?php if ($showShopArea): ?><a href="shop.php" class="btn btn-outline btn-lg" data-t="home_cta_shop">Shop merch</a><?php endif; ?>
+                  <?php if ($showShopArea): ?><a href="shop.php" class="btn btn-outline btn-lg" data-t="home_cta_shop">Shop products</a><?php endif; ?>
                 </div>
               </div>
 
@@ -220,7 +219,7 @@ include '../includes/header.php';
                 </div><?php endif; ?>
                 <?php if ($showShopArea): ?><div class="home-hero-stat">
                   <strong><?= $homeStats['products'] ?></strong>
-                  <span data-t="home_stat_merch">Merch products</span>
+                  <span data-t="home_stat_merch">Artist products</span>
                 </div><?php endif; ?>
               </div>
             </div>
@@ -299,8 +298,8 @@ include '../includes/header.php';
           <div class="hero-visual-cloud" data-media-cloud='<?= h(json_encode($homeMediaCloud, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?>' aria-hidden="true"></div>
           <div class="hero-visual-head">
             <div>
-              <span class="auth-kicker" data-t="home_visual_label">Greenerry visual mode</span>
-              <h2 data-t="home_visual_title">Pick a world to float through.</h2>
+              <span class="auth-kicker" data-t="home_visual_label">Greenerry moodboard</span>
+              <h2 data-t="home_visual_title">Today's board.</h2>
             </div>
             <button type="button" class="hero-flip-logo hero-flip-logo--back" data-hero-unflip aria-label="Flip back to hero">
               <span aria-hidden="true"></span>
@@ -412,8 +411,8 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="section-band">
       <div class="page-intro">
-        <span class="slabel" data-t="home_merch_label">Merch</span>
-        <h2 data-t="home_merch_title">Selected merch</h2>
+        <span class="slabel" data-t="home_merch_label">Products</span>
+        <h2 data-t="home_merch_title">Selected artist products</h2>
       </div>
       <a href="shop.php" class="btn btn-ghost btn-sm" data-t="home_merch_cta">Visit store</a>
     </div>

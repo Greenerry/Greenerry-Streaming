@@ -12,6 +12,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reason = trim($_POST['reason'] ?? '');
     $reasonSafe = db_escape($conn, $reason);
 
+    if ($feedback === '' && $releaseId > 0 && $action === 'guardar') {
+        $title = trim((string)($_POST['titulo'] ?? ''));
+        $type = (string)($_POST['tipo'] ?? 'Single');
+        $releaseDate = (string)($_POST['data_lancamento'] ?? '');
+        $description = trim((string)($_POST['descricao'] ?? ''));
+        $state = (string)($_POST['estado'] ?? 'pendente');
+        $allowedReleaseStates = ['pendente', 'aprovado', 'rejeitado', 'inativo'];
+        if ($title === '' || !in_array($type, ['Single', 'EP', 'Album'], true) || !in_array($state, $allowedReleaseStates, true)) {
+            $feedback = tr('error.api_invalid_request');
+        } else {
+            $titleSafe = db_escape($conn, $title);
+            $typeSafe = db_escape($conn, $type);
+            $dateSafe = db_escape($conn, $releaseDate);
+            $descriptionSafe = db_escape($conn, $description);
+            $stateSafe = db_escape($conn, $state);
+            $active = $state === 'aprovado' ? 1 : 0;
+            $trackStateMap = [
+                'pendente' => 'pendente',
+                'aprovado' => 'aprovada',
+                'rejeitado' => 'rejeitada',
+                'inativo' => 'inativa',
+            ];
+            $trackStateSafe = db_escape($conn, $trackStateMap[$state] ?? 'pendente');
+            $releaseMedia = db_one($conn, "SELECT capa FROM release_musical WHERE idRelease = {$releaseId} LIMIT 1");
+            $cover = (string)($releaseMedia['capa'] ?? '');
+            if (isset($_FILES['capa']) && ($_FILES['capa']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $coverError = validate_uploaded_image($_FILES['capa']);
+                if ($coverError) {
+                    $feedback = $coverError;
+                } else {
+                    [$savedCover, $saveErr] = save_uploaded_file($_FILES['capa'], 'img', 'release_admin_' . $releaseId, ['jpg', 'jpeg', 'png', 'webp'], GREENERRY_MAX_IMAGE_BYTES);
+                    if ($saveErr) {
+                        $feedback = $saveErr;
+                    } else {
+                        $cover = $savedCover;
+                    }
+                }
+            }
+            $trackTitles = $_POST['track_title'] ?? [];
+            $trackGenres = $_POST['track_genre'] ?? [];
+            $trackFiles = $_FILES['track_audio'] ?? null;
+            if ($feedback === '' && is_array($trackTitles)) {
+                foreach ($trackTitles as $trackIdRaw => $trackTitleRaw) {
+                    $trackId = (int)$trackIdRaw;
+                    $trackTitle = trim((string)$trackTitleRaw);
+                    $trackGenre = trim((string)($trackGenres[$trackIdRaw] ?? ''));
+                    if ($trackId <= 0 || $trackTitle === '') continue;
+                    $audioSql = '';
+                    if ($trackFiles && !empty($trackFiles['name'][$trackIdRaw])) {
+                        $file = [
+                            'name' => $trackFiles['name'][$trackIdRaw],
+                            'type' => $trackFiles['type'][$trackIdRaw] ?? '',
+                            'tmp_name' => $trackFiles['tmp_name'][$trackIdRaw] ?? '',
+                            'error' => $trackFiles['error'][$trackIdRaw] ?? UPLOAD_ERR_NO_FILE,
+                            'size' => $trackFiles['size'][$trackIdRaw] ?? 0,
+                        ];
+                        $audioError = validate_uploaded_audio($file);
+                        if ($audioError) {
+                            $feedback = $audioError;
+                            break;
+                        }
+                        [$audioName, $saveErr] = save_uploaded_file($file, 'audio', 'track_admin_' . $releaseId . '_' . $trackId, ['mp3', 'wav', 'ogg', 'flac', 'm4a'], GREENERRY_MAX_AUDIO_BYTES);
+                        if ($saveErr) {
+                            $feedback = $saveErr;
+                            break;
+                        }
+                        $audioSql = ", ficheiro_audio = '" . db_escape($conn, $audioName) . "'";
+                    }
+                    mysqli_query(
+                        $conn,
+                        "UPDATE faixa
+                         SET titulo = '" . db_escape($conn, $trackTitle) . "',
+                             genero = '" . db_escape($conn, $trackGenre) . "'{$audioSql}
+                         WHERE idFaixa = {$trackId} AND idRelease = {$releaseId}"
+                    );
+                }
+            }
+        }
+
+        if ($feedback === '') {
+            mysqli_query(
+                $conn,
+                "UPDATE release_musical
+                 SET titulo = '{$titleSafe}',
+                     tipo = '{$typeSafe}',
+                     data_lancamento = " . ($dateSafe !== '' ? "'{$dateSafe}'" : "NULL") . ",
+                     descricao = '{$descriptionSafe}',
+                     capa = '" . db_escape($conn, $cover) . "',
+                     estado = '{$stateSafe}',
+                     ativo = {$active}
+                 WHERE idRelease = {$releaseId}"
+            );
+            mysqli_query($conn, "UPDATE faixa SET estado = '{$trackStateSafe}', ativo = {$active} WHERE idRelease = {$releaseId}");
+            $feedback = tr('success.release_updated');
+        }
+    }
+
     if ($feedback === '' && $releaseId > 0 && in_array($action, ['aprovar', 'rejeitar', 'inativar', 'reativar'], true)) {
         $releaseActionRow = db_one($conn, "SELECT estado FROM release_musical WHERE idRelease = {$releaseId} LIMIT 1");
         $currentReleaseState = (string)($releaseActionRow['estado'] ?? '');
@@ -92,7 +189,7 @@ if ($combinedReleases) {
     $releaseIds = implode(',', array_unique(array_map(static fn($release) => (int)$release['idRelease'], $combinedReleases)));
     $trackRows = db_all(
         $conn,
-        "SELECT idRelease, numero_faixa, titulo, ficheiro_audio
+        "SELECT idFaixa, idRelease, numero_faixa, titulo, genero, ficheiro_audio
          FROM faixa
          WHERE idRelease IN ({$releaseIds})
          ORDER BY idRelease, numero_faixa"
@@ -255,13 +352,13 @@ include 'admin_header.php';
           <tr>
             <th>ID</th>
             <th data-admin-t="products_image">Capa</th>
-            <th>Título</th>
-            <th>Artista</th>
-            <th>Tipo</th>
-            <th>Faixas</th>
+            <th data-admin-t="label_title">Titulo</th>
+            <th data-admin-t="label_artist">Artista</th>
+            <th data-admin-t="profile_table_type">Tipo</th>
+            <th data-admin-t="label_tracks">Faixas</th>
             <th class="col-audio" data-admin-t="releases_audio">Audio</th>
-            <th>Estado</th>
-            <th>Acao</th>
+            <th data-admin-t="categories_state">Estado</th>
+            <th data-admin-t="orders_action">Acao</th>
           </tr>
         </thead>
         <tbody>
@@ -314,19 +411,67 @@ include 'admin_header.php';
               </td>
               <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
               <td>
+                <div class="admin-row-actions">
+                <details class="admin-inline-editor">
+                  <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
+                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data">
+                    <?= csrf_input() ?>
+                    <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
+                    <label><span data-admin-t="label_title">Titulo</span><input name="titulo" class="finput" value="<?= h($release['titulo']) ?>" required></label>
+                    <div class="admin-inline-edit-pair">
+                      <label><span data-admin-t="profile_table_type">Tipo</span><select name="tipo" class="finput">
+                        <?php foreach (['Single', 'EP', 'Album'] as $type): ?>
+                          <option value="<?= h($type) ?>" <?= $type === (string)$release['tipo'] ? 'selected' : '' ?>><?= h(release_type_label($type)) ?></option>
+                        <?php endforeach; ?>
+                      </select></label>
+                      <label><span data-admin-t="label_release_date">Lancamento</span><input type="date" name="data_lancamento" class="finput" value="<?= h((string)($release['data_lancamento'] ?? '')) ?>"></label>
+                    </div>
+                    <label><span data-admin-t="label_description">Descricao</span><textarea name="descricao" class="finput"><?= h($release['descricao'] ?? '') ?></textarea></label>
+                    <label><span data-admin-t="categories_state">Estado</span><select name="estado" class="finput">
+                      <?php foreach (['pendente', 'aprovado', 'rejeitado', 'inativo'] as $state): ?>
+                        <option value="<?= h($state) ?>" <?= $state === (string)$release['estado'] ? 'selected' : '' ?>><?= h(order_status_label($state)) ?></option>
+                      <?php endforeach; ?>
+                    </select></label>
+                    <div>
+                      <span class="admin-modal-label" data-admin-t="products_image">Capa</span>
+                      <div class="admin-inline-media-grid">
+                        <?php if (!empty($release['capa'])): ?>
+                          <span class="admin-inline-media-item"><img src="../assets/img/<?= h($release['capa']) ?>" alt=""></span>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                    <label><span data-admin-t="btn_replace_cover">Substituir capa</span><input type="file" name="capa" class="finput" accept=".jpg,.jpeg,.png,.webp"></label>
+                    <?php if (!empty($releaseTracks[(int)$release['idRelease']])): ?>
+                      <div class="admin-track-edit-list">
+                        <span class="admin-modal-label" data-admin-t="releases_tracks">Faixas</span>
+                        <?php foreach ($releaseTracks[(int)$release['idRelease']] as $track): ?>
+                          <div class="admin-track-edit-row">
+                            <label><span data-admin-t="label_title">Titulo</span><input name="track_title[<?= (int)$track['idFaixa'] ?>]" class="finput" value="<?= h($track['titulo']) ?>"></label>
+                            <label><span data-admin-t="label_genre">Genero</span><input name="track_genre[<?= (int)$track['idFaixa'] ?>]" class="finput" value="<?= h($track['genero'] ?? '') ?>"></label>
+                            <label><span data-admin-t="btn_replace_audio">Substituir audio</span><input type="file" name="track_audio[<?= (int)$track['idFaixa'] ?>]" class="finput" accept=".mp3,.wav,.ogg,.flac,.m4a,.mp4"></label>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php endif; ?>
+                    <div class="admin-action-buttons">
+                      <button type="submit" name="action" value="guardar" class="btn btn-dark btn-sm" data-admin-t="btn_save_changes">Guardar alteracoes</button>
+                    </div>
+                  </form>
+                </details>
                 <form method="post">
                   <?= csrf_input() ?>
                   <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
                   <?php if ($release['estado'] === 'aprovado' && (int)$release['ativo'] === 1): ?>
-                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-confirm="Inativar este lançamento?" data-admin-t="btn_deactivate">Inativar</button>
+                    <button type="submit" name="action" value="inativar" class="btn btn-ghost btn-sm" data-confirm="Inativar este lancamento?" data-admin-t="btn_deactivate">Inativar</button>
                   <?php elseif ($release['estado'] !== 'pendente' && $release['estado'] !== 'rejeitado'): ?>
                     <button type="submit" name="action" value="reativar" class="btn btn-ghost btn-sm" data-admin-t="btn_reactivate">Reativar</button>
                   <?php elseif ($release['estado'] === 'rejeitado'): ?>
                     <span class="color-text3" data-admin-t="state_rejected">Rejeitado</span>
                   <?php else: ?>
-                    <span class="color-text3" data-admin-t="state_in_review">Em revisão</span>
+                    <span class="color-text3" data-admin-t="state_in_review">Em revisao</span>
                   <?php endif; ?>
                 </form>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>

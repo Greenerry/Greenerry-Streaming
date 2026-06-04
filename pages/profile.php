@@ -228,7 +228,7 @@ include '../includes/header.php';
       <button class="tab <?= $activeTab === 'edit' ? 'on' : '' ?>" data-tab="edit" data-t="profile_tab_profile">Perfil</button>
       <button class="tab <?= $activeTab === 'orders' ? 'on' : '' ?>" data-tab="orders" data-t="profile_tab_orders">Compras</button>
       <button class="tab <?= $activeTab === 'music' ? 'on' : '' ?>" data-tab="music" data-t="profile_tab_releases">Lançamentos</button>
-      <button class="tab <?= $activeTab === 'merch' ? 'on' : '' ?>" data-tab="merch" data-t="profile_tab_merch">Merch</button>
+      <button class="tab <?= $activeTab === 'merch' ? 'on' : '' ?>" data-tab="merch" data-t="profile_tab_merch">Products</button>
     </div>
 
     <?php if ($err): ?>
@@ -450,7 +450,7 @@ include '../includes/header.php';
           </div>
 
           <?php if (!$products): ?>
-            <p data-t="profile_products_empty">Ainda não submeteste merch.</p>
+            <p data-t="profile_products_empty">You have not submitted products yet.</p>
           <?php else: ?>
             <div class="tbl-wrap">
               <table>

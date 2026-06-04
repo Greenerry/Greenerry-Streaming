@@ -232,8 +232,7 @@ include '../includes/header.php';
   <div class="wrap-sm">
     <div class="submission-hero submission-hero--merch hero-card--single">
       <div class="submission-hero-copy">
-        <span class="slabel" data-t="upload_merch_label">Merch</span>
-        <h2><?= $editProduct ? (current_lang() === 'en' ? 'Edit product.' : 'Editar produto.') : '<span data-t="upload_merch_title">Novo produto.</span>' ?></h2>
+        <h2><?= $editProduct ? '<span data-t="upload_merch_edit_title">Editar produto.</span>' : '<span data-t="upload_merch_title">Novo produto.</span>' ?></h2>
       </div>
     </div>
 
@@ -296,7 +295,7 @@ include '../includes/header.php';
                     <div class="edit-media-gallery-item">
                       <img src="<?= h(asset_url('img', $image)) ?>" alt="<?= h($editProduct['nomeProduto']) ?>">
                       <input type="hidden" name="existing_images[]" value="<?= h($image) ?>">
-                      <button type="button" class="merch-image-preview-remove" data-remove-existing-image aria-label="<?= h(current_lang() === 'en' ? 'Remove image' : 'Remover imagem') ?>">X</button>
+                      <button type="button" class="merch-image-preview-remove" data-remove-existing-image data-taria="artist_remove_image" aria-label="<?= h(current_lang() === 'en' ? 'Remove image' : 'Remover imagem') ?>">X</button>
                     </div>
                   <?php endforeach; ?>
                   <span data-t="upload_merch_current_images">Imagens atuais</span>
@@ -337,7 +336,7 @@ include '../includes/header.php';
               <?php endforeach; ?>
             </div>
 
-            <button type="submit" class="btn btn-dark"><?= $editProduct ? (current_lang() === 'en' ? 'Save and send for review' : 'Guardar e enviar para revis„o') : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
+            <button type="submit" class="btn btn-dark"><?= $editProduct ? '<span data-t="upload_merch_save_review">Guardar e enviar para revis√£o</span>' : '<span data-t="upload_merch_submit">Enviar produto</span>' ?></button>
             <?php if ($editProduct): ?>
               <a href="profile.php?tab=merch" class="btn btn-ghost"><?= current_lang() === 'en' ? 'Back to profile' : 'Voltar ao perfil' ?></a>
             <?php endif; ?>

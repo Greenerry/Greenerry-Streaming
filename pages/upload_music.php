@@ -271,7 +271,6 @@ include '../includes/header.php';
   <div class="wrap-sm">
     <div class="submission-hero submission-hero--music hero-card--single">
       <div class="submission-hero-copy">
-        <span class="slabel" data-t="upload_music_label">Submissao</span>
         <h2><?= $editRelease ? '<span data-t="upload_music_edit_title">Editar lançamento.</span>' : '<span data-t="upload_music_title">Novo lançamento.</span>' ?></h2>
       </div>
     </div>
@@ -372,7 +371,7 @@ include '../includes/header.php';
             <button type="button" class="btn btn-ghost" id="add-track" data-t="upload_music_add_track">Adicionar faixa</button>
           </div>
 
-          <button type="submit" class="btn btn-dark btn-full"><?= $editRelease ? '<span data-t="upload_music_save_review">Guardar e enviar para revisão</span>' : '<span data-t="upload_music_submit">Enviar para aprovacao</span>' ?></button>
+          <button type="submit" class="btn btn-dark btn-full"><?= $editRelease ? '<span data-t="upload_music_save_review">Guardar e enviar para revisão</span>' : '<span data-t="upload_music_submit">Enviar para aprova??o</span>' ?></button>
           <datalist id="genre-suggestions">
             <?php foreach ($genreSuggestions as $genreSuggestion): ?>
               <option value="<?= h($genreSuggestion) ?>"></option>

@@ -204,12 +204,10 @@ foreach ($orders as $orderRow) {
 include '../includes/header.php';
 ?>
 
-<section class="content-shell">
+<section class="content-shell artist-animate orders-artist-page">
   <div class="wrap">
     <div class="page-intro">
-      <span class="slabel" data-t="orders_label">Pedidos</span>
-      <h2 data-t="orders_title">Encomendas do teu merch</h2>
-      <p data-t="orders_intro">Acompanha o estado das encomendas e marca o progresso de cada pedido.</p>
+      <h2 data-t="orders_title">Orders for your products</h2>
     </div>
 
     <?php if ($feedback): ?>
@@ -241,7 +239,7 @@ include '../includes/header.php';
             <span class="orders-filter-count"><?= (int)$orderCounts['pendente'] ?></span>
           </button>
           <button type="button" data-order-filter="em_preparacao">
-            <span data-t="orders_action_prepare">Em preparacao</span>
+            <span data-t="orders_action_prepare">Em prepara??o</span>
             <span class="orders-filter-count"><?= (int)$orderCounts['em_preparacao'] ?></span>
           </button>
           <button type="button" data-order-filter="enviada">
@@ -390,7 +388,7 @@ include '../includes/header.php';
                   <form method="post" class="order-actions-form">
                     <?= csrf_input() ?>
                     <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                    <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm" data-t="orders_action_prepare">Em preparacao</button>
+                    <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm" data-t="orders_action_prepare">Em prepara??o</button>
                     <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm" data-t="orders_action_ship">Marcar enviada</button>
                     <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm" data-t="orders_action_deliver">Marcar entregue</button>
                     <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm" data-t="orders_action_cancel">Cancelar itens</button>
