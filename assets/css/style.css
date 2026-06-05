@@ -10853,3 +10853,137 @@ body.sr-animating .player-bar {
     z-index:750;
   }
 }
+
+/* Final PAP phone catalog fix: prevent clipped cards and oversized hero gaps. */
+@media (max-width:768px) {
+  html,
+  body {
+    max-width:100%;
+    overflow-x:hidden;
+  }
+
+  .content-shell--catalog-cloud,
+  .content-shell--music-page-cloud {
+    padding-top:22px !important;
+    padding-bottom:calc(var(--player-h) + 32px) !important;
+  }
+
+  .section-media-cloud--catalog {
+    display:none !important;
+  }
+
+  .catalog-hero,
+  .catalog-hero--shop,
+  .content-shell--music-page-cloud .catalog-hero {
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:24px !important;
+    margin-bottom:18px !important;
+    min-height:0 !important;
+    padding:0 !important;
+  }
+
+  .catalog-hero h1,
+  .catalog-hero--shop h1,
+  .content-shell--music-page-cloud .catalog-hero h1 {
+    max-width:9.5ch !important;
+    margin:0 !important;
+    white-space:normal !important;
+    font-size:clamp(2.15rem, 11vw, 2.9rem) !important;
+    line-height:1.02 !important;
+    letter-spacing:0 !important;
+  }
+
+  .catalog-filter,
+  .catalog-filter--single,
+  .catalog-hero--shop .catalog-filter,
+  .content-shell--music-page-cloud .catalog-filter {
+    width:100% !important;
+    max-width:none !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    padding:0 !important;
+    margin:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+
+  .catalog-search-field,
+  .catalog-filter .finput,
+  .catalog-filter input.finput,
+  .catalog-filter select.finput {
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+
+  .music-catalog-grid,
+  .shop-catalog-grid,
+  .artist-grid-panels {
+    width:100% !important;
+    max-width:100% !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:16px !important;
+    overflow:visible !important;
+  }
+
+  .music-catalog-grid .mcard,
+  .shop-catalog-grid .mcard,
+  .artist-panel {
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+  }
+
+  .music-catalog-grid .mcard .cover,
+  .shop-catalog-grid .mcard .cover {
+    aspect-ratio:1 / 1 !important;
+    height:auto !important;
+    max-height:none !important;
+    border-radius:18px !important;
+  }
+
+  .artist-panel {
+    min-height:250px !important;
+    border-radius:20px !important;
+  }
+
+  .artist-panel-body {
+    padding:18px !important;
+  }
+
+  .player-bar {
+    min-width:0 !important;
+    padding:8px 10px !important;
+    gap:8px !important;
+  }
+
+  .pb-left {
+    width:126px !important;
+    min-width:0 !important;
+    gap:8px !important;
+  }
+
+  .pb-title,
+  .pb-artist {
+    max-width:78px !important;
+  }
+
+  .pb-center {
+    min-width:0 !important;
+    padding:0 !important;
+    gap:6px !important;
+  }
+
+  .pb-ctrls {
+    gap:10px !important;
+  }
+
+  .pb-btn {
+    flex:0 0 auto !important;
+  }
+}
