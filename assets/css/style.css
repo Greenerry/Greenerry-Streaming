@@ -10926,8 +10926,8 @@ body.sr-animating .player-bar {
     width:100% !important;
     max-width:100% !important;
     display:grid !important;
-    grid-template-columns:1fr !important;
-    gap:16px !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:16px 12px !important;
     overflow:visible !important;
   }
 
@@ -10948,12 +10948,39 @@ body.sr-animating .player-bar {
   }
 
   .artist-panel {
-    min-height:250px !important;
-    border-radius:20px !important;
+    min-height:190px !important;
+    border-radius:18px !important;
   }
 
   .artist-panel-body {
-    padding:18px !important;
+    gap:8px !important;
+    padding:14px !important;
+  }
+
+  .artist-panel-avatar {
+    width:50px !important;
+    height:50px !important;
+  }
+
+  .artist-panel h3 {
+    font-size:.98rem !important;
+    line-height:1.12 !important;
+  }
+
+  .artist-panel-stats {
+    gap:6px !important;
+    font-size:.68rem !important;
+  }
+
+  .music-catalog-grid .mcard h4,
+  .shop-catalog-grid .mcard h4 {
+    font-size:.88rem !important;
+    line-height:1.18 !important;
+  }
+
+  .music-catalog-grid .mcard .meta,
+  .shop-catalog-grid .mcard .meta {
+    padding:8px 4px 0 !important;
   }
 
   .player-bar {
