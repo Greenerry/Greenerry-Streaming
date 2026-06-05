@@ -909,7 +909,7 @@
       scope.appendChild(empty);
     }
 
-    const items = Array.from(scope.querySelectorAll('tbody tr, .admin-card-list > *, .curator-option-grid > *, .simple-list > *, .admin-size-row, .admin-bar-row, .dash-review-list > *, .admin-music-leaders > *'));
+    const items = Array.from(scope.querySelectorAll('tbody tr, .admin-card-list > *, .admin-order-stack > *, .curator-option-grid > *, .simple-list > *, .admin-size-row, .admin-bar-row, .dash-review-list > *, .admin-music-leaders > *'));
     const needle = normalizeAdminSearchText(input.value.trim());
     const activeStatValue = input.dataset.activeFilter || '';
     const hasActiveFilter = activeStatValue !== '' || filters.some((filter) => (filter.value || '') !== '');

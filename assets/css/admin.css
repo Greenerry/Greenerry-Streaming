@@ -7474,6 +7474,23 @@ html body:has(.admin-shell) .admin-donut-legend > div:nth-child(3) em { color:va
 html body:has(.admin-shell) .admin-donut-legend > div:nth-child(4) strong,
 html body:has(.admin-shell) .admin-donut-legend > div:nth-child(4) em { color:var(--admin-report-blocked) !important; }
 
+/* PAP admin usability: keep long admin pages scrollable and product review cards readable. */
+html body:has(.admin-shell) .admin-main-scroll,
+html body:has(.admin-shell) .admin-main-scroll.is-scrollable {
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+}
+
+html body:has(.admin-shell) #products-search > section:first-child .admin-card-list {
+  grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 980px) {
+  html body:has(.admin-shell) #products-search > section:first-child .admin-card-list {
+    grid-template-columns:1fr !important;
+  }
+}
+
 html body:has(.admin-shell) .admin-donut-legend > div:nth-child(1) strong,
 html body:has(.admin-shell) .admin-donut-legend > div:nth-child(1) em { color:var(--admin-report-paid) !important; }
 html body:has(.admin-shell) .admin-donut-legend > div:nth-child(2) strong,
