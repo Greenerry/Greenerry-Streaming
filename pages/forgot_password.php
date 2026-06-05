@@ -17,11 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ((string)($user['estado'] ?? '') !== 'ativo') {
             $err = tr('error.account_inactive');
         } else {
-            $token = create_password_reset($conn, (int)$user['idCliente']);
-            if (!$token) {
+            $code = create_password_reset($conn, (int)$user['idCliente']);
+            if (!$code) {
                 $err = tr('error.reset_request_save');
             } else {
-                $user['reset_token'] = $token;
+                $user['reset_code'] = $code;
                 if (!send_reset_request_email($user)) {
                     $err = tr('error.reset_request_save');
                 }
@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$err) {
-            $ok = tr('success.reset_request');
-            $emailValue = '';
+            header('Location: reset_password.php?email=' . urlencode($emailValue) . '&sent=1');
+            exit;
         }
     }
 }
@@ -44,7 +44,7 @@ include '../includes/header.php';
       <div class="auth-card-head">
         <span class="slabel" data-t="forgot_label">Recuperacao</span>
         <h2 data-t="forgot_title">Recuperar acesso</h2>
-        <p data-t="forgot_intro">Envia o teu email e recebe um link seguro para mudares a palavra-passe.</p>
+        <p data-t="forgot_intro">Envia o teu email e recebe um código para mudares a palavra-passe.</p>
       </div>
 
       <?php if ($err): ?>
@@ -62,7 +62,7 @@ include '../includes/header.php';
           <input id="email" type="email" name="email" class="finput" required maxlength="150" autocomplete="email" value="<?= h($emailValue) ?>">
         </div>
 
-        <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="forgot_submit">Enviar link</button>
+        <button type="submit" class="btn btn-dark btn-full btn-lg" data-t="forgot_submit">Enviar código</button>
       </form>
 
       <p class="auth-foot-note auth-foot-note--center">

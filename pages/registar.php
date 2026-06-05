@@ -39,11 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newUser = db_one_prepared($conn, "SELECT * FROM cliente WHERE idCliente = ? LIMIT 1", 'i', [$newUserId]);
 
                 if ($newUser) {
-                    $token = create_email_verification($conn, $newUserId);
-                    if ($token && send_email_verification($newUser, $token)) {
-                        $ok = tr('success.account_created');
-                        $nomeValue = '';
-                        $emailValue = '';
+                    $code = create_email_verification($conn, $newUserId);
+                    if ($code && send_email_verification($newUser, $code)) {
+                        header('Location: verify_email.php?email=' . urlencode($emailValue) . '&sent=1');
+                        exit;
                     } else {
                         db_prepared($conn, "DELETE FROM cliente WHERE idCliente = ?", 'i', [$newUserId]);
                         $err = tr('error.verification_email_send');

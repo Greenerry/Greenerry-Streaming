@@ -20,6 +20,9 @@ function ensure_email_verification_table(mysqli $conn): bool
     )";
 
     $ready = mysqli_query($conn, $sql) !== false;
+    if ($ready && !greenerry_column_exists($conn, 'verificacao_email', 'hash_codigo')) {
+        mysqli_query($conn, "ALTER TABLE verificacao_email ADD hash_codigo VARCHAR(255) NULL AFTER hash_token");
+    }
     return $ready;
 }
 
@@ -44,7 +47,20 @@ function ensure_password_reset_table(mysqli $conn): bool
     )";
 
     $ready = mysqli_query($conn, $sql) !== false;
+    if ($ready && !greenerry_column_exists($conn, 'recuperacao_password', 'hash_codigo')) {
+        mysqli_query($conn, "ALTER TABLE recuperacao_password ADD hash_codigo VARCHAR(255) NULL AFTER hash_token");
+    }
     return $ready;
+}
+
+function greenerry_auth_code(): string
+{
+    return (string)random_int(100000, 999999);
+}
+
+function greenerry_clean_code(string $code): string
+{
+    return preg_replace('/\D+/', '', $code) ?? '';
 }
 
 function create_email_verification(mysqli $conn, int $userId): ?string
@@ -54,19 +70,21 @@ function create_email_verification(mysqli $conn, int $userId): ?string
     }
 
     $token = bin2hex(random_bytes(32));
+    $code = greenerry_auth_code();
     $hash = hash('sha256', $token);
+    $codeHash = hash('sha256', $code);
 
     db_prepared($conn, "DELETE FROM verificacao_email WHERE idCliente = ? AND usado_em IS NULL", 'i', [$userId]);
 
     $saved = db_prepared(
         $conn,
-        "INSERT INTO verificacao_email (idCliente, hash_token, expira_em)
-         VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))",
-        'is',
-        [$userId, $hash]
+        "INSERT INTO verificacao_email (idCliente, hash_token, hash_codigo, expira_em)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))",
+        'iss',
+        [$userId, $hash, $codeHash]
     );
 
-    return $saved ? $token : null;
+    return $saved ? $code : null;
 }
 
 function create_password_reset(mysqli $conn, int $userId): ?string
@@ -76,19 +94,21 @@ function create_password_reset(mysqli $conn, int $userId): ?string
     }
 
     $token = bin2hex(random_bytes(32));
+    $code = greenerry_auth_code();
     $hash = hash('sha256', $token);
+    $codeHash = hash('sha256', $code);
 
     db_prepared($conn, "DELETE FROM recuperacao_password WHERE idCliente = ? AND usado_em IS NULL", 'i', [$userId]);
 
     $saved = db_prepared(
         $conn,
-        "INSERT INTO recuperacao_password (idCliente, hash_token, expira_em)
-         VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
-        'is',
-        [$userId, $hash]
+        "INSERT INTO recuperacao_password (idCliente, hash_token, hash_codigo, expira_em)
+         VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+        'iss',
+        [$userId, $hash, $codeHash]
     );
 
-    return $saved ? $token : null;
+    return $saved ? $code : null;
 }
 
 function password_reset_user(mysqli $conn, string $token): ?array
@@ -110,6 +130,30 @@ function password_reset_user(mysqli $conn, string $token): ?array
          LIMIT 1",
         's',
         [$hash]
+    );
+}
+
+function password_reset_user_by_code(mysqli $conn, string $email, string $code): ?array
+{
+    $email = trim($email);
+    $code = greenerry_clean_code($code);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\d{6}$/', $code) || !ensure_password_reset_table($conn)) {
+        return null;
+    }
+
+    $hash = hash('sha256', $code);
+    return db_one_prepared(
+        $conn,
+        "SELECT rp.idRecuperacaoPassword, rp.idCliente, rp.expira_em, rp.usado_em,
+                rp.expira_em < NOW() AS expirado,
+                c.nome, c.email, c.estado
+         FROM recuperacao_password rp
+         JOIN cliente c ON c.idCliente = rp.idCliente
+         WHERE c.email = ? AND rp.hash_codigo = ?
+         ORDER BY rp.criado_em DESC
+         LIMIT 1",
+        'ss',
+        [$email, $hash]
     );
 }
 
@@ -150,6 +194,43 @@ function complete_password_reset(mysqli $conn, string $token, string $newPasswor
     return 'ok';
 }
 
+function complete_password_reset_code(mysqli $conn, string $email, string $code, string $newPassword): string
+{
+    $row = password_reset_user_by_code($conn, $email, $code);
+    if (!$row) {
+        return 'invalid';
+    }
+
+    if (!empty($row['usado_em']) || (int)($row['expirado'] ?? 0) === 1) {
+        return 'expired';
+    }
+
+    if ((string)$row['estado'] !== 'ativo') {
+        return 'inactive';
+    }
+
+    $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+    $userId = (int)$row['idCliente'];
+    $resetId = (int)$row['idRecuperacaoPassword'];
+
+    mysqli_begin_transaction($conn);
+    try {
+        if (!db_prepared($conn, "UPDATE cliente SET palavra_passe = ? WHERE idCliente = ?", 'si', [$passwordHash, $userId])) {
+            throw new RuntimeException('password update failed');
+        }
+        if (!db_prepared($conn, "UPDATE recuperacao_password SET usado_em = NOW() WHERE idRecuperacaoPassword = ?", 'i', [$resetId])) {
+            throw new RuntimeException('reset code update failed');
+        }
+        mysqli_commit($conn);
+    } catch (Throwable $e) {
+        mysqli_rollback($conn);
+        return 'invalid';
+    }
+
+    send_password_changed_email($row);
+    return 'ok';
+}
+
 function verify_email_token(mysqli $conn, string $token): string
 {
     $token = trim($token);
@@ -175,6 +256,57 @@ function verify_email_token(mysqli $conn, string $token): string
         [$hash]
     );
 
+    if (!$row) {
+        return 'invalid';
+    }
+
+    if (!empty($row['usado_em']) || (int)($row['expirado'] ?? 0) === 1) {
+        return 'expired';
+    }
+
+    $userId = (int)$row['idCliente'];
+    $verificationId = (int)$row['idVerificacaoEmail'];
+
+    if ((string)$row['estado'] === 'inativo') {
+        db_prepared($conn, "UPDATE cliente SET estado = 'ativo' WHERE idCliente = ?", 'i', [$userId]);
+    }
+    db_prepared($conn, "UPDATE verificacao_email SET usado_em = NOW() WHERE idVerificacaoEmail = ?", 'i', [$verificationId]);
+
+    $user = db_one_prepared($conn, "SELECT * FROM cliente WHERE idCliente = ? LIMIT 1", 'i', [$userId]);
+    if ($user) {
+        send_welcome_email($user);
+    }
+
+    return 'ok';
+}
+
+function email_verification_user_by_code(mysqli $conn, string $email, string $code): ?array
+{
+    $email = trim($email);
+    $code = greenerry_clean_code($code);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\d{6}$/', $code) || !ensure_email_verification_table($conn)) {
+        return null;
+    }
+
+    $hash = hash('sha256', $code);
+    return db_one_prepared(
+        $conn,
+        "SELECT ve.idVerificacaoEmail, ve.idCliente, ve.usado_em, ve.expira_em,
+                ve.expira_em < NOW() AS expirado,
+                c.estado
+         FROM verificacao_email ve
+         JOIN cliente c ON c.idCliente = ve.idCliente
+         WHERE c.email = ? AND ve.hash_codigo = ?
+         ORDER BY ve.criado_em DESC
+         LIMIT 1",
+        'ss',
+        [$email, $hash]
+    );
+}
+
+function verify_email_code(mysqli $conn, string $email, string $code): string
+{
+    $row = email_verification_user_by_code($conn, $email, $code);
     if (!$row) {
         return 'invalid';
     }

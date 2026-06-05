@@ -10618,6 +10618,19 @@ body.sr-animating .player-bar {
   .main.sr-open .home-track-grid .mcard .meta {
     padding:7px 6px 0 !important;
   }
+
+  .main.sr-open #artist-releases-section.grid {
+    grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+    gap:16px !important;
+  }
+
+  .main.sr-open #artist-releases-section .mcard .meta {
+    padding:7px 5px 0 !important;
+  }
+
+  .main.sr-open #artist-releases-section .mcard h4 {
+    font-size:.82rem !important;
+  }
 }
 
 .page-body > .home-hero .home-hero-panel::before,

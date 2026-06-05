@@ -146,16 +146,14 @@ function send_welcome_email(array $user): void
     );
 }
 
-function send_email_verification(array $user, string $token): bool
+function send_email_verification(array $user, string $code): bool
 {
-    $link = absolute_site_url('pages/verify_email.php?token=' . urlencode($token));
-
     $subject = tr('email.verify_subject');
     $body = tr('email.verify_body', [
         'name' => $user['nome'] ?? '',
-        'link' => $link,
+        'code' => $code,
     ]);
-    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Confirm your email address.' : 'Confirma o teu email.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><a href="' . h($link) . '" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;">' . h(current_lang() === 'en' ? 'Verify email' : 'Verificar email') . '</a>');
+    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Enter this code to activate your account.' : 'Insere este código para ativar a conta.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><div style="display:inline-block;letter-spacing:8px;background:#111827;color:#fff;border-radius:16px;padding:16px 22px;font-size:28px;font-weight:800;">' . h($code) . '</div>');
     return greenerry_send_email(
         (string)$user['email'],
         $subject,
@@ -166,15 +164,14 @@ function send_email_verification(array $user, string $token): bool
 
 function send_reset_request_email(array $user): bool
 {
-    $token = (string)($user['reset_token'] ?? '');
-    $link = absolute_site_url('pages/reset_password.php?token=' . urlencode($token));
+    $code = (string)($user['reset_code'] ?? '');
 
     $subject = tr('email.reset_request_subject');
     $body = tr('email.reset_request_body', [
         'name' => $user['nome'] ?? '',
-        'link' => $link,
+        'code' => $code,
     ]);
-    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Use the button below to reset your password.' : 'Usa o botão abaixo para alterar a password.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><a href="' . h($link) . '" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;">' . h(current_lang() === 'en' ? 'Reset password' : 'Alterar password') . '</a>');
+    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Enter this code to choose a new password.' : 'Insere este código para escolher uma nova password.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><div style="display:inline-block;letter-spacing:8px;background:#111827;color:#fff;border-radius:16px;padding:16px 22px;font-size:28px;font-weight:800;">' . h($code) . '</div>');
     return greenerry_send_email(
         (string)$user['email'],
         $subject,
