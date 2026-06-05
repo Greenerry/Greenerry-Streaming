@@ -328,7 +328,6 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="section-band">
       <div class="page-intro">
-        <span class="slabel" data-t="home_tracks_label">Latest tracks</span>
         <h2 data-t="home_tracks_title">Listen to the latest</h2>
       </div>
       <a href="music.php" class="btn btn-ghost btn-sm" data-t="home_tracks_cta">Open music</a>
@@ -382,7 +381,6 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="section-band">
       <div class="page-intro">
-        <span class="slabel" data-t="home_artists_label">Artists</span>
         <h2 data-t="home_artists_title">Meet the artists</h2>
       </div>
       <a href="artists.php" class="btn btn-ghost btn-sm" data-t="home_artists_cta">See all artists</a>
@@ -411,7 +409,6 @@ include '../includes/header.php';
   <div class="wrap">
     <div class="section-band">
       <div class="page-intro">
-        <span class="slabel" data-t="home_merch_label">Products</span>
         <h2 data-t="home_merch_title">Selected artist products</h2>
       </div>
       <a href="shop.php" class="btn btn-ghost btn-sm" data-t="home_merch_cta">Visit store</a>

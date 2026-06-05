@@ -355,8 +355,8 @@ async function main() {
 
   const releaseImagesByArtist = new Map();
   const artistIds = new Map([['Green', 5]]);
-  const allTrackIds = [];
-  const allProducts = [];
+const allTrackIds = [];
+const allProducts = [];
 
   for (const artist of artists) {
     console.log(`Preparing ${artist.name}`);
@@ -369,6 +369,7 @@ async function main() {
     releaseImagesByArtist.set(artist.name, [firstRelease.art, wiki.main].filter(Boolean));
 
     const wanted = [firstRelease, ...(await Promise.all([...artist.releases.slice(1), ...artist.singles].map(title => releaseData(artist.name, title, artist.genre))))];
+    const artistTrackTitles = new Set();
     let releaseIndex = 0;
     for (const rel of wanted) {
       const cover = await downloadFirst([rel.art, firstRelease.art, artist.image, wiki.main, wiki.thumb, banner ? `file://${join(imgDir, banner).replace(/\\/g, '/')}` : null], `pap_final_release_${slug(artist.name)}_${releaseIndex + 1}`, imgDir);
@@ -378,6 +379,9 @@ async function main() {
       `);
       let trackNo = 1;
       for (const track of rel.tracks.slice(0, rel.type === 'Album' ? 6 : 3)) {
+        const trackKey = String(track.title || '').trim().toLowerCase();
+        if (trackKey && artistTrackTitles.has(trackKey)) continue;
+        if (trackKey) artistTrackTitles.add(trackKey);
         const audio = await download(track.preview, `pap_preview_${slug(artist.name)}_${slug(track.title)}`, audioDir) || ensureSilencePreview();
         const idFaixa = mysqlId(`
           INSERT INTO faixa (idRelease, numero_faixa, titulo, genero, ficheiro_audio, duracao_segundos, estado, ativo, criado_em, atualizado_em)
