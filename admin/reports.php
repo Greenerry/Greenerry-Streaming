@@ -169,10 +169,10 @@ $breakdownTotal = max(
     (float)($finance['paid_revenue'] ?? 0) + (float)($finance['commission'] ?? 0) + (float)($finance['artist_value'] ?? 0) + (float)($finance['blocked_value'] ?? 0)
 );
 $incomeBreakdown = [
-    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#8fb7f3'],
-    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#94d3a2'],
-    ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#d8bd7b'],
-    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#d98a94'],
+    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#86aaf5'],
+    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#98d0b2'],
+    ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#f0c44d'],
+    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#e17699'],
 ];
 foreach ($incomeBreakdown as &$breakdownItem) {
     $breakdownItem['percent'] = $breakdownTotal > 0 ? round(($breakdownItem['value'] / $breakdownTotal) * 100) : 0;
@@ -189,8 +189,8 @@ foreach ($incomeBreakdown as $item) {
     $breakdownCursor = $next;
 }
 $donutStyle = $breakdownStops
-    ? 'background: conic-gradient(' . implode(', ', $breakdownStops) . ', rgba(255,255,255,.10) ' . round($breakdownCursor, 2) . '% 100%);'
-    : 'background: conic-gradient(#c9d0db 0 38%, #9dafaa 38% 62%, #8b98aa 62% 84%, #d7b676 84% 100%);';
+    ? 'background: conic-gradient(' . implode(', ', $breakdownStops) . ', rgba(255,255,255,.10) ' . round($breakdownCursor, 2) . '% 100%) !important;'
+    : 'background: conic-gradient(#86aaf5 0 38%, #98d0b2 38% 62%, #f0c44d 62% 84%, #e17699 84% 100%) !important;';
 $paidStop = 0.0;
 $commissionStop = 0.0;
 $artistsStop = 0.0;

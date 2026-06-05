@@ -119,8 +119,18 @@ include 'admin_header.php';
   <?php if (!$users): ?>
     <p data-admin-t="users_empty">Sem utilizadores registados.</p>
   <?php else: ?>
-    <div class="tbl-wrap">
+    <div class="tbl-wrap admin-users-table">
       <table>
+        <colgroup>
+          <col class="admin-users-col-id">
+          <col class="admin-users-col-name">
+          <col class="admin-users-col-email">
+          <col class="admin-users-col-count">
+          <col class="admin-users-col-count">
+          <col class="admin-users-col-count">
+          <col class="admin-users-col-state">
+          <col class="admin-users-col-actions">
+        </colgroup>
         <thead>
           <tr>
             <th>ID</th>
