@@ -49,7 +49,7 @@ $totalFollowing = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_arti
 // These query flags open the follower/following modal directly from profile links.
 $showFollowers = (int)($_GET['followers'] ?? 0) === 1;
 $showFollowing = (int)($_GET['following'] ?? 0) === 1;
-$artistReleasesPerPage = 10;
+$artistReleasesPerPage = 12;
 $artistProductsPerPage = 10;
 $artistReleasePage = max(1, (int)($_GET['release_page'] ?? 1));
 $artistProductPage = max(1, (int)($_GET['product_page'] ?? 1));
