@@ -16,18 +16,26 @@ const artists = [
   { name: 'Bladee', wiki: 'Bladee', genre: 'Cloud rap', bio: 'Artista sueco ligado ao universo Drain Gang, com uma identidade visual fria, digital e muito reconhecivel.', releases: ['Crest', 'Icedancer'], singles: ['Be Nice 2 Me'] },
   { name: 'The Weeknd', wiki: 'The Weeknd', genre: 'R&B', bio: 'Artista canadiano conhecido por misturar R&B, pop e uma estetica cinematografica nocturna.', releases: ['After Hours', 'Dawn FM'], singles: ['Blinding Lights'] },
   { name: 'Cocteau Twins', wiki: 'Cocteau Twins', genre: 'Dream pop', bio: 'Banda escocesa essencial do dream pop, marcada por guitarras atmosfericas e vozes etereas.', releases: ['Heaven or Las Vegas', 'Treasure'], singles: ['Cherry-coloured Funk'] },
-  { name: 'The Hellp', wiki: 'The Hellp', genre: 'Alternative', bio: 'Projeto alternativo com energia electronica, moda urbana e som directo de clube underground.', releases: ['LL'], singles: ['Tu Tu Neurotic'] },
   { name: 'Rihanna', wiki: 'Rihanna', genre: 'Pop', bio: 'Artista global de Barbados, reconhecida pela versatilidade entre pop, R&B, dancehall e moda.', releases: ['ANTI', 'LOUD'], singles: ['Work'] },
   { name: 'Young Thug', wiki: 'Young Thug', genre: 'Hip hop', bio: 'Rapper norte-americano com voz elastica, flow experimental e enorme influencia no trap moderno.', releases: ['So Much Fun', 'JEFFERY'], singles: ['Hot'] },
   { name: 'Dean Blunt', wiki: 'Dean Blunt', genre: 'Experimental', bio: 'Musico britanico de linguagem minimalista, ambigua e experimental, entre pop, dub e art music.', releases: ['Black Metal', 'The Redeemer'], singles: ['100'] },
-  { name: '2hollis', wiki: '2hollis', genre: 'Electronic', bio: 'Artista de som digital e energico, cruzando rap, electronica e estetica hiper-online.', releases: ['boy', '2'], singles: ['jeans'] },
-  { name: 'Cities Aviv', wiki: 'Cities Aviv', genre: 'Experimental hip hop', bio: 'Projeto de hip hop experimental com colagens densas, texturas lo-fi e narrativa introspectiva.', releases: ['Man Plays the Horn', 'Working Title For The Album Secret Waters'], singles: ['URL IRL'] },
-  { name: 'Fakemink', wiki: 'Fakemink', genre: 'Alternative rap', bio: 'Artista de cena digital underground, com som rapido, visual cru e energia de internet club.', releases: ['London Savant'], singles: ['Fashion Week'], image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Fakemink%20performing%20in%20London%2C%20photographed%20by%20Teddy%20Westside.jpg' },
   { name: 'Miguel', wiki: 'Miguel (singer)', genre: 'R&B', bio: 'Cantor e compositor norte-americano que une R&B moderno, soul, rock e sensualidade futurista.', releases: ['Kaleidoscope Dream', 'Wildheart'], singles: ['Sure Thing'] },
   { name: 'Childish Gambino', wiki: 'Donald Glover', genre: 'Funk', bio: 'Projeto musical de Donald Glover, com fases entre rap, soul, funk psicadelico e pop conceptual.', releases: ['Awaken, My Love!', 'Because the Internet'], singles: ['Redbone'] },
   { name: 'Kanye West', wiki: 'Kanye West', genre: 'Hip hop', bio: 'Produtor e rapper norte-americano, importante pela producao, conceito visual e impacto cultural.', releases: ['Graduation', 'My Beautiful Dark Twisted Fantasy'], singles: ['Stronger'] },
   { name: 'Justin Bieber', wiki: 'Justin Bieber', genre: 'Pop', bio: 'Artista canadiano de pop e R&B, conhecido por grandes singles globais e varias fases visuais.', releases: ['Purpose', 'Justice'], singles: ['Sorry'] },
   { name: 'Lil Uzi Vert', wiki: 'Lil Uzi Vert', genre: 'Rap', bio: 'Rapper norte-americano de trap melodico, visual colorido e forte ligacao a moda e cultura digital.', releases: ['Luv Is Rage 2', 'Pink Tape'], singles: ['XO Tour Llif3'] },
+  { name: 'Frank Ocean', wiki: 'Frank Ocean', genre: 'Alternative R&B', bio: 'Artista norte-americano de R&B alternativo, conhecido por escrita emotiva, minimalismo e direcao visual muito forte.', releases: ['channel ORANGE', 'Blonde'], singles: ['Pink + White'] },
+  { name: 'Tyler, The Creator', wiki: 'Tyler, the Creator', genre: 'Hip hop', bio: 'Rapper, produtor e diretor criativo com mundos visuais muito marcados, entre rap, soul e pop alternativo.', releases: ['IGOR', 'CALL ME IF YOU GET LOST'], singles: ['EARFQUAKE'] },
+  { name: 'SZA', wiki: 'SZA', genre: 'R&B', bio: 'Cantora e compositora de R&B contemporaneo, com escrita intima, melodias fluidas e estetica visual suave.', releases: ['SOS', 'Ctrl'], singles: ['Kill Bill'] },
+  { name: 'Travis Scott', wiki: 'Travis Scott', genre: 'Hip hop', bio: 'Artista e produtor conhecido por concertos imersivos, trap atmosferico e uma identidade visual de grande escala.', releases: ['ASTROWORLD', 'UTOPIA'], singles: ['SICKO MODE'] },
+  { name: 'Playboi Carti', wiki: 'Playboi Carti', genre: 'Rap', bio: 'Rapper norte-americano com som minimalista, energia punk e estetica muito forte ligada a moda e performance.', releases: ['Whole Lotta Red', 'Die Lit'], singles: ['Magnolia'] },
+  { name: 'A$AP Rocky', wiki: 'ASAP Rocky', genre: 'Hip hop', bio: 'Rapper de Harlem ligado a moda, videos cinematograficos e uma mistura entre rap, luxo e cultura alternativa.', releases: ['LONG.LIVE.A$AP', 'AT.LONG.LAST.A$AP'], singles: ['Praise The Lord'] },
+  { name: 'ZAYN', wiki: 'Zayn Malik', genre: 'Pop', bio: 'Cantor britanico com som entre pop e R&B, marcado por vocais suaves, atmosfera escura e imagem editorial.', releases: ['Mind Of Mine', 'Nobody Is Listening'], singles: ['PILLOWTALK'] },
+  { name: 'Lana Del Rey', wiki: 'Lana Del Rey', genre: 'Alternative', bio: 'Artista norte-americana com universo cinematografico, melancolia pop e estetica vintage muito reconhecivel.', releases: ['Born To Die', 'Ultraviolence'], singles: ['Summertime Sadness'] },
+  { name: 'Charli XCX', wiki: 'Charli XCX', genre: 'Pop', bio: 'Artista britanica ligada ao pop futurista, club music e cultura digital, com identidade visual muito atual.', releases: ['BRAT', 'how i am feeling now'], singles: ['360'] },
+  { name: 'FKA twigs', wiki: 'FKA twigs', genre: 'Alternative R&B', bio: 'Artista britanica de musica, performance e visual art, cruzando R&B, electronica, coreografia e moda.', releases: ['MAGDALENE', 'LP1'], singles: ['cellophane'] },
+  { name: 'Bjork', wiki: 'Bjork', genre: 'Art pop', bio: 'Artista islandesa de art pop e electronica experimental, conhecida por mundos visuais organicos e futuristas.', releases: ['Homogenic', 'Vespertine'], singles: ['Joga'] },
+  { name: 'Beyonce', wiki: 'Beyoncé', genre: 'Pop', bio: 'Artista global com espetaculos visuais de grande producao, pop, R&B, dance e conceitos culturais fortes.', releases: ['RENAISSANCE', 'COWBOY CARTER'], singles: ['CUFF IT'] },
 ];
 
 const demoBuyers = [
@@ -60,6 +68,105 @@ function emailFor(name) {
 function sql(value) {
   if (value === null || value === undefined) return 'NULL';
   return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
+}
+
+function xml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function colorPair(seed) {
+  const pairs = [
+    ['#111827', '#f8fafc'],
+    ['#1f2937', '#d9b66f'],
+    ['#141414', '#a8b9ad'],
+    ['#22243a', '#d97f9a'],
+    ['#0f172a', '#8fa1b5'],
+    ['#2d1f2f', '#e7d28a'],
+    ['#101820', '#60a5fa'],
+  ];
+  let sum = 0;
+  for (const char of seed) sum += char.charCodeAt(0);
+  return pairs[sum % pairs.length];
+}
+
+function writeProductMockup({ artist, title, categoryId, categoryName, productName, fileBase }) {
+  const [dark, accent] = colorPair(`${artist}-${title}-${categoryId}`);
+  const safeArtist = xml(artist);
+  const safeTitle = xml(title);
+  const safeProduct = xml(productName);
+  const safeCategory = xml(categoryName);
+  const file = `${fileBase}.svg`;
+  const common = `
+    <defs>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="26" stdDeviation="20" flood-color="#000" flood-opacity=".28"/>
+      </filter>
+      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+        <stop stop-color="#f8f8f5"/>
+        <stop offset="1" stop-color="#ddd8cf"/>
+      </linearGradient>
+      <linearGradient id="accent" x1="0" x2="1" y1="0" y2="1">
+        <stop stop-color="${accent}"/>
+        <stop offset="1" stop-color="${dark}"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="1200" rx="0" fill="url(#bg)"/>
+    <circle cx="1020" cy="220" r="170" fill="${accent}" opacity=".18"/>
+    <circle cx="200" cy="1020" r="220" fill="${dark}" opacity=".08"/>`;
+  let body = '';
+  if (categoryId === 1) {
+    body = `
+      <path d="M365 250 500 182h200l135 68 120 170-112 78-74-88v525H431V410l-74 88-112-78 120-170Z" fill="${dark}" filter="url(#shadow)"/>
+      <rect x="475" y="392" width="250" height="300" rx="28" fill="${accent}" opacity=".96"/>
+      <text x="600" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="800" fill="#fff">${safeArtist}</text>
+      <text x="600" y="575" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#fff">${safeTitle}</text>
+      <text x="600" y="650" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" letter-spacing="5" fill="#fff">GREENERRY</text>`;
+  } else if (categoryId === 2) {
+    body = `
+      <path d="M392 240c58-46 116-68 174-68h68c58 0 116 22 174 68l84 100-88 94-50-56v536H446V378l-50 56-88-94 84-100Z" fill="${dark}" filter="url(#shadow)"/>
+      <path d="M524 176c24 54 128 54 152 0l46 42c-18 88-226 88-244 0l46-42Z" fill="#0b0d12" opacity=".34"/>
+      <rect x="480" y="420" width="240" height="250" rx="34" fill="${accent}" opacity=".95"/>
+      <text x="600" y="530" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="#fff">${safeArtist}</text>
+      <text x="600" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#fff">${safeTitle}</text>`;
+  } else if (categoryId === 3) {
+    body = `
+      <circle cx="590" cy="595" r="330" fill="#111" filter="url(#shadow)"/>
+      <circle cx="590" cy="595" r="250" fill="#1f1f1f"/>
+      <circle cx="590" cy="595" r="80" fill="${accent}"/>
+      <rect x="690" y="286" width="310" height="310" rx="18" fill="url(#accent)" filter="url(#shadow)"/>
+      <text x="845" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#fff">${safeArtist}</text>
+      <text x="845" y="480" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#fff">${safeTitle}</text>`;
+  } else if (categoryId === 4) {
+    body = `
+      <rect x="335" y="300" width="530" height="530" rx="30" fill="rgba(255,255,255,.58)" stroke="#cbd5e1" stroke-width="4" filter="url(#shadow)"/>
+      <rect x="388" y="354" width="310" height="422" rx="18" fill="url(#accent)"/>
+      <circle cx="750" cy="565" r="92" fill="none" stroke="#b7bcc5" stroke-width="22"/>
+      <circle cx="750" cy="565" r="18" fill="#b7bcc5"/>
+      <text x="543" y="535" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="800" fill="#fff">${safeArtist}</text>
+      <text x="543" y="594" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#fff">${safeTitle}</text>`;
+  } else if (categoryId === 5) {
+    body = `
+      <rect x="350" y="150" width="500" height="780" rx="8" fill="#fdfbf7" filter="url(#shadow)"/>
+      <rect x="390" y="190" width="420" height="620" rx="4" fill="url(#accent)"/>
+      <text x="600" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="#fff">${safeArtist}</text>
+      <text x="600" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#fff">${safeTitle}</text>
+      <text x="600" y="770" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" letter-spacing="7" fill="#fff">POSTER</text>`;
+  } else {
+    body = `
+      <rect x="326" y="355" width="548" height="360" rx="46" fill="#f9fafb" filter="url(#shadow)"/>
+      <circle cx="475" cy="535" r="88" fill="${accent}"/>
+      <circle cx="600" cy="535" r="88" fill="${dark}"/>
+      <rect x="700" y="450" width="120" height="170" rx="28" fill="url(#accent)"/>
+      <text x="600" y="775" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="800" fill="${dark}">${safeArtist}</text>
+      <text x="600" y="830" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#606a78">${safeCategory}</text>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">${common}${body}<text x="64" y="1120" font-family="Arial, sans-serif" font-size="30" font-weight="800" fill="#111827">${safeProduct}</text></svg>`;
+  writeFileSync(join(imgDir, file), svg, 'utf8');
+  return file;
 }
 
 function ensureSilencePreview() {
@@ -290,23 +397,33 @@ async function main() {
       const pending = (allProducts.length + i) % 11 === 0;
       const stock = 18 + ((allProducts.length + i) % 27);
       const price = Number(type.price + ((allProducts.length + i) % 5) * 3).toFixed(2);
+      const productName = `${artist.name} ${mainTitle} ${type.suffix}`;
+      const categoryName = productTypes.find((item) => item.category === type.category)?.suffix || 'merch';
+      const productDescription = type.category === 1
+        ? `T-shirt de algodao com grafismo frontal inspirado em ${mainTitle}. Corte regular, ideal para um look de concerto ou uso diario.`
+        : type.category === 2
+          ? `Hoodie macio com bolso frontal, capuz ajustavel e grafismo de ${artist.name} inspirado em ${mainTitle}.`
+          : type.category === 3
+            ? `Edicao em vinil para colecao, com embalagem visual de ${mainTitle} e acabamento premium para exposicao.`
+            : type.category === 4
+              ? `CD deluxe em caixa fisica com arte de ${mainTitle}, pensado para colecionadores e apresentacao de loja.`
+              : type.category === 5
+                ? `Poster decorativo de parede com direcao visual de ${artist.name}, preparado para quartos, estudio ou espaco criativo.`
+                : `Pack de acessorios inspirado em ${mainTitle}, com pins, pouch e detalhes visuais do universo de ${artist.name}.`;
       const idProduto = mysqlId(`
         INSERT INTO produto (idCliente, idCategoria, nomeProduto, descricaoProduto, marca, precoAtual, iva_percentual, comissao_percentual, stock_total, usa_tamanhos, estado, ativo, bloqueado_admin, idAdminAprovacao, aprovado_em, criado_em, atualizado_em)
-        VALUES (${idCliente}, ${type.category}, ${sql(`${artist.name} ${mainTitle} ${type.suffix}`)}, ${sql(`Artigo de merchandising inspirado em ${mainTitle}, com imagem real do universo visual de ${artist.name}. Produto preparado para uma demonstracao profissional da loja Greenerry.`)}, ${sql(artist.name)}, ${price}, 23.00, 5.00, ${stock}, ${type.sizes ? 1 : 0}, ${sql(pending ? 'pendente' : 'aprovado')}, 1, 0, ${pending ? 'NULL' : '1'}, ${pending ? 'NULL' : 'NOW()'}, NOW(), NOW())
+        VALUES (${idCliente}, ${type.category}, ${sql(productName)}, ${sql(productDescription)}, ${sql(artist.name)}, ${price}, 23.00, 5.00, ${stock}, ${type.sizes ? 1 : 0}, ${sql(pending ? 'pendente' : 'aprovado')}, 1, 0, ${pending ? 'NULL' : '1'}, ${pending ? 'NULL' : 'NOW()'}, NOW(), NOW())
       `);
-      const savedProductImages = [];
       for (let order = 0; order < 3; order++) {
-        const imageUrl = artPool[(i + order) % artPool.length] || firstRelease.art || artist.image || wiki.main || wiki.thumb;
-        const productImage = await downloadFirst([imageUrl, firstRelease.art, artist.image, wiki.main, wiki.thumb], `pap_final_product_${slug(artist.name)}_${idProduto}_${order + 1}`, imgDir);
-        if (productImage) {
-          mysqlExec(`INSERT INTO produto_imagem (idProduto, ficheiro, ordem, criado_em) VALUES (${idProduto}, ${sql(productImage)}, ${order}, NOW());`);
-          savedProductImages.push(productImage);
-        }
-      }
-      if (savedProductImages.length === 0) {
-        for (const [order, fallback] of [avatar, banner].filter(Boolean).entries()) {
-          mysqlExec(`INSERT INTO produto_imagem (idProduto, ficheiro, ordem, criado_em) VALUES (${idProduto}, ${sql(fallback)}, ${order}, NOW());`);
-        }
+        const productImage = writeProductMockup({
+          artist: artist.name,
+          title: order === 0 ? mainTitle : wanted[(i + order) % wanted.length]?.title || mainTitle,
+          categoryId: type.category,
+          categoryName,
+          productName,
+          fileBase: `pap_final_product_${slug(artist.name)}_${idProduto}_${order + 1}`,
+        });
+        mysqlExec(`INSERT INTO produto_imagem (idProduto, ficheiro, ordem, criado_em) VALUES (${idProduto}, ${sql(productImage)}, ${order}, NOW());`);
       }
       if (type.sizes) {
         for (const sizeId of [1, 2, 3, 4]) {

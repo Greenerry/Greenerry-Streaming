@@ -198,6 +198,7 @@ function _markSidebarAnimating() {
 }
 
 function openSr() {
+  closeMobileSidebar();
   _markSidebarAnimating();
   document.getElementById('sr')?.classList.add('open');
   document.querySelector('.main')?.classList.add('sr-open');
@@ -229,8 +230,10 @@ function closeSr() {
 
 /* Mobile sidebar */
 function openMobileSidebar() {
+  closeSr();
   document.getElementById('sl')?.classList.add('open');
   document.getElementById('sl-overlay')?.classList.add('visible');
+  document.body?.classList.add('nav-open');
 
   const playerBar = document.getElementById('player-bar');
   if (playerBar) playerBar.style.display = 'none';
@@ -241,6 +244,7 @@ function closeMobileSidebar() {
   const overlay = document.getElementById('sl-overlay');
   if (sidebar) sidebar.classList.remove('open');
   if (overlay) overlay.classList.remove('visible');
+  document.body?.classList.remove('nav-open');
 
   const playerBar = document.getElementById('player-bar');
   if (playerBar && (playerBar.classList.contains('sr-open') || _cur)) {

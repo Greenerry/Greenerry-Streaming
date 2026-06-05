@@ -134,9 +134,6 @@ include '../includes/header.php';
               </div>
               <div>
                 <h3><?= h($artist['nome']) ?></h3>
-                <?php if (!empty($artist['bio'])): ?>
-                  <p><?= h($artist['bio']) ?></p>
-                <?php endif; ?>
               </div>
               <div class="artist-panel-stats">
                 <span data-count-type="release" data-count-value="<?= (int)$artist['total_releases'] ?>"><?= h(count_label((int)$artist['total_releases'], 'release')) ?></span>

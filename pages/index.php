@@ -68,7 +68,7 @@ $publicArtistsSql = "
     GROUP BY c.idCliente, c.nome, c.email, c.foto, c.banner, c.bio, c.slug
 ";
 
-$featuredArtists = $showArtistArea ? db_all($conn, "{$publicArtistsSql} ORDER BY total_releases DESC, nome ASC LIMIT 5") : [];
+$featuredArtists = $showArtistArea ? db_all($conn, "{$publicArtistsSql} ORDER BY total_releases DESC, nome ASC LIMIT 12") : [];
 $featuredProducts = $showShopArea ? db_all(
     $conn,
     "SELECT p.*, cat.nomeCategoria
@@ -91,7 +91,7 @@ if ($showArtistArea && $curatedArtistId > 0) {
     if ($curatedArtist) {
         $featuredArtists = array_values(array_filter($featuredArtists, static fn($artist) => (int)$artist['idCliente'] !== $curatedArtistId));
         array_unshift($featuredArtists, $curatedArtist);
-        $featuredArtists = array_slice($featuredArtists, 0, 5);
+        $featuredArtists = array_slice($featuredArtists, 0, 12);
     }
 }
 

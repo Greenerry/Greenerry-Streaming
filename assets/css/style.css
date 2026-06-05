@@ -10792,3 +10792,64 @@ body.sr-animating .player-bar {
     filter:blur(0) saturate(1);
   }
 }
+
+/* Final PAP mobile and homepage artist polish */
+@media (min-width:901px) {
+  .home-section--artists {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+  }
+
+  .home-section--artists .home-artist-grid {
+    grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width:768px) {
+  body:has(.sr.open) {
+    overflow:hidden;
+  }
+
+  .sr {
+    width:100vw !important;
+    max-width:none !important;
+    left:0 !important;
+    right:auto !important;
+    z-index:780 !important;
+    border-left:0;
+    border-radius:0;
+  }
+
+  .main.sr-open {
+    margin-right:0 !important;
+  }
+
+  .nav.sr-open {
+    right:0 !important;
+  }
+
+  .player-bar.sr-open {
+    display:none !important;
+  }
+
+  .sr-cover-frame {
+    padding:18px 18px 0;
+  }
+
+  .np-cover {
+    height:min(58vh, 420px) !important;
+  }
+
+  .sr-body {
+    padding-bottom:24px;
+  }
+
+  .sl.open {
+    z-index:760;
+  }
+
+  .sl-overlay.visible {
+    z-index:750;
+  }
+}

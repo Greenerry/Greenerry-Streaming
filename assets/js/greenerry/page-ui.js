@@ -942,13 +942,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     _setFill('pb-vol-fill', percent * 100);
   });
 
-  document.getElementById('ham')?.addEventListener('click', () => {
-    const sidebar = document.getElementById('sl');
-    if (sidebar && sidebar.classList.contains('open')) closeMobileSidebar();
-    else openMobileSidebar();
-  });
-
-  document.getElementById('sl-overlay')?.addEventListener('click', closeMobileSidebar);
+  if (document.body.dataset.mobileMenuReady !== '1') {
+    document.body.dataset.mobileMenuReady = '1';
+    document.addEventListener('click', (event) => {
+      const menuButton = event.target.closest('#ham');
+      if (!menuButton) return;
+      event.preventDefault();
+      const sidebar = document.getElementById('sl');
+      if (sidebar && sidebar.classList.contains('open')) closeMobileSidebar();
+      else openMobileSidebar();
+    });
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('#sl-overlay')) closeMobileSidebar();
+    });
+  }
 
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.sl-link');
