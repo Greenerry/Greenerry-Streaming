@@ -59,11 +59,8 @@ include '../includes/header.php';
 
 <section class="content-shell">
   <div class="wrap">
-    <div class="support-hero hero-card--single">
-      <div class="support-hero-copy">
-        <span class="slabel" data-t="contact_label">Contacto</span>
-        <h2 data-t="contact_title">Fala com o admin.</h2>
-      </div>
+    <div class="support-plain-title">
+      <h2 data-t="contact_title">Falar com o admin</h2>
     </div>
 
     <div class="two-column-layout">

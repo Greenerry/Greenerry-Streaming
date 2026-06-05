@@ -72,10 +72,10 @@ include '../includes/header.php';
                   </div>
                 </td>
                 <td><strong><?= h($release['titulo']) ?></strong></td>
-                <td><?= h($release['tipo']) ?></td>
+                <td><span data-release-type="<?= h($release['tipo']) ?>"><?= h(release_type_label((string)$release['tipo'])) ?></span></td>
                 <td><?= (int)$release['tracks_count'] ?></td>
                 <td><?= (int)$release['listens'] ?></td>
-                <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>" data-state-label><?= h(order_status_label($release['estado'])) ?></span></td>
+                <td><span class="badge <?= h(state_badge_class($release['estado'])) ?>" data-state-label="<?= h($release['estado']) ?>"><?= h(order_status_label($release['estado'])) ?></span></td>
                 <td>
                   <div class="artist-actions-cell">
                     <a class="btn btn-ghost btn-sm" href="upload_music.php?edit=<?= (int)$release['idRelease'] ?>" data-t="artist_action_edit">Edit</a>
@@ -114,8 +114,17 @@ document.querySelectorAll('.js-toggle-item').forEach((button) => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || artistText('artist_update_failed', 'Update failed'));
       const enabled = Number(result.enabled) === 1;
-      button.textContent = enabled ? artistText('artist_action_deactivate', 'Deactivate') : artistText('artist_action_activate', 'Activate');
-      button.closest('[data-artist-row]')?.querySelector('[data-state-label]')?.replaceChildren(document.createTextNode(enabled ? artistText('status_approved', 'Approved') : artistText('status_inactive', 'Inactive')));
+      const label = button.querySelector('[data-t]');
+      const labelKey = enabled ? 'artist_action_deactivate' : 'artist_action_activate';
+      if (label) {
+        label.dataset.t = labelKey;
+        label.textContent = artistText(labelKey, enabled ? 'Deactivate' : 'Activate');
+      }
+      const stateLabel = button.closest('[data-artist-row]')?.querySelector('[data-state-label]');
+      if (stateLabel) {
+        stateLabel.dataset.stateLabel = enabled ? 'aprovado' : 'inativo';
+        stateLabel.textContent = enabled ? artistText('status_approved', 'Approved') : artistText('status_inactive', 'Inactive');
+      }
       button.disabled = false;
     } catch (error) {
       button.disabled = false;

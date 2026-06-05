@@ -239,7 +239,7 @@ include 'admin_header.php';
             <?php endif; ?>
           </span>
           <strong><?= h($product['nomeProduto']) ?></strong>
-          <small><?= h($product['artista']) ?> &middot; <?= h($product['nomeCategoria']) ?> &middot; <?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</small>
+          <small><?= h($product['artista']) ?> &middot; <?= h($product['nomeCategoria']) ?> &middot; <?= h(format_eur((float)$product['precoAtual'])) ?></small>
         </label>
       <?php endforeach; ?>
     </div>

@@ -252,7 +252,7 @@ include '../includes/header.php';
                 </span>
                 <?= h($track['titulo']) ?>
               </strong>
-              <span><?= h($track['genero'] ?: (current_lang() === 'en' ? 'No genre' : 'Sem género')) ?></span>
+              <span <?= $track['genero'] ? '' : 'data-lang-pt="Sem género" data-lang-en="No genre"' ?>><?= h($track['genero'] ?: (current_lang() === 'en' ? 'No genre' : 'Sem género')) ?></span>
               <span><?= (int)$track['listeners'] ?></span>
               <b><?= (int)$track['listens'] ?></b>
             </div>
@@ -295,7 +295,7 @@ include '../includes/header.php';
               <span class="artist-mini-thumb">
                 <?php if ($orderImage): ?><img src="<?= h(asset_url('img', $orderImage)) ?>" alt=""><?php else: ?><span data-t="artist_overview_item">Item</span><?php endif; ?>
               </span>
-              <p><strong><?= h($order['nome_produto']) ?></strong><small><?= (int)$order['quantidade'] ?> <span data-t="artist_overview_items">item(s)</span> / <?= h(format_eur((float)$order['valor_artista'])) ?></small></p><time><?= h(order_status_label($order['estado_item'])) ?></time>
+              <p><strong><?= h($order['nome_produto']) ?></strong><small><?= (int)$order['quantidade'] ?> <span data-t="artist_overview_items">item(s)</span> / <?= h(format_eur((float)$order['valor_artista'])) ?></small></p><time data-status-label="<?= h($order['estado_item']) ?>"><?= h(order_status_label($order['estado_item'])) ?></time>
             </a>
           <?php endforeach; ?>
         </div>

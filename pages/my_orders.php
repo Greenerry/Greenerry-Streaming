@@ -135,7 +135,7 @@ include '../includes/header.php';
               default => (string)$order['estado_encomenda'],
           };
           ?>
-          <details class="order-accordion card surface-card order-shell" data-order-card data-order-status="<?= h($orderFilterStatus) ?>" data-order-search="<?= h($orderSearch) ?>">
+          <details class="order-accordion card surface-card order-shell <?= $orderFilterStatus === 'cancelada' ? 'order-shell--cancelled' : '' ?>" data-order-card data-order-status="<?= h($orderFilterStatus) ?>" data-order-search="<?= h($orderSearch) ?>">
             <summary class="order-accordion-summary">
               <div class="order-accordion-summary-main">
                 <span class="badge badge-dark"><span data-t="orders_order_label">Encomenda</span> #<?= (int)$order['idEncomenda'] ?></span>
@@ -144,15 +144,19 @@ include '../includes/header.php';
               </div>
               <div class="order-accordion-summary-side">
                 <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
-                <a href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>" class="btn btn-ghost btn-sm" target="_blank" rel="noopener" data-t="profile_receipt">Recibo</a>
+                <a href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>" class="btn btn-ghost btn-sm" target="_blank" rel="noopener" data-t="profile_receipt">Fatura</a>
               </div>
             </summary>
             <div class="order-accordion-body">
               <div class="order-tracking">
+                <?php if ($orderFilterStatus === 'cancelada'): ?>
+                  <span class="is-cancelled" data-status-label="cancelada"><?= h(order_status_label('cancelada')) ?></span>
+                <?php else: ?>
                 <?php foreach (['pendente', 'em_preparacao', 'enviada', 'entregue'] as $step): ?>
                   <?php $isOn = array_search($step, ['pendente', 'em_preparacao', 'enviada', 'entregue'], true) <= array_search((string)$order['estado_encomenda'], ['pendente', 'em_preparacao', 'enviada', 'entregue'], true); ?>
                   <span class="<?= $isOn ? 'on' : '' ?>" data-status-label="<?= h($step) ?>"><?= h(order_status_label($step)) ?></span>
                 <?php endforeach; ?>
+                <?php endif; ?>
               </div>
 
               <?php if (!empty($order['morada'])): ?>

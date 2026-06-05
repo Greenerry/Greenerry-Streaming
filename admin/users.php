@@ -12,6 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $state = (string)($_POST['estado'] ?? '');
     $name = trim((string)($_POST['nome'] ?? ''));
     $email = trim((string)($_POST['email'] ?? ''));
+    $quickAction = (string)($_POST['quick_action'] ?? '');
+
+    if ($quickAction !== '' && in_array($quickAction, $allowedStates, true)) {
+        $state = $quickAction;
+        $currentUserRow = $userId > 0 ? db_one($conn, "SELECT nome, email FROM cliente WHERE idCliente = {$userId} LIMIT 1") : null;
+        $name = (string)($currentUserRow['nome'] ?? '');
+        $email = (string)($currentUserRow['email'] ?? '');
+    }
 
     if ($error === '' && ($userId <= 0 || !in_array($state, $allowedStates, true) || $name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL))) {
         $error = tr('error.api_invalid_request');
@@ -148,6 +156,20 @@ include 'admin_header.php';
               <td><?= (int)$user['total_orders'] ?></td>
               <td><span class="badge <?= h(state_badge_class((string)$user['estado'])) ?>"><?= h(order_status_label((string)$user['estado'])) ?></span></td>
               <td>
+                <div class="admin-user-actions">
+                  <?php foreach (['ativo', 'inativo', 'bloqueado'] as $quickState): ?>
+                    <?php if ($quickState !== (string)$user['estado']): ?>
+                      <form method="post" class="admin-user-quick-form">
+                        <?= csrf_input() ?>
+                        <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
+                        <input type="hidden" name="estado" value="<?= h($quickState) ?>">
+                        <input type="hidden" name="quick_action" value="<?= h($quickState) ?>">
+                        <button type="submit" class="btn btn-ghost btn-sm <?= $quickState === 'bloqueado' ? 'btn-danger' : '' ?>">
+                          <?= h($quickState === 'ativo' ? order_status_label('ativo') : ($quickState === 'inativo' ? 'Inativar' : 'Bloquear')) ?>
+                        </button>
+                      </form>
+                    <?php endif; ?>
+                  <?php endforeach; ?>
                 <details class="admin-inline-editor">
                   <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
                   <form method="post" class="admin-inline-edit-form">
@@ -163,6 +185,7 @@ include 'admin_header.php';
                     <button type="submit" class="btn btn-dark btn-sm" data-admin-t="btn_save_changes">Guardar alterações</button>
                   </form>
                 </details>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>

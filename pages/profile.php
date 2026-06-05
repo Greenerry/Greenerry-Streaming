@@ -343,7 +343,7 @@ include '../includes/header.php';
                       <td><span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span></td>
                       <td><span class="badge <?= h(state_badge_class($order['estado_pagamento'])) ?>" data-status-label="<?= h($order['estado_pagamento']) ?>"><?= h(payment_status_label($order['estado_pagamento'])) ?></span></td>
                       <td><?= h(format_eur((float)$order['total_final'])) ?></td>
-                      <td><a href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>" class="btn btn-ghost btn-sm" target="_blank" data-t="profile_receipt">Recibo</a></td>
+                      <td><a href="receipt.php?id=<?= (int)$order['idEncomenda'] ?>" class="btn btn-ghost btn-sm" target="_blank" data-t="profile_receipt">Fatura</a></td>
                     </tr>
                   <?php endforeach; ?>
                 </tbody>

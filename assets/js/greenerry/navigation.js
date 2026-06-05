@@ -107,6 +107,10 @@ async function _softNavigate(url, push = true) {
   try {
     // Fetch the next page, copy the app chrome and page body, then re-run page scripts.
     _saveState();
+    const currentPage = _pageNameFromUrl(new URL(window.location.href));
+    const targetPage = _pageNameFromUrl(url);
+    const keepScroll = currentPage === 'artist.php' && targetPage === 'release.php';
+    const previousScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
     const response = await fetch(url.href, { headers: { 'X-Requested-With': 'fetch' } });
     if (!response.ok) throw new Error('Navigation failed');
 
@@ -136,8 +140,8 @@ async function _softNavigate(url, push = true) {
     _runPageScripts(currentBody);
     document.title = doc.title || document.title;
 
-    if (push) history.pushState({ greenerrySoftNav: true }, '', url.href);
-    window.scrollTo(0, 0);
+    if (push) history.pushState({ greenerrySoftNav: true, scrollY: keepScroll ? previousScroll.y : 0 }, '', url.href);
+    if (!keepScroll) window.scrollTo(0, 0);
     document.body.classList.remove('artist-mode-switching');
     document.querySelectorAll('[data-artist-mode-toggle]').forEach((item) => {
       item.disabled = false;
@@ -153,7 +157,7 @@ async function _softNavigate(url, push = true) {
     await _loadTracks();
     _renderQueue();
     window.dispatchEvent(new CustomEvent('greenerry:page-ready', { detail: { root: currentBody } }));
-    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+    requestAnimationFrame(() => window.scrollTo({ top: keepScroll ? previousScroll.y : 0, left: keepScroll ? previousScroll.x : 0, behavior: 'auto' }));
   } catch (error) {
     window.location.href = url.href;
   } finally {

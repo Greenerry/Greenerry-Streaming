@@ -148,7 +148,12 @@ function setLang(nextLang) {
   });
 
   document.querySelectorAll('[data-lang-pt][data-lang-en]').forEach((el) => {
-    el.textContent = nextLang === 'en' ? el.dataset.langEn : el.dataset.langPt;
+    const value = nextLang === 'en' ? el.dataset.langEn : el.dataset.langPt;
+    if (el.dataset.langTarget === 'html') {
+      el.innerHTML = value;
+      return;
+    }
+    el.textContent = value;
   });
 
   applyDynamicLabels(nextLang);
@@ -191,6 +196,11 @@ function applyDynamicLabels(activeLang = lang) {
 
   document.querySelectorAll('[data-status-label]').forEach((element) => {
     const key = statusMap[element.dataset.statusLabel || ''];
+    if (key && T[activeLang]?.[key]) element.textContent = T[activeLang][key];
+  });
+
+  document.querySelectorAll('[data-state-label]').forEach((element) => {
+    const key = statusMap[element.dataset.stateLabel || ''];
     if (key && T[activeLang]?.[key]) element.textContent = T[activeLang][key];
   });
 

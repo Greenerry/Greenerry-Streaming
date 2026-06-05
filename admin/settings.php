@@ -8,6 +8,9 @@ $settings = [
     'site_name' => site_setting('site_name', 'Greenerry'),
     'contact_email' => site_setting('contact_email', 'support@greenerry.test'),
     'contact_phone' => site_setting('contact_phone', '+351 900 000 000'),
+    'company_name' => site_setting('company_name', 'Greenerry'),
+    'company_address' => site_setting('company_address', 'Portugal'),
+    'company_nif' => site_setting('company_nif', ''),
     'instagram_url' => site_setting('instagram_url', '#'),
     'x_url' => site_setting('x_url', '#'),
     'footer_note' => site_setting('footer_note', ''),
@@ -108,6 +111,18 @@ include 'admin_header.php';
       <div class="fg">
         <label class="flabel" for="contact-phone" data-admin-t="settings_phone">Telefone do site</label>
         <input id="contact-phone" name="contact_phone" class="finput" value="<?= h($settings['contact_phone']) ?>" maxlength="40">
+      </div>
+      <div class="fg">
+        <label class="flabel" for="company-name">Nome da empresa</label>
+        <input id="company-name" name="company_name" class="finput" value="<?= h($settings['company_name']) ?>" maxlength="150">
+      </div>
+      <div class="fg">
+        <label class="flabel" for="company-address">Morada da empresa</label>
+        <input id="company-address" name="company_address" class="finput" value="<?= h($settings['company_address']) ?>" maxlength="220">
+      </div>
+      <div class="fg">
+        <label class="flabel" for="company-nif">NIF da empresa</label>
+        <input id="company-nif" name="company_nif" class="finput" value="<?= h($settings['company_nif']) ?>" maxlength="20">
       </div>
       <label class="admin-check-row">
         <input type="checkbox" name="email_enabled" value="1" <?= $settings['email_enabled'] === '1' ? 'checked' : '' ?>>

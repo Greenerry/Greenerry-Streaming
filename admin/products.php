@@ -220,7 +220,7 @@ include 'admin_header.php';
                 </div>
                 <div class="admin-review-meta-item">
                   <span data-admin-t="label_price">Preço</span>
-                  <strong><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</strong>
+                  <strong><?= h(format_eur((float)$product['precoAtual'])) ?></strong>
                 </div>
                 <div class="admin-review-meta-item">
                   <span data-admin-t="label_vat">IVA</span>
@@ -321,7 +321,7 @@ include 'admin_header.php';
               </td>
               <td><?= h($product['artista']) ?></td>
               <td><?= h($product['nomeCategoria']) ?></td>
-              <td><?= number_format((float)$product['precoAtual'], 2, ',', '.') ?> EUR</td>
+              <td><?= h(format_eur((float)$product['precoAtual'])) ?></td>
               <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
               <td>
                 <div class="admin-row-actions">

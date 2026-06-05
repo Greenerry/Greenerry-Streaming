@@ -5,6 +5,8 @@ let _contextTracks = [];
 let _contextIndex = -1;
 let _contextMode = 'global';
 let _shuffle = true;
+let _loop = false;
+let _history = [];
 
 function _syncPlayerLayoutVisible(visible = !!_cur) {
   // Adds page spacing when the bottom player is visible.
@@ -141,13 +143,13 @@ async function nextTrack() {
 async function prevTrack() {
   if (!_allTracks.length) await _loadTracks();
   let track = null;
-  if (_contextMode === 'collection' && _contextTracks.length) {
+  if (_history.length) {
+    track = _history.pop();
+  } else if (_contextMode === 'collection' && _contextTracks.length) {
     _contextIndex = (_contextIndex - 1 + _contextTracks.length) % _contextTracks.length;
     track = _contextTracks[_contextIndex];
-  } else {
-    track = _pickRandomTrack(_cur ? [_cur] : []);
   }
-  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true });
+  if (track) playTrack(track.title, track.artist, track.cover, track.audio, track.artistId, track.artistFoto, track.id, { keepQueue: true, skipHistory: true });
 }
 
 async function playReleaseByKey(key) {
@@ -171,6 +173,17 @@ function toggleShuffle() {
 
   const button = document.getElementById('pb-shuffle');
   if (button) button.style.color = _shuffle ? 'var(--text)' : 'var(--text3)';
+}
+
+function toggleLoop() {
+  _loop = !_loop;
+  const button = document.getElementById('pb-loop');
+  if (button) {
+    button.classList.toggle('on', _loop);
+    button.setAttribute('aria-pressed', _loop ? 'true' : 'false');
+    button.style.color = _loop ? 'var(--text)' : 'var(--text3)';
+  }
+  _saveState();
 }
 
 /* Right sidebar */
@@ -239,6 +252,9 @@ function closeMobileSidebar() {
 /* Play a track */
 async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, musicId, options = {}) {
   // Central player function: updates UI, audio source, queue, favourites icon, and saved state.
+  if (_cur && !options.skipHistory && !_sameTrack(_cur, { id: musicId, audio: audioSrc, audioSrc })) {
+    _history = [_cur, ..._history.filter((track) => !_sameTrack(track, _cur))].slice(0, 30);
+  }
   _cur = { id: musicId, title, artist, cover, audioSrc, audio: audioSrc, artistId, artistFoto };
 
   if (!_allTracks.length) await _loadTracks();
@@ -252,6 +268,9 @@ async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, m
     _contextTracks = [];
     _contextIndex = -1;
     _contextMode = 'global';
+  } else if (_contextMode === 'collection' && _contextTracks.length) {
+    const currentContextIndex = _contextTracks.findIndex((track) => _sameTrack(track, _cur));
+    if (currentContextIndex >= 0) _contextIndex = currentContextIndex;
   }
 
   if (!options.keepQueue) {
@@ -392,6 +411,11 @@ function _bindAudio(audio) {
   };
 
   audio.onended = () => {
+    if (_loop) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+      return;
+    }
     _playing = false;
     _updatePlayBtn(false);
     nextTrack();
@@ -409,6 +433,10 @@ function _startFake() {
     _setText('pb-dur', _fmt(_fakeDur));
 
     if (_fakeT >= _fakeDur) {
+      if (_loop) {
+        _fakeT = 0;
+        return;
+      }
       clearInterval(_fakeTimer);
       _playing = false;
       _updatePlayBtn(false);
@@ -434,6 +462,50 @@ function togglePlay() {
 
   _updatePlayBtn(_playing);
 }
+
+function _isTypingTarget(target) {
+  const element = target instanceof Element ? target : null;
+  if (!element) return false;
+  return !!element.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""], .finput');
+}
+
+function _seekPlayer(seconds) {
+  const audio = document.getElementById('g-audio');
+  const hasAudio = audio?.src && !audio.src.endsWith(window.location.pathname);
+  if (hasAudio && Number.isFinite(audio.duration)) {
+    audio.currentTime = Math.max(0, Math.min(audio.duration, (audio.currentTime || 0) + seconds));
+    return;
+  }
+  if (_cur) {
+    _fakeT = Math.max(0, Math.min(_fakeDur, _fakeT + seconds));
+    _setFill('pb-fill', (_fakeT / _fakeDur) * 100);
+    _setText('pb-cur', _fmt(_fakeT));
+  }
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || _isTypingTarget(event.target)) return;
+  if (!_cur && event.code !== 'ArrowRight' && event.code !== 'ArrowLeft') return;
+
+  if (event.code === 'Space') {
+    event.preventDefault();
+    togglePlay();
+  } else if (event.code === 'ArrowRight') {
+    event.preventDefault();
+    if (event.shiftKey) nextTrack();
+    else _seekPlayer(10);
+  } else if (event.code === 'ArrowLeft') {
+    event.preventDefault();
+    if (event.shiftKey) prevTrack();
+    else _seekPlayer(-10);
+  } else if (event.code === 'KeyN') {
+    event.preventDefault();
+    nextTrack();
+  } else if (event.code === 'KeyP') {
+    event.preventDefault();
+    prevTrack();
+  }
+});
 
 function _updatePlayBtn(isPlaying) {
   const button = document.getElementById('pb-play');
@@ -509,6 +581,8 @@ function _saveState() {
     duration: hasAudio ? (audio.duration || _fakeDur) : _fakeDur,
     volume: hasAudio ? audio.volume : 0.7,
     queue: _queue,
+    history: _history,
+    loop: _loop,
     contextTracks: _contextTracks,
     contextIndex: _contextIndex,
     contextMode: _contextMode,

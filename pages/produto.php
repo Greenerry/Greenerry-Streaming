@@ -191,6 +191,18 @@ foreach ($relatedProducts as $related) {
     }
 }
 $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
+
+if (!function_exists('product_rating_stars')) {
+    function product_rating_stars(float $rating, string $class = ''): string
+    {
+        $rounded = (int)round(max(0, min(5, $rating)));
+        $html = '<span class="rating-stars ' . h($class) . '" aria-label="' . h(number_format($rating, 1, ',', '.') . '/5') . '">';
+        for ($star = 1; $star <= 5; $star++) {
+            $html .= '<span class="' . ($star <= $rounded ? 'is-filled' : '') . '">&#9733;</span>';
+        }
+        return $html . '</span>';
+    }
+}
 ?>
 
 <section class="content-shell content-shell--cloud content-shell--catalog-cloud">
@@ -262,10 +274,10 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
             <?php endif; ?>
 
             <div class="product-buy-row">
-              <div class="qty-picker product-qty-picker <?= $isOwnProduct ? 'qty-picker--disabled' : '' ?>">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(-1, this)" <?= $isOwnProduct ? 'disabled' : '' ?>>-</button>
+              <div class="qty-picker product-qty-picker <?= $isOwnProduct ? 'qty-picker--disabled' : '' ?>" aria-label="<?= h(current_lang() === 'en' ? 'Quantity' : 'Quantidade') ?>">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(-1, this)" aria-label="<?= h(current_lang() === 'en' ? 'Decrease quantity' : 'Diminuir quantidade') ?>" <?= $isOwnProduct ? 'disabled' : '' ?>>-</button>
                 <span class="product-qty">1</span>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(1, this)" <?= $isOwnProduct ? 'disabled' : '' ?>>+</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="changeProductQty(1, this)" aria-label="<?= h(current_lang() === 'en' ? 'Increase quantity' : 'Aumentar quantidade') ?>" <?= $isOwnProduct ? 'disabled' : '' ?>>+</button>
               </div>
 
               <button type="button" class="btn btn-dark product-add-btn" id="product-add-btn" onclick="handleProductAddToCart()" <?= $isOwnProduct ? 'disabled aria-disabled="true"' : '' ?>>
@@ -293,6 +305,9 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
       <div class="page-intro mt8">
         <span class="slabel" data-t="product_reviews_label">Avaliações</span>
         <h2 data-t="product_reviews_title">Reviews do produto</h2>
+        <div class="review-summary">
+          <?= product_rating_stars((float)$reviewStats['avg_rating'], 'rating-stars--summary') ?>
+        </div>
         <p>
           <strong><?= number_format((float)$reviewStats['avg_rating'], 1, ',', '.') ?>/5</strong>
           · <?= h(count_label((int)$reviewStats['total_reviews'], 'record')) ?>
@@ -333,7 +348,7 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
         <div class="review-list">
           <?php foreach ($reviews as $review): ?>
             <article class="message-thread-item review-item">
-              <div class="between">
+              <div class="review-item-head">
                 <div class="order-product-info">
                   <div class="avatar review-avatar">
                     <?php if (!empty($review['foto'])): ?><img src="<?= h(asset_url('img', $review['foto'])) ?>" alt=""><?php endif; ?>
@@ -343,7 +358,10 @@ $productMediaCloud = array_values(array_slice($productMediaCloud, 0, 12));
                     <p><?= date('d/m/Y', strtotime($review['criado_em'])) ?></p>
                   </div>
                 </div>
-                <span class="badge badge-dark"><?= (int)$review['rating'] ?>/5</span>
+                <div class="review-rating-badge">
+                  <?= product_rating_stars((float)$review['rating'], 'rating-stars--small') ?>
+                  <span><?= (int)$review['rating'] ?>/5</span>
+                </div>
               </div>
               <?php if (!empty($review['comentario'])): ?>
                 <p><?= nl2br(h($review['comentario'])) ?></p>

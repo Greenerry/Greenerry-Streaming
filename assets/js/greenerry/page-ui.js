@@ -788,6 +788,59 @@ function initArtistSearch(root = document) {
   });
 }
 
+function initOrderMessageForms(root = document) {
+  const forms = Array.from(root.querySelectorAll?.('.order-message-form') || document.querySelectorAll('.order-message-form'));
+  forms.forEach((form) => {
+    if (form.dataset.ajaxMessageReady === '1') return;
+    form.dataset.ajaxMessageReady = '1';
+    const textarea = form.querySelector('textarea[name="message"]');
+
+    textarea?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey) return;
+      event.preventDefault();
+      form.requestSubmit();
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = (textarea?.value || '').trim();
+      if (!message) return;
+      const button = form.querySelector('button[type="submit"]');
+      button?.setAttribute('disabled', 'disabled');
+
+      try {
+        const response = await fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { 'X-Requested-With': 'fetch' }
+        });
+        if (!response.ok) throw new Error('message failed');
+
+        let thread = form.parentElement?.querySelector('.order-message-thread');
+        if (!thread) {
+          thread = document.createElement('div');
+          thread.className = 'order-message-thread';
+          form.before(thread);
+        }
+        const bubble = document.createElement('div');
+        bubble.className = 'order-message-bubble from-me';
+        const label = form.querySelector('input[name="action"][value="reply_message"]')
+          ? (typeof _tr === 'function' ? _tr('message_you', 'Tu') : 'Tu')
+          : (typeof _tr === 'function' ? _tr('message_you', 'Tu') : 'Tu');
+        bubble.innerHTML = `<span>${label}</span><p>${message.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]).replace(/\n/g, '<br>')}</p>`;
+        thread.appendChild(bubble);
+        textarea.value = '';
+        bubble.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (error) {
+        if (window.DEBUG_GREENERRY) console.warn('Order message failed:', error);
+        form.submit();
+      } finally {
+        button?.removeAttribute('disabled');
+      }
+    });
+  });
+}
+
 /* Page init */
 async function _initPageContent() {
   // Called once on normal page load and again after soft navigation.
@@ -798,6 +851,7 @@ async function _initPageContent() {
   document.querySelectorAll('[data-catalog-results]').forEach((host) => animateCatalogResults(host));
   initArtistFilters();
   initOrderFilters();
+  initOrderMessageForms();
   initOrderAccordions();
   initLibraryTabs();
   initPlaylistTrackRemoval();
@@ -865,6 +919,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     shuffleBtn.style.color = _shuffle ? 'var(--text)' : 'var(--text3)';
     shuffleBtn.addEventListener('click', toggleShuffle);
   }
+  const loopBtn = document.getElementById('pb-loop');
+  if (loopBtn) {
+    loopBtn.classList.toggle('on', !!_loop);
+    loopBtn.setAttribute('aria-pressed', _loop ? 'true' : 'false');
+    loopBtn.style.color = _loop ? 'var(--text)' : 'var(--text3)';
+    loopBtn.addEventListener('click', toggleLoop);
+  }
 
   document.getElementById('pb-bar')?.addEventListener('click', function(e) {
     const percent = (e.clientX - this.getBoundingClientRect().left) / this.offsetWidth;
@@ -907,6 +968,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       _fakeT = Number(saved.currentTime || 0);
       _fakeDur = Number(saved.duration || 210);
       if (saved.queue?.length) _queue = saved.queue;
+      if (Array.isArray(saved.history)) _history = saved.history;
+      _loop = !!saved.loop;
       if (Array.isArray(saved.contextTracks)) _contextTracks = saved.contextTracks;
       _contextIndex = Number.isFinite(Number(saved.contextIndex)) ? Number(saved.contextIndex) : -1;
       _contextMode = saved.contextMode === 'collection' ? 'collection' : 'global';

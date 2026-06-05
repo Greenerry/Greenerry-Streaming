@@ -385,10 +385,10 @@ include '../includes/header.php';
 
               <div class="order-actions-bar mt6">
                 <?php if ($hasEditableItems && $order['estado_encomenda'] !== 'cancelada'): ?>
-                  <form method="post" class="order-actions-form">
+                  <form method="post" class="order-actions-form order-actions-form--stepper">
                     <?= csrf_input() ?>
                     <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">
-                    <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm" data-t="orders_action_prepare">Em prepara??o</button>
+                    <button type="submit" name="action" value="prepare" class="btn btn-ghost btn-sm" data-t="orders_action_prepare">Em preparação</button>
                     <button type="submit" name="action" value="ship" class="btn btn-ghost btn-sm" data-t="orders_action_ship">Marcar enviada</button>
                     <button type="submit" name="action" value="deliver" class="btn btn-dark btn-sm" data-t="orders_action_deliver">Marcar entregue</button>
                     <button type="submit" name="action" value="cancel" class="btn btn-danger btn-sm" data-t="orders_action_cancel">Cancelar itens</button>

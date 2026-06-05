@@ -135,7 +135,7 @@ include '../includes/header.php';
       </div>
       <div class="artist-analytics-insights">
         <div><span data-t="artist_analytics_best_day">Best day</span><strong><?= h($bestDay['label']) ?></strong><small><?= (int)$bestDay['listens'] ?> <span data-t="artist_overview_plays_lower">plays</span></small></div>
-        <div><span data-t="artist_analytics_active_days">Active days</span><strong><?= (int)$activeDays ?></strong><small><?= h($rangeOptions[$selectedRange]['label']) ?></small></div>
+        <div><span data-t="artist_analytics_active_days">Active days</span><strong><?= (int)$activeDays ?></strong><small data-t="<?= h($rangeOptions[$selectedRange]['key']) ?>"><?= h($rangeOptions[$selectedRange]['label']) ?></small></div>
         <div><span data-t="artist_analytics_average">Average</span><strong><?= (int)$averagePerActiveDay ?></strong><small><span data-t="artist_analytics_plays_active_day">plays / active day</span></small></div>
       </div>
     </article>
@@ -156,7 +156,7 @@ include '../includes/header.php';
             </span>
             <div>
               <strong><?= h($track['titulo']) ?></strong>
-              <small><?= h($track['genero'] ?: (current_lang() === 'en' ? 'No genre' : 'Sem género')) ?></small>
+              <small <?= $track['genero'] ? '' : 'data-lang-pt="Sem género" data-lang-en="No genre"' ?>><?= h($track['genero'] ?: (current_lang() === 'en' ? 'No genre' : 'Sem género')) ?></small>
               <div class="artist-track-stats"><span><?= (int)$track['listeners'] ?> <span data-t="artist_table_listeners">listeners</span></span><span><?= (int)$track['listens'] ?> <span data-t="artist_overview_plays_lower">plays</span></span></div>
             </div>
           </article>

@@ -127,6 +127,10 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 10h6"/><path d="M8 14h6"/><path d="M8 18h6"/></svg>
             <span data-t="nav_my_orders">As minhas compras</span>
           </a>
+          <a href="<?= $_base ?>/pages/contact_admin.php" class="sl-link sl-link--contact-admin <?= $page === 'contact_admin.php' ? 'on' : '' ?>">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+            <span data-t="nav_contact_admin">Falar com o admin</span>
+          </a>
         </div>
 
         <div class="sl-sec sl-artist-nav">
@@ -296,7 +300,6 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
                   <a href="<?= $_base ?>/pages/profile.php" data-t="nav_profile">Profile</a>
                   <a href="<?= $_base ?>/pages/favourites.php" data-t="nav_library">Library</a>
                   <a href="<?= $_base ?>/pages/my_orders.php" data-t="nav_my_orders">My orders</a>
-                  <button type="button" data-theme-toggle data-t="account_theme">Theme</button>
                   <a href="<?= $_base ?>/pages/logout.php" data-t="nav_logout">Sign out</a>
                 </div>
               </div>

@@ -150,7 +150,10 @@ include '../includes/header.php';
       </div>
 
       <form method="get" class="catalog-filter" data-instant-filter>
-        <input type="text" name="q" value="<?= h($search) ?>" class="finput" data-tp="shop_search_placeholder" placeholder="Search product or artist" autocomplete="off">
+        <label class="catalog-search-field">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" name="q" value="<?= h($search) ?>" class="finput" data-tp="shop_search_placeholder" placeholder="Search product or artist" autocomplete="off">
+        </label>
         <select name="cat" class="finput">
           <option value="0" data-t="shop_all_categories">All</option>
           <?php foreach ($categories as $cat): ?>

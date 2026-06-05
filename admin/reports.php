@@ -28,6 +28,56 @@ $periodKeySql = in_array($range, ['7d', '30d'], true)
 $periodLabelSql = in_array($range, ['7d', '30d'], true)
     ? "DATE_FORMAT(e.criado_em, '%d/%m')"
     : "DATE_FORMAT(e.criado_em, '%m/%Y')";
+$artistOptions = db_all(
+    $conn,
+    "SELECT DISTINCT c.idCliente, c.nome
+     FROM cliente c
+     WHERE EXISTS (SELECT 1 FROM encomenda_item ei WHERE ei.idArtista = c.idCliente)
+        OR EXISTS (SELECT 1 FROM faixa_listen fl WHERE fl.idArtista = c.idCliente)
+     ORDER BY c.nome ASC"
+);
+$artistFilterId = max(0, (int)($_GET['artist_id'] ?? 0));
+$artistQuery = trim((string)($_GET['artist_q'] ?? ''));
+$selectedArtist = null;
+foreach ($artistOptions as $artistOption) {
+    if ($artistFilterId > 0 && (int)$artistOption['idCliente'] === $artistFilterId) {
+        $selectedArtist = $artistOption;
+        break;
+    }
+    if ($artistFilterId === 0 && $artistQuery !== '' && mb_strtolower((string)$artistOption['nome']) === mb_strtolower($artistQuery)) {
+        $selectedArtist = $artistOption;
+        break;
+    }
+}
+if (!$selectedArtist && $artistFilterId === 0 && $artistQuery !== '') {
+    foreach ($artistOptions as $artistOption) {
+        if (mb_stripos((string)$artistOption['nome'], $artistQuery) !== false) {
+            $selectedArtist = $artistOption;
+            break;
+        }
+    }
+}
+if ($selectedArtist) {
+    $artistFilterId = (int)$selectedArtist['idCliente'];
+    $artistQuery = (string)$selectedArtist['nome'];
+}
+if ($artistFilterId > 0 && !$selectedArtist) {
+    $artistFilterId = 0;
+}
+$artistSalesWhere = $artistFilterId > 0 ? " AND ei.idArtista = {$artistFilterId}" : "";
+$artistListenWhere = $artistFilterId > 0 ? " AND fl.idArtista = {$artistFilterId}" : "";
+$reportsRangeUrl = static function (string $targetRange) use ($artistQuery): string {
+    $query = ['range' => $targetRange];
+    if ($artistQuery !== '') {
+        $query['artist_q'] = $artistQuery;
+    }
+    return 'reports.php?' . http_build_query($query);
+};
+$exportQuery = ['export' => 'excel', 'range' => $range, 'lang' => current_lang()];
+if ($artistQuery !== '') {
+    $exportQuery['artist_q'] = $artistQuery;
+}
+$exportHref = 'reports.php?' . http_build_query($exportQuery);
 
 $finance = db_one(
     $conn,
@@ -38,12 +88,13 @@ $finance = db_one(
         COALESCE(SUM(CASE WHEN e.estado_encomenda = 'cancelada' OR ei.estado_item = 'cancelado' OR e.estado_pagamento = 'reembolsado' THEN ei.total_linha END), 0) AS blocked_value
      FROM encomenda e
      JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
-     WHERE e.criado_em >= {$dateFromSql}"
+     WHERE e.criado_em >= {$dateFromSql}{$artistSalesWhere}"
 ) ?: [];
 
 $topArtists = db_all(
     $conn,
     "SELECT c.nome,
+            c.foto,
             COUNT(DISTINCT e.idEncomenda) AS orders_count,
             COALESCE(SUM(ei.valor_artista), 0) AS artist_total,
             COALESCE(SUM(ei.comissao_valor), 0) AS commission_total
@@ -53,8 +104,8 @@ $topArtists = db_all(
      WHERE e.estado_pagamento = 'pago'
        AND e.estado_encomenda != 'cancelada'
        AND ei.estado_item != 'cancelado'
-       AND e.criado_em >= {$dateFromSql}
-     GROUP BY c.idCliente
+       AND e.criado_em >= {$dateFromSql}{$artistSalesWhere}
+     GROUP BY c.idCliente, c.nome, c.foto
      ORDER BY artist_total DESC
      LIMIT 10"
 );
@@ -69,7 +120,7 @@ $categoryRevenue = db_all(
      WHERE e.estado_pagamento = 'pago'
        AND e.estado_encomenda != 'cancelada'
        AND ei.estado_item != 'cancelado'
-       AND e.criado_em >= {$dateFromSql}
+       AND e.criado_em >= {$dateFromSql}{$artistSalesWhere}
      GROUP BY ei.categoria_nome
      ORDER BY total_value DESC"
 );
@@ -85,9 +136,22 @@ $monthlyRevenue = db_all(
      WHERE e.criado_em >= {$dateFromSql}
        AND e.estado_pagamento = 'pago'
        AND e.estado_encomenda != 'cancelada'
-       AND ei.estado_item != 'cancelado'
+       AND ei.estado_item != 'cancelado'{$artistSalesWhere}
      GROUP BY {$periodKeySql}, {$periodLabelSql}
      ORDER BY period_key ASC"
+);
+
+$listeningLeadersExport = db_all(
+    $conn,
+    "SELECT c.nome AS artista,
+            COUNT(fl.idListen) AS reproducoes,
+            COUNT(DISTINCT fl.idCliente) AS ouvintes
+     FROM faixa_listen fl
+     JOIN cliente c ON c.idCliente = fl.idArtista
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
+     GROUP BY c.idCliente, c.nome
+     ORDER BY reproducoes DESC
+     LIMIT 25"
 );
 
 $maxMonthlyRevenue = 0.0;
@@ -105,11 +169,15 @@ $breakdownTotal = max(
     (float)($finance['paid_revenue'] ?? 0) + (float)($finance['commission'] ?? 0) + (float)($finance['artist_value'] ?? 0) + (float)($finance['blocked_value'] ?? 0)
 );
 $incomeBreakdown = [
-    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#2563eb'],
-    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#16a34a'],
-    ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#f59e0b'],
-    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#e11d48'],
+    ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#8fb7f3'],
+    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#94d3a2'],
+    ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#d8bd7b'],
+    ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#d98a94'],
 ];
+foreach ($incomeBreakdown as &$breakdownItem) {
+    $breakdownItem['percent'] = $breakdownTotal > 0 ? round(($breakdownItem['value'] / $breakdownTotal) * 100) : 0;
+}
+unset($breakdownItem);
 $breakdownStops = [];
 $breakdownCursor = 0.0;
 foreach ($incomeBreakdown as $item) {
@@ -123,6 +191,15 @@ foreach ($incomeBreakdown as $item) {
 $donutStyle = $breakdownStops
     ? 'background: conic-gradient(' . implode(', ', $breakdownStops) . ', rgba(255,255,255,.10) ' . round($breakdownCursor, 2) . '% 100%);'
     : 'background: conic-gradient(#c9d0db 0 38%, #9dafaa 38% 62%, #8b98aa 62% 84%, #d7b676 84% 100%);';
+$paidStop = 0.0;
+$commissionStop = 0.0;
+$artistsStop = 0.0;
+if ($breakdownTotal > 0) {
+    $paidStop = min(100, ((float)($finance['paid_revenue'] ?? 0) / $breakdownTotal) * 100);
+    $commissionStop = min(100, $paidStop + (((float)($finance['commission'] ?? 0) / $breakdownTotal) * 100));
+    $artistsStop = min(100, $commissionStop + (((float)($finance['artist_value'] ?? 0) / $breakdownTotal) * 100));
+}
+$donutStyle .= ' --paid-stop:' . round($paidStop, 2) . '%; --commission-stop:' . round($commissionStop, 2) . '%; --artists-stop:' . round($artistsStop, 2) . '%;';
 
 if (($_GET['export'] ?? '') === 'excel') {
     $exportLang = strtolower((string)($_GET['lang'] ?? current_lang())) === 'en' ? 'en' : 'pt';
@@ -383,6 +460,7 @@ if (($_GET['export'] ?? '') === 'excel') {
          JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
          JOIN cliente c ON c.idCliente = e.idCliente
          JOIN cliente art ON art.idCliente = ei.idArtista
+         WHERE e.criado_em >= {$dateFromSql}{$artistSalesWhere}
          ORDER BY e.criado_em DESC, ei.idEncomendaItem DESC
          LIMIT 200"
     );
@@ -432,7 +510,8 @@ if (($_GET['export'] ?? '') === 'excel') {
             'pago' => $xl('paid'),
             'reembolsado' => $xl('refunded'),
             'cancelada', 'cancelado' => $xl('cancelled'),
-            'processamento' => $xl('processing'),
+            'processamento', 'em_preparacao' => $xl('processing'),
+            'enviada', 'enviado' => current_lang() === 'en' ? 'Sent' : 'Enviada',
             'entregue' => $xl('delivered'),
             'aberta' => $xl('open'),
             'respondida' => $xl('answered'),
@@ -444,7 +523,7 @@ if (($_GET['export'] ?? '') === 'excel') {
         $label = $statusLabel($status);
         $style = match ($status) {
             'aprovado', 'ativo', 'pago', 'entregue', 'respondida', 'fechada' => 'StatusGood',
-            'pendente', 'aberta', 'processamento' => 'StatusWarn',
+            'pendente', 'aberta', 'processamento', 'em_preparacao', 'enviada', 'enviado' => 'StatusWarn',
             'rejeitado', 'inativo', 'cancelada', 'cancelado', 'reembolsado' => 'StatusBad',
             default => 'Text',
         };
@@ -481,13 +560,13 @@ if (($_GET['export'] ?? '') === 'excel') {
         . '<Style ss:ID="Title"><Font ss:FontName="Georgia" ss:Bold="1" ss:Size="22" ss:Color="#FFFFFF"/><Interior ss:Color="#111827" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>'
         . '<Style ss:ID="Subtitle"><Font ss:FontName="Aptos" ss:Size="10" ss:Color="#CBD5E1"/><Interior ss:Color="#111827" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>'
         . '<Style ss:ID="MetricLabel"><Font ss:Bold="1" ss:Size="9" ss:Color="#64748B"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>'
-        . '<Style ss:ID="MetricMoney"><Font ss:Bold="1" ss:Size="16" ss:Color="#111827"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 &quot;EUR&quot;"/></Style>'
+        . '<Style ss:ID="MetricMoney"><Font ss:Bold="1" ss:Size="16" ss:Color="#111827"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><NumberFormat ss:Format="#,##0.00 &quot;€&quot;"/></Style>'
         . '<Style ss:ID="MetricNumber"><Font ss:Bold="1" ss:Size="16" ss:Color="#111827"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><NumberFormat ss:Format="0"/></Style>'
         . '<Style ss:ID="Spacer"><Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/></Style>'
         . '<Style ss:ID="Header"><Font ss:Bold="1" ss:Size="9" ss:Color="#FFFFFF"/><Interior ss:Color="#1F2937" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/></Borders></Style>'
         . '<Style ss:ID="Text"><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>'
         . '<Style ss:ID="Number"><NumberFormat ss:Format="0"/><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>'
-        . '<Style ss:ID="Money"><NumberFormat ss:Format="#,##0.00 &quot;EUR&quot;"/><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>'
+        . '<Style ss:ID="Money"><NumberFormat ss:Format="#,##0.00 &quot;€&quot;"/><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>'
         . '<Style ss:ID="StatusGood"><Font ss:Bold="1" ss:Size="9" ss:Color="#14532D"/><Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>'
         . '<Style ss:ID="StatusWarn"><Font ss:Bold="1" ss:Size="9" ss:Color="#713F12"/><Interior ss:Color="#FEF3C7" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>'
         . '<Style ss:ID="StatusBad"><Font ss:Bold="1" ss:Size="9" ss:Color="#7F1D1D"/><Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>'
@@ -612,6 +691,19 @@ if (($_GET['export'] ?? '') === 'excel') {
         ]);
     }
     $workbook .= $sheetEnd();
+
+    $workbook .= $sheetStart(current_lang() === 'en' ? 'Listening' : 'Escuta');
+    $workbook .= $titleRows(current_lang() === 'en' ? 'Listening report' : 'Relatório de escuta', current_lang() === 'en' ? 'Top artists by plays and listeners' : 'Artistas com mais reproduções e ouvintes');
+    $workbook .= $row([$cell(current_lang() === 'en' ? 'Artist' : 'Artista', 'Header'), $cell(current_lang() === 'en' ? 'Plays' : 'Reproduções', 'Header'), $cell(current_lang() === 'en' ? 'Listeners' : 'Ouvintes', 'Header')]);
+    foreach ($listeningLeadersExport as $leader) {
+        $workbook .= $row([
+            $cell($leader['artista']),
+            $numberCell($leader['reproducoes']),
+            $numberCell($leader['ouvintes'])
+        ]);
+    }
+    $workbook .= $sheetEnd();
+
     $workbook .= '</Workbook>';
 
     $filename = $xl('file') . '-' . date('Y-m-d') . '.xls';
@@ -636,13 +728,25 @@ include 'admin_header.php';
     <h2 data-admin-t="reports_title">Relatórios</h2>
     <p data-admin-t="reports_intro">Receita, categorias, artistas e exportacao executiva num so lugar.</p>
   </div>
-  <div class="dash-v4-actions">
+  <div class="dash-v4-actions admin-report-tools">
     <nav class="admin-range-pills" aria-label="Reports range">
       <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
-        <a href="reports.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-admin-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
+        <a href="<?= h($reportsRangeUrl($rangeKey)) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-admin-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
       <?php endforeach; ?>
     </nav>
-    <a href="reports.php?export=excel&range=<?= h($range) ?>&lang=<?= h(current_lang()) ?>" class="btn btn-dark btn-sm" data-admin-export-link data-admin-t="reports_export_excel">Exportar Excel</a>
+    <form method="get" class="admin-artist-filter">
+      <input type="hidden" name="range" value="<?= h($range) ?>">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" name="artist_q" list="reports-artist-options" value="<?= h($artistQuery) ?>" placeholder="Todos os artistas" aria-label="Pesquisar artista ou cliente" onchange="this.form.submit()">
+        <datalist id="reports-artist-options">
+          <?php foreach ($artistOptions as $artistOption): ?>
+            <option value="<?= h($artistOption['nome']) ?>"></option>
+          <?php endforeach; ?>
+        </datalist>
+      </label>
+    </form>
+    <a href="<?= h($exportHref) ?>" class="btn btn-dark btn-sm" data-admin-export-link data-admin-t="reports_export_excel">Exportar Excel</a>
   </div>
 </div>
 
@@ -661,8 +765,8 @@ include 'admin_header.php';
     </div>
     <div class="admin-donut admin-chart-tip" style="<?= h($donutStyle) ?>" data-chart-tip="<?= h($chartTipLabels['paid'] . ': ' . format_eur((float)($finance['paid_revenue'] ?? 0)) . ' | ' . $chartTipLabels['commission'] . ': ' . format_eur((float)($finance['commission'] ?? 0)) . ' | ' . $chartTipLabels['artists'] . ': ' . format_eur((float)($finance['artist_value'] ?? 0)) . ' | ' . $chartTipLabels['blocked'] . ': ' . format_eur((float)($finance['blocked_value'] ?? 0))) ?>">
       <div>
-        <strong><?= $breakdownTotal > 1 ? round(((float)($finance['paid_revenue'] ?? 0) / $breakdownTotal) * 100, 1) : 0 ?>%</strong>
-        <span data-admin-t="reports_paid_short">pago</span>
+        <strong><?= h(format_eur($breakdownTotal)) ?></strong>
+        <span>Total</span>
       </div>
     </div>
     <div class="admin-donut-legend">
@@ -670,7 +774,7 @@ include 'admin_header.php';
         <div>
           <span style="background: <?= h($item['color']) ?>"></span>
           <strong data-admin-t="<?= h($item['tkey']) ?>"><?= h($item['label']) ?></strong>
-          <em><?= h(format_eur($item['value'])) ?></em>
+          <em><?= (int)$item['percent'] ?>%</em>
         </div>
       <?php endforeach; ?>
     </div>
@@ -745,8 +849,15 @@ include 'admin_header.php';
         <?php foreach ($topArtists as $artist): ?>
           <div class="simple-list-item">
             <div>
-              <strong><?= h($artist['nome']) ?></strong>
-              <p><?= (int)$artist['orders_count'] ?> <span data-admin-t="card_orders">encomendas</span></p>
+              <span class="admin-inline-person">
+                <span class="admin-inline-avatar">
+                  <?php if (!empty($artist['foto'])): ?><img src="<?= h(asset_url('img', $artist['foto'])) ?>" alt=""><?php endif; ?>
+                </span>
+                <span>
+                  <strong><?= h($artist['nome']) ?></strong>
+                  <p><?= (int)$artist['orders_count'] ?> <span data-admin-t="card_orders">encomendas</span></p>
+                </span>
+              </span>
             </div>
             <span><?= h(format_eur((float)$artist['artist_total'])) ?></span>
           </div>

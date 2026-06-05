@@ -76,15 +76,15 @@ include '../includes/header.php';
 
         <div class="cart-summary-line">
           <span data-t="cart_subtotal">Subtotal</span>
-          <strong id="cart-subtotal">0,00 EUR</strong>
+          <strong id="cart-subtotal">0,00 €</strong>
         </div>
         <div class="cart-summary-line">
           <span data-t="cart_vat">IVA estimado</span>
-          <strong id="cart-iva">0,00 EUR</strong>
+          <strong id="cart-iva">0,00 €</strong>
         </div>
         <div class="cart-summary-line cart-summary-line--total">
           <span data-t="cart_total">Total</span>
-          <strong id="cart-total">0,00 EUR</strong>
+          <strong id="cart-total">0,00 €</strong>
         </div>
 
         <?php if (is_user_logged_in()): ?>

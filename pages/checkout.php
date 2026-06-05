@@ -9,16 +9,6 @@ $orderId = 0;
 // Country-specific rules keep checkout validation aligned between PHP and the browser.
 $checkoutCountries = [
     'Portugal' => ['key' => 'country_portugal', 'postal' => '/^\d{4}-\d{3}$/', 'html' => '\d{4}-\d{3}', 'placeholder' => '1000-001', 'phone' => '+351 912345678'],
-    'Spain' => ['key' => 'country_spain', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '28013', 'phone' => '+34 600 000 000'],
-    'France' => ['key' => 'country_france', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '75001', 'phone' => '+33 6 00 00 00 00'],
-    'Germany' => ['key' => 'country_germany', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '10115', 'phone' => '+49 151 23456789'],
-    'Italy' => ['key' => 'country_italy', 'postal' => '/^\d{5}$/', 'html' => '\d{5}', 'placeholder' => '00118', 'phone' => '+39 312 345 6789'],
-    'Netherlands' => ['key' => 'country_netherlands', 'postal' => '/^\d{4}\s?[A-Z]{2}$/i', 'html' => '\d{4}\s?[A-Za-z]{2}', 'placeholder' => '1012 AB', 'phone' => '+31 6 12345678'],
-    'Belgium' => ['key' => 'country_belgium', 'postal' => '/^\d{4}$/', 'html' => '\d{4}', 'placeholder' => '1000', 'phone' => '+32 470 12 34 56'],
-    'Ireland' => ['key' => 'country_ireland', 'postal' => '/^[A-Z0-9]{3}\s?[A-Z0-9]{4}$/i', 'html' => '[A-Za-z0-9]{3}\s?[A-Za-z0-9]{4}', 'placeholder' => 'D02 X285', 'phone' => '+353 85 123 4567'],
-    'United Kingdom' => ['key' => 'country_united_kingdom', 'postal' => '/^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i', 'html' => '[A-Za-z]{1,2}\d[A-Za-z\d]?\s?\d[A-Za-z]{2}', 'placeholder' => 'SW1A 1AA', 'phone' => '+44 7700 900123'],
-    'United States' => ['key' => 'country_united_states', 'postal' => '/^\d{5}(-\d{4})?$/', 'html' => '\d{5}(-\d{4})?', 'placeholder' => '10001', 'phone' => '+1 202 555 0100'],
-    'Brazil' => ['key' => 'country_brazil', 'postal' => '/^\d{5}-?\d{3}$/', 'html' => '\d{5}-?\d{3}', 'placeholder' => '01001-000', 'phone' => '+55 11 91234-5678'],
 ];
 $recipient = '';
 $address = '';
@@ -59,14 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
         $err = tr('error.invalid_postal');
     } elseif (!$err && $phone === '') {
         $err = tr('error.invalid_phone');
-    } elseif (!$err && $country === 'Portugal' && (($phoneErr = validate_phone($phone)) !== null)) {
+    } elseif (!$err && (($phoneErr = validate_phone($phone)) !== null)) {
         $err = $phoneErr;
-    } elseif (!$err && $country !== 'Portugal' && !preg_match('/^\+?[0-9\s().-]{7,20}$/', $phone)) {
-        $err = tr('error.invalid_phone');
-    } elseif (!$err && $country === 'Portugal' && (($nifErr = validate_nif($nif)) !== null)) {
+    } elseif (!$err && (($nifErr = validate_nif($nif)) !== null)) {
         $err = $nifErr;
-    } elseif (!$err && $country !== 'Portugal' && $nif !== '' && !preg_match('/^[A-Za-z0-9 .-]{4,30}$/', $nif)) {
-        $err = tr('error.invalid_nif');
     } elseif (!$err && !in_array($paymentMethod, ['cartao', 'mbway', 'transferencia'], true)) {
         $err = tr('error.invalid_payment_method');
     } elseif (!$err && !$cart) {
@@ -156,6 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                 'product' => $product,
                 'quantity' => $quantity,
                 'sizeId' => $sizeId > 0 ? $sizeId : null,
+                'sizeLabel' => isset($size['etiqueta']) ? (string)$size['etiqueta'] : '',
                 'lineSubtotal' => $lineSubtotal,
                 'lineIva' => $lineIva,
                 'lineCommission' => $lineCommission,
@@ -217,8 +204,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
 
             $orderId = (int)mysqli_insert_id($conn);
 
-            foreach ($orderLines as $line) {
+            foreach ($orderLines as $lineIndex => $line) {
                 $product = $line['product'];
+                $orderLines[$lineIndex]['image'] = product_main_image($conn, (int)$product['idProduto']);
 
                 if (!db_prepared(
                     $conn,
@@ -366,10 +354,8 @@ include '../includes/header.php';
 
 <section class="content-shell">
   <div class="wrap">
-    <div class="page-intro">
-      <span class="slabel" data-t="checkout_label">Checkout</span>
-      <h2 data-t="checkout_title">Finalizar encomenda</h2>
-      <p data-t="checkout_intro">Confirma a morada, o pagamento e o resumo dos artigos antes de concluir.</p>
+    <div class="page-intro page-intro--simple">
+      <h2 data-t="checkout_title">Finalizar compra</h2>
     </div>
 
     <?php if ($err): ?>
@@ -381,9 +367,25 @@ include '../includes/header.php';
         <div class="card-body text-center">
           <span class="badge badge-blue" data-t="checkout_success_badge">Encomenda criada</span>
           <h3 class="mt4"><span data-t="checkout_order_number">Pedido</span> #<?= (int)$orderId ?></h3>
-          <p data-t="checkout_success_text">O recibo já esta disponível e o carrinho pode ser limpo em segurança.</p>
+          <?php if (!empty($orderLines)): ?>
+            <div class="checkout-success-items text-left mt4">
+              <?php foreach ($orderLines as $line): ?>
+                <div class="checkout-success-item">
+                  <span class="checkout-success-thumb">
+                    <?php if (!empty($line['image'])): ?><img src="<?= h(asset_url('img', $line['image'])) ?>" alt=""><?php endif; ?>
+                  </span>
+                  <span class="checkout-success-copy">
+                    <strong><?= h($line['product']['nomeProduto']) ?></strong>
+                    <small><?= h($line['product']['artist_name']) ?> · <?= h(count_label((int)$line['quantity'], 'unit')) ?><?= $line['sizeId'] ? ' · ' . h((string)($line['sizeLabel'] ?? '')) : '' ?></small>
+                  </span>
+                  <span><?= h(format_eur((float)$line['lineTotal'])) ?></span>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <p data-t="checkout_success_text">A fatura já está disponível e o carrinho pode ser limpo em segurança.</p>
           <div class="hero-actions" style="justify-content:center;margin-top:18px;">
-            <a href="receipt.php?id=<?= (int)$orderId ?>" class="btn btn-dark" target="_blank" data-t="checkout_open_receipt">Abrir recibo</a>
+            <a href="receipt.php?id=<?= (int)$orderId ?>" class="btn btn-dark" target="_blank" data-t="checkout_open_receipt">Abrir fatura</a>
             <a href="profile.php" class="btn btn-ghost" data-t="checkout_view_profile">Ver perfil</a>
           </div>
         </div>
@@ -401,7 +403,7 @@ include '../includes/header.php';
 
               <div class="frow">
                 <div class="fg">
-                  <label class="flabel" for="nome_destinatario" data-t="checkout_recipient">Nome do destinatario</label>
+                  <label class="flabel" for="nome_destinatario" data-t="checkout_recipient">Nome do destinatário</label>
                   <input id="nome_destinatario" type="text" name="nome_destinatario" class="finput" required minlength="3" maxlength="120" pattern="^[^\d]+$" data-name-only value="<?= h($recipient) ?>">
                 </div>
                 <div class="fg">
@@ -428,19 +430,8 @@ include '../includes/header.php';
 
               <div class="frow">
                 <div class="fg">
-                  <label class="flabel" for="pais" data-t="checkout_country">Pais</label>
-                  <select id="pais" name="pais" class="finput" required>
-                    <?php foreach ($checkoutCountries as $countryName => $countryRules): ?>
-                      <option
-                        value="<?= h($countryName) ?>"
-                        data-t="<?= h($countryRules['key']) ?>"
-                        data-postal-placeholder="<?= h($countryRules['placeholder']) ?>"
-                        data-postal-pattern="<?= h($countryRules['html']) ?>"
-                        data-phone-placeholder="<?= h($countryRules['phone']) ?>"
-                        <?= $country === $countryName ? 'selected' : '' ?>
-                      ><?= h($countryName) ?></option>
-                    <?php endforeach; ?>
-                  </select>
+                  <label class="flabel" for="pais" data-t="checkout_country">País</label>
+                  <input id="pais" name="pais" class="finput" value="Portugal" readonly data-postal-placeholder="1000-001" data-postal-pattern="\d{4}-\d{3}" data-phone-placeholder="+351 912345678">
                 </div>
                 <div class="fg">
                   <label class="flabel" for="nif" id="tax-label" data-t="checkout_tax_nif">NIF</label>
@@ -476,15 +467,15 @@ include '../includes/header.php';
             <div class="simple-list">
               <div class="simple-list-item">
                 <strong data-t="cart_subtotal">Subtotal</strong>
-                <span id="checkout-subtotal">0,00 EUR</span>
+                <span id="checkout-subtotal">0,00 €</span>
               </div>
               <div class="simple-list-item">
                 <strong data-t="checkout_vat">IVA</strong>
-                <span id="checkout-iva">0,00 EUR</span>
+                <span id="checkout-iva">0,00 €</span>
               </div>
               <div class="simple-list-item">
                 <strong data-t="checkout_final_total">Total final</strong>
-                <span id="checkout-total">0,00 EUR</span>
+                <span id="checkout-total">0,00 €</span>
               </div>
             </div>
           </div>

@@ -183,7 +183,7 @@ include '../includes/header.php';
             </div>
             <div class="artist-message-meta">
               <?php if ((int)$thread['unread_count'] > 0): ?><b><?= (int)$thread['unread_count'] ?> <span data-t="artist_messages_new">new</span></b><?php endif; ?>
-              <span class="badge <?= h(state_badge_class($thread['estado_item'])) ?>"><?= h(order_status_label($thread['estado_item'])) ?></span>
+              <span class="badge <?= h(state_badge_class($thread['estado_item'])) ?>" data-status-label="<?= h($thread['estado_item']) ?>"><?= h(order_status_label($thread['estado_item'])) ?></span>
             </div>
           </div>
 

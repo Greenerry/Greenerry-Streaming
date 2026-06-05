@@ -137,7 +137,7 @@ function cleanup_unused_uploaded_assets(mysqli $conn): int
 function format_eur(float $value): string
 {
     // Portuguese-style currency formatting for shop/orders/revenue.
-    return number_format($value, 2, ',', '.') . ' EUR';
+    return number_format($value, 2, ',', '.') . ' €';
 }
 
 function count_label(int $count, string $type): string

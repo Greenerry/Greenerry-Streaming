@@ -25,7 +25,7 @@ function cartSave(cart) {
 }
 
 function commerceMoney(value) {
-  return `${Number(value || 0).toFixed(2).replace('.', ',')} EUR`;
+  return `${Number(value || 0).toFixed(2).replace('.', ',')} €`;
 }
 
 function commerceEscape(value) {
@@ -386,7 +386,7 @@ function initCheckoutPage(root = document) {
   if (cartJson) cartJson.value = JSON.stringify(cart);
 
   const syncCountryFields = () => {
-    const option = countrySelect?.options?.[countrySelect.selectedIndex];
+    const option = countrySelect?.options?.[countrySelect.selectedIndex] || countrySelect;
     if (!option) return;
     if (postalInput) {
       postalInput.placeholder = option.dataset.postalPlaceholder || '';
@@ -394,8 +394,8 @@ function initCheckoutPage(root = document) {
     }
     if (phoneInput) phoneInput.placeholder = option.dataset.phonePlaceholder || '';
     if (taxLabel) {
-      taxLabel.dataset.t = countrySelect.value === 'Portugal' ? 'checkout_tax_nif' : 'checkout_tax_number';
-      taxLabel.textContent = countrySelect.value === 'Portugal' ? 'NIF' : commerceText('Numero fiscal', 'Tax number');
+      taxLabel.dataset.t = 'checkout_tax_nif';
+      taxLabel.textContent = 'NIF';
     }
   };
 

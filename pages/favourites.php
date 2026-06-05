@@ -286,6 +286,12 @@ include '../includes/header.php';
           <span class="slabel" data-t="library_artists_label">Artistas</span>
           <h2 data-t="library_favourite_artists_title">Artistas favoritos</h2>
         </div>
+        <?php if (is_user_logged_in()): ?>
+          <label class="spotify-search-field library-page-search">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="following-search" placeholder="Procurar artistas favoritos" data-tp="library_following_search_placeholder">
+          </label>
+        <?php endif; ?>
       </div>
 
       <?php if (!is_user_logged_in()): ?>

@@ -7410,8 +7410,9 @@ html body:has(.admin-shell) .admin-commandbar,
 html body:has(.admin-shell) .admin-commandbar.is-solid,
 html body.admin-scrolled:has(.admin-shell) .admin-commandbar {
   border-bottom:0 !important;
-  background:var(--bg) !important;
-  background-color:var(--bg) !important;
+  background:#151719 !important;
+  background-color:#151719 !important;
+  background-image:none !important;
   box-shadow:none !important;
   backdrop-filter:none !important;
   -webkit-backdrop-filter:none !important;
@@ -7422,5 +7423,404 @@ html body.admin-scrolled:has(.admin-shell) .admin-commandbar {
 :root[data-theme="light"] body.admin-scrolled:has(.admin-shell) .admin-commandbar {
   background:#f4f6f8 !important;
   background-color:#f4f6f8 !important;
+  background-image:none !important;
   box-shadow:none !important;
+}
+
+/* Final dashboard/report readability polish. */
+html body:has(.admin-shell) .admin-inline-person {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+html body:has(.admin-shell) .admin-inline-avatar {
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--admin-panel-2);
+  border:1px solid var(--admin-line);
+}
+
+html body:has(.admin-shell) .admin-inline-avatar img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+html body:has(.admin-shell) .admin-donut-card {
+  --admin-report-paid:#3b82f6;
+  --admin-report-commission:#22c55e;
+  --admin-report-artists:#f59e0b;
+  --admin-report-blocked:#ef4444;
+}
+
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(1) span { background:var(--admin-report-paid) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(2) span { background:var(--admin-report-commission) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(3) span { background:var(--admin-report-artists) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(4) span { background:var(--admin-report-blocked) !important; }
+
+html body:has(.admin-shell) .admin-chart-bar,
+html body:has(.admin-shell) .admin-bar-track > div {
+  background:linear-gradient(90deg, #3b82f6, #22c55e) !important;
+}
+
+html body:has(.admin-shell) .dash-review-list,
+html body:has(.admin-shell) .admin-music-leaders {
+  display:grid;
+  gap:12px;
+}
+
+html body:has(.admin-shell) .dash-review-list > *,
+html body:has(.admin-shell) .admin-music-leaders > * {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px;
+  border:1px solid var(--admin-line);
+  border-radius:8px;
+  background:var(--admin-panel);
+}
+
+html body:has(.admin-shell) .dash-review-list > *::before {
+  content:"";
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-radius:50%;
+  background:#a7f3d0;
+}
+
+:root[data-theme="light"] body:has(.admin-shell),
+:root[data-theme="light"] body:has(.admin-shell) .admin-shell,
+:root[data-theme="light"] body:has(.admin-shell) .admin-main,
+:root[data-theme="light"] body:has(.admin-shell) .admin-main-scroll {
+  color:#121417 !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) .admin-card-note,
+:root[data-theme="light"] body:has(.admin-shell) .admin-kicker,
+:root[data-theme="light"] body:has(.admin-shell) .admin-page-kicker,
+:root[data-theme="light"] body:has(.admin-shell) .slabel,
+:root[data-theme="light"] body:has(.admin-shell) .stat-lbl,
+:root[data-theme="light"] body:has(.admin-shell) p,
+:root[data-theme="light"] body:has(.admin-shell) small {
+  color:#5b6472 !important;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) h1,
+:root[data-theme="light"] body:has(.admin-shell) h2,
+:root[data-theme="light"] body:has(.admin-shell) h3,
+:root[data-theme="light"] body:has(.admin-shell) h4,
+:root[data-theme="light"] body:has(.admin-shell) strong,
+:root[data-theme="light"] body:has(.admin-shell) .stat-val {
+  color:#121417 !important;
+}
+
+html body:has(.admin-shell) .admin-report-tools {
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+}
+
+html body:has(.admin-shell) .admin-artist-filter {
+  margin:0;
+}
+
+html body:has(.admin-shell) .admin-artist-filter .sbar {
+  min-width:220px;
+  height:46px;
+}
+
+html body:has(.admin-shell) .admin-artist-filter select,
+html body:has(.admin-shell) .admin-artist-filter input {
+  width:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  color:var(--admin-text);
+  background:transparent;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+}
+
+html body:has(.admin-shell) .admin-artist-filter select option {
+  color:#111827;
+  background:#fff;
+}
+
+html body:has(.admin-shell) .admin-user-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+html body:has(.admin-shell) .admin-user-quick-form {
+  margin:0;
+}
+
+html body:has(.admin-shell) .admin-donut-card {
+  --admin-report-paid:#8fb7f3;
+  --admin-report-commission:#94d3a2;
+  --admin-report-artists:#d8bd7b;
+  --admin-report-blocked:#d98a94;
+}
+
+/* Final admin alignment fixes */
+html body:has(.admin-shell) .admin-user-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  flex-wrap:wrap;
+  min-width:250px;
+}
+
+html body:has(.admin-shell) .admin-user-quick-form {
+  margin:0;
+}
+
+html body:has(.admin-shell) .admin-user-actions .btn {
+  min-width:92px;
+  justify-content:center;
+}
+
+html body:has(.admin-shell) .admin-inline-editor {
+  flex:0 0 92px;
+}
+
+html body:has(.admin-shell) .admin-inline-editor > summary {
+  width:92px;
+  justify-content:center;
+}
+
+html body:has(.admin-shell) .admin-team-action-form {
+  display:grid;
+  grid-template-columns:minmax(260px, 1fr) 126px auto;
+  gap:12px;
+  align-items:center;
+}
+
+html body:has(.admin-shell) .admin-role-checks--inline {
+  display:grid;
+  grid-template-columns:repeat(2, minmax(130px, 1fr));
+  gap:8px;
+}
+
+html body:has(.admin-shell) .admin-role-check {
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:0 12px;
+  border:1px solid var(--admin-line);
+  border-radius:14px;
+  background:var(--admin-panel-2);
+}
+
+html body:has(.admin-shell) .admin-role-check input {
+  width:16px;
+  height:16px;
+  accent-color:var(--admin-text);
+}
+
+html body:has(.admin-shell) .admin-team-action-form select.finput {
+  min-height:42px;
+  border-radius:14px;
+}
+
+html body:has(.admin-shell) .admin-team-action-form .btn {
+  min-height:42px;
+}
+
+html body:has(.admin-shell) .admin-donut-card {
+  background:var(--admin-panel) !important;
+  background-image:none !important;
+}
+
+html body:has(.admin-shell) .admin-donut {
+  background:
+    conic-gradient(
+      var(--admin-report-paid) 0 var(--paid-stop, 47%),
+      var(--admin-report-commission) var(--paid-stop, 47%) var(--commission-stop, 52%),
+      var(--admin-report-artists) var(--commission-stop, 52%) var(--artists-stop, 93%),
+      var(--admin-report-blocked) var(--artists-stop, 93%) 100%
+    ) !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(1) span { background:var(--admin-report-paid) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(2) span { background:var(--admin-report-commission) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(3) span { background:var(--admin-report-artists) !important; }
+html body:has(.admin-shell) .admin-donut-legend > div:nth-child(4) span { background:var(--admin-report-blocked) !important; }
+
+html body:has(.admin-shell) .admin-music-track-table-card .pager {
+  margin:16px 0 0;
+}
+
+@media (max-width: 1180px) {
+  html body:has(.admin-shell) .admin-team-action-form {
+    grid-template-columns:1fr;
+  }
+
+  html body:has(.admin-shell) .admin-role-checks--inline {
+    grid-template-columns:1fr;
+  }
+}
+
+html body:has(.admin-shell) .admin-donut {
+  background:var(--admin-panel-2);
+}
+
+html body:has(.admin-shell) .admin-chart-bar,
+html body:has(.admin-shell) .admin-bar-track > div {
+  background:linear-gradient(180deg, rgba(172, 196, 187, .58), rgba(172, 196, 187, .18)) !important;
+}
+
+html body:has(.admin-shell) .admin-chart-bar-wrap {
+  background:color-mix(in srgb, var(--admin-panel-2) 92%, #9bb6aa 8%);
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list > a::before,
+html body:has(.admin-shell) .admin-dashboard-ranked-list > span::before {
+  content:none !important;
+  display:none !important;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list > a,
+html body:has(.admin-shell) .admin-dashboard-ranked-list > span {
+  justify-content:flex-start !important;
+  min-height:88px;
+  padding:14px 16px !important;
+  overflow:hidden;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list .admin-dashboard-media {
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:14px;
+  min-width:0;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list .admin-dashboard-thumb,
+html body:has(.admin-shell) .admin-dashboard-ranked-list .admin-dashboard-thumb--avatar {
+  width:58px;
+  height:58px;
+  flex:0 0 58px;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list .admin-dashboard-media > span:last-child {
+  display:block;
+  min-width:0;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list strong {
+  display:block;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.25;
+}
+
+html body:has(.admin-shell) .admin-dashboard-ranked-list small {
+  display:block;
+  margin-top:5px;
+  border:0 !important;
+  color:var(--admin-soft);
+  line-height:1.4;
+}
+
+:root[data-theme="light"] body:has(.admin-shell) .admin-artist-filter select,
+:root[data-theme="light"] body:has(.admin-shell) .admin-artist-filter input {
+  color:#121417;
+}
+
+/* Final report donut: match compact status-card style. */
+html body:has(.admin-shell) .admin-donut-card {
+  padding:22px !important;
+  border-radius:20px !important;
+  background:var(--admin-panel) !important;
+}
+
+html body:has(.admin-shell) .admin-donut-card .acard-box-head {
+  margin-bottom:16px !important;
+}
+
+html body:has(.admin-shell) .admin-donut {
+  width:min(276px, 82vw) !important;
+  height:min(276px, 82vw) !important;
+  margin:18px auto 26px !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+  background:
+    conic-gradient(
+      var(--admin-report-paid) 0 var(--paid-stop, 47%),
+      var(--admin-report-commission) var(--paid-stop, 47%) var(--commission-stop, 52%),
+      var(--admin-report-artists) var(--commission-stop, 52%) var(--artists-stop, 93%),
+      var(--admin-report-blocked) var(--artists-stop, 93%) 100%
+    ) !important;
+}
+
+html body:has(.admin-shell) .admin-donut > div {
+  inset:76px !important;
+  border-radius:50% !important;
+  background:var(--admin-panel) !important;
+}
+
+html body:has(.admin-shell) .admin-donut strong {
+  max-width:124px;
+  font-size:1.7rem !important;
+  line-height:1.05 !important;
+  text-align:center;
+}
+
+html body:has(.admin-shell) .admin-donut span {
+  margin-top:4px;
+  color:var(--admin-soft) !important;
+  font-size:.88rem !important;
+  text-transform:none !important;
+  letter-spacing:0 !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend {
+  display:grid !important;
+  gap:14px !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend div {
+  display:grid !important;
+  grid-template-columns:10px minmax(0, 1fr) auto !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend span {
+  width:10px !important;
+  height:10px !important;
+  border-radius:999px !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend strong {
+  color:var(--admin-soft) !important;
+  font-size:.95rem !important;
+  font-weight:800 !important;
+}
+
+html body:has(.admin-shell) .admin-donut-legend em {
+  color:var(--admin-text) !important;
+  font-size:1.16rem !important;
+  font-style:normal !important;
+  font-weight:900 !important;
 }

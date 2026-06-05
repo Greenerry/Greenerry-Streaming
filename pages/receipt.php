@@ -47,7 +47,6 @@ $receiptTitle = tr('receipt.title', ['id' => (string)$orderId]);
 $receiptCustomer = tr('receipt.customer');
 $receiptDetails = tr('receipt.details');
 $receiptDate = tr('receipt.date');
-$receiptStatus = tr('receipt.status');
 $receiptPayment = tr('receipt.payment');
 $receiptDelivery = tr('receipt.delivery');
 $receiptProduct = tr('receipt.product');
@@ -58,6 +57,10 @@ $receiptSubtotal = tr('receipt.subtotal');
 $receiptVat = tr('receipt.vat');
 $receiptTotal = tr('receipt.total');
 $receiptFooter = tr('receipt.footer');
+$companyName = site_setting('company_name', site_setting('site_name', 'Greenerry'));
+$companyAddress = site_setting('company_address', 'Portugal');
+$companyNif = site_setting('company_nif', '');
+$companyEmail = site_setting('contact_email', '');
 
 $html = '<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
@@ -80,6 +83,14 @@ td{padding:12px 10px;border-bottom:1px solid #e4e9e6;color:#1f3028;}
 <div class="sub">' . h($receiptTitle) . '</div>
 
 <div class="panel">
+  <div class="label">Emitente</div>
+  <p class="value"><strong>' . h($companyName) . '</strong></p>
+  <p class="value">' . h($companyAddress) . '</p>
+  ' . ($companyNif !== '' ? '<p class="value">NIF: ' . h($companyNif) . '</p>' : '') . '
+  ' . ($companyEmail !== '' ? '<p class="value">Email: ' . h($companyEmail) . '</p>' : '') . '
+</div>
+
+<div class="panel">
   <div class="row">
     <div class="col">
       <div class="label">' . h($receiptCustomer) . '</div>
@@ -90,7 +101,6 @@ td{padding:12px 10px;border-bottom:1px solid #e4e9e6;color:#1f3028;}
     <div class="col right">
       <div class="label">' . h($receiptDetails) . '</div>
       <p class="value">' . h($receiptDate) . ': <strong>' . date('d/m/Y', strtotime($order['criado_em'])) . '</strong></p>
-      <p class="value">' . h($receiptStatus) . ': <strong>' . h(order_status_label($order['estado_encomenda'])) . '</strong></p>
       <p class="value">' . h($receiptPayment) . ': <strong>' . h(payment_method_label($order['metodo_pagamento'])) . '</strong></p>
     </div>
   </div>
@@ -151,7 +161,7 @@ if (file_exists($autoload)) {
     $pdf->loadHtml($html);
     $pdf->setPaper('A4', 'portrait');
     $pdf->render();
-    $pdf->stream('recibo_' . $orderId . '.pdf', ['Attachment' => false]);
+    $pdf->stream('fatura_' . $orderId . '.pdf', ['Attachment' => false]);
     exit;
 }
 

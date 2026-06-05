@@ -78,10 +78,16 @@ include '../includes/header.php';
                   </div>
                 </td>
                 <td><strong><?= h($product['nomeProduto']) ?></strong></td>
-                <td><?= h($product['nomeCategoria'] ?? (current_lang() === 'en' ? 'No category' : 'Sem categoria')) ?></td>
+                <td>
+                  <?php if (!empty($product['nomeCategoria'])): ?>
+                    <span data-product-category="<?= h($product['nomeCategoria']) ?>"><?= h(category_label((string)$product['nomeCategoria'])) ?></span>
+                  <?php else: ?>
+                    <span data-t="profile_no_category"><?= h(current_lang() === 'en' ? 'No category' : 'Sem categoria') ?></span>
+                  <?php endif; ?>
+                </td>
                 <td><?= (int)$product['stock_total'] ?></td>
                 <td><?= (int)$product['units_sold'] ?></td>
-                <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-state-label><?= h(order_status_label($product['estado'])) ?></span></td>
+                <td><span class="badge <?= h(state_badge_class($product['estado'])) ?>" data-state-label="<?= h($product['estado']) ?>"><?= h(order_status_label($product['estado'])) ?></span></td>
                 <td>
                   <div class="artist-actions-cell">
                     <a class="btn btn-ghost btn-sm" href="upload_merch.php?edit=<?= (int)$product['idProduto'] ?>" data-t="artist_action_edit">Edit</a>
@@ -120,8 +126,17 @@ document.querySelectorAll('.js-toggle-item').forEach((button) => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || artistText('artist_update_failed', 'Update failed'));
       const enabled = Number(result.enabled) === 1;
-      button.textContent = enabled ? artistText('artist_action_deactivate', 'Deactivate') : artistText('artist_action_activate', 'Activate');
-      button.closest('[data-artist-row]')?.querySelector('[data-state-label]')?.replaceChildren(document.createTextNode(enabled ? artistText('status_approved', 'Approved') : artistText('status_inactive', 'Inactive')));
+      const label = button.querySelector('[data-t]');
+      const labelKey = enabled ? 'artist_action_deactivate' : 'artist_action_activate';
+      if (label) {
+        label.dataset.t = labelKey;
+        label.textContent = artistText(labelKey, enabled ? 'Deactivate' : 'Activate');
+      }
+      const stateLabel = button.closest('[data-artist-row]')?.querySelector('[data-state-label]');
+      if (stateLabel) {
+        stateLabel.dataset.stateLabel = enabled ? 'aprovado' : 'inativo';
+        stateLabel.textContent = enabled ? artistText('status_approved', 'Approved') : artistText('status_inactive', 'Inactive');
+      }
       button.disabled = false;
     } catch (error) {
       button.disabled = false;

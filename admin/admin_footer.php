@@ -1245,11 +1245,81 @@
     activeSearch?.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  function bindAdminReplyEnter(root = document) {
+    root.querySelectorAll('form.admin-review-actions textarea[name="reply"]').forEach((textarea) => {
+      if (textarea.dataset.adminReplyEnterReady === '1') return;
+      textarea.dataset.adminReplyEnterReady = '1';
+      textarea.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.shiftKey) return;
+        event.preventDefault();
+        textarea.closest('form')?.requestSubmit();
+      });
+    });
+  }
+
+  bindAdminReplyEnter();
+
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches('.admin-review-actions')) return;
+    const messageId = form.querySelector('input[name="message_id"]')?.value;
+    const reply = form.querySelector('textarea[name="reply"]');
+    if (!messageId || !reply) return;
+    const replyText = reply.value.trim();
+    if (!replyText) return;
+
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    button?.setAttribute('disabled', 'disabled');
+    try {
+      const response = await fetch(window.location.href, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'X-Requested-With': 'fetch' }
+      });
+      if (!response.ok) throw new Error('reply failed');
+      const html = await response.text();
+      const card = form.closest('.admin-review-card');
+      showAdminToast(adminText('success_admin_reply_sent', 'Resposta enviada com sucesso.'));
+      if (card) {
+        card.style.transition = 'opacity .22s ease, transform .22s ease, max-height .28s ease, margin .28s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-8px)';
+        card.style.maxHeight = `${card.offsetHeight}px`;
+        window.setTimeout(() => {
+          card.style.maxHeight = '0px';
+          card.style.margin = '0';
+        }, 30);
+        window.setTimeout(() => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const freshSection = doc.getElementById('messages-search');
+          const currentSection = document.getElementById('messages-search');
+          if (freshSection && currentSection) {
+            currentSection.replaceWith(freshSection);
+            window.GreenerryApplyAdminLang?.(localStorage.getItem('g_lang') || 'pt');
+            bindAdminReplyEnter(freshSection);
+            freshSection.querySelector('.admin-review-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          }
+          const next = card.nextElementSibling || card.previousElementSibling;
+          card.remove();
+          next?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 320);
+      }
+    } catch (error) {
+      if (window.DEBUG_GREENERRY) console.warn('Admin reply failed:', error);
+      form.submit();
+    } finally {
+      button?.removeAttribute('disabled');
+    }
+  });
+
   document.addEventListener('submit', async (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement)) return;
     const userId = form.querySelector('input[name="user_id"]')?.value;
-    const userState = form.querySelector('select[name="estado"]')?.value;
+    const userState = form.querySelector('[name="estado"]')?.value;
     if (userId && userState) {
       event.preventDefault();
       const buttons = Array.from(form.querySelectorAll('button'));

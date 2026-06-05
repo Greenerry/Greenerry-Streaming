@@ -14,6 +14,8 @@ $rangeSqlMap = [
     '1y' => 'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)',
     'all' => "'1970-01-01'",
 ];
+$trackPage = max(1, (int)($_GET['track_page'] ?? 1));
+$trackPerPage = 12;
 $rangeLabels = [
     '7d' => ['key' => 'range_7d', 'label' => '7 dias'],
     '30d' => ['key' => 'range_30d', 'label' => '30 dias'],
@@ -22,6 +24,49 @@ $rangeLabels = [
     'all' => ['key' => 'range_all', 'label' => 'Tudo'],
 ];
 $dateFromSql = $rangeSqlMap[$range];
+$artistOptions = db_all(
+    $conn,
+    "SELECT DISTINCT c.idCliente, c.nome
+     FROM faixa_listen fl
+     JOIN cliente c ON c.idCliente = fl.idArtista
+     ORDER BY c.nome ASC"
+);
+$artistFilterId = max(0, (int)($_GET['artist_id'] ?? 0));
+$artistQuery = trim((string)($_GET['artist_q'] ?? ''));
+$selectedArtist = null;
+foreach ($artistOptions as $artistOption) {
+    if ($artistFilterId > 0 && (int)$artistOption['idCliente'] === $artistFilterId) {
+        $selectedArtist = $artistOption;
+        break;
+    }
+    if ($artistFilterId === 0 && $artistQuery !== '' && mb_strtolower((string)$artistOption['nome']) === mb_strtolower($artistQuery)) {
+        $selectedArtist = $artistOption;
+        break;
+    }
+}
+if (!$selectedArtist && $artistFilterId === 0 && $artistQuery !== '') {
+    foreach ($artistOptions as $artistOption) {
+        if (mb_stripos((string)$artistOption['nome'], $artistQuery) !== false) {
+            $selectedArtist = $artistOption;
+            break;
+        }
+    }
+}
+if ($selectedArtist) {
+    $artistFilterId = (int)$selectedArtist['idCliente'];
+    $artistQuery = (string)$selectedArtist['nome'];
+}
+if ($artistFilterId > 0 && !$selectedArtist) {
+    $artistFilterId = 0;
+}
+$artistListenWhere = $artistFilterId > 0 ? " AND fl.idArtista = {$artistFilterId}" : "";
+$musicRangeUrl = static function (string $targetRange) use ($artistQuery): string {
+    $query = ['range' => $targetRange];
+    if ($artistQuery !== '') {
+        $query['artist_q'] = $artistQuery;
+    }
+    return 'music.php?' . http_build_query($query);
+};
 
 $summary = db_one(
     $conn,
@@ -31,10 +76,10 @@ $summary = db_one(
         COUNT(DISTINCT fl.idFaixa) AS tracks,
         COALESCE(SUM(fl.segundos_ouvidos), 0) AS seconds_listened
      FROM faixa_listen fl
-     WHERE fl.criado_em >= {$dateFromSql}"
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}"
 );
 
-$topTracks = db_all(
+$topTracksAll = db_all(
     $conn,
     "SELECT
         f.idFaixa,
@@ -52,18 +97,29 @@ $topTracks = db_all(
      JOIN faixa f ON f.idFaixa = fl.idFaixa
      JOIN release_musical r ON r.idRelease = f.idRelease
      JOIN cliente c ON c.idCliente = fl.idArtista
-     WHERE fl.criado_em >= {$dateFromSql}
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
      GROUP BY f.idFaixa, f.titulo, f.genero, f.ficheiro_audio, r.titulo, r.capa, c.nome
      ORDER BY listens DESC, last_played DESC
-     LIMIT 80"
+     LIMIT 120"
 );
+$totalTrackRows = count($topTracksAll);
+$trackTotalPages = max(1, (int)ceil($totalTrackRows / $trackPerPage));
+$trackPage = min($trackPage, $trackTotalPages);
+$topTracks = array_slice($topTracksAll, ($trackPage - 1) * $trackPerPage, $trackPerPage);
+$musicTrackPageUrl = static function (int $targetPage) use ($range, $artistQuery): string {
+    $query = ['range' => $range, 'track_page' => max(1, $targetPage)];
+    if ($artistQuery !== '') {
+        $query['artist_q'] = $artistQuery;
+    }
+    return 'music.php?' . http_build_query($query) . '#music-search';
+};
 
 $topArtists = db_all(
     $conn,
     "SELECT c.idCliente, c.nome, c.foto, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners
      FROM faixa_listen fl
      JOIN cliente c ON c.idCliente = fl.idArtista
-     WHERE fl.criado_em >= {$dateFromSql}
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
      GROUP BY c.idCliente, c.nome, c.foto
      ORDER BY listens DESC
      LIMIT 8"
@@ -83,7 +139,7 @@ $listeningTrend = db_all(
         COUNT(*) AS listens,
         COUNT(DISTINCT fl.idCliente) AS listeners
      FROM faixa_listen fl
-     WHERE fl.criado_em >= {$dateFromSql}
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
      GROUP BY period_key, period_label
      ORDER BY period_key ASC"
 );
@@ -99,7 +155,7 @@ $genrePerformance = db_all(
             COUNT(DISTINCT fl.idCliente) AS listeners
      FROM faixa_listen fl
      JOIN faixa f ON f.idFaixa = fl.idFaixa
-     WHERE fl.criado_em >= {$dateFromSql}
+     WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
      GROUP BY genre
      ORDER BY listens DESC
      LIMIT 6"
@@ -142,11 +198,25 @@ include 'admin_header.php';
     <h2 data-admin-t="music_title">Relatório musical</h2>
     <p data-admin-t="music_intro">Performance de faixas, artistas e ouvintes ativos da plataforma.</p>
   </div>
-  <nav class="admin-range-pills" aria-label="Music report range">
-    <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
-      <a href="music.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-admin-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
-    <?php endforeach; ?>
-  </nav>
+  <div class="dash-v4-actions admin-report-tools">
+    <nav class="admin-range-pills" aria-label="Music report range">
+      <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
+        <a href="<?= h($musicRangeUrl($rangeKey)) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-admin-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
+      <?php endforeach; ?>
+    </nav>
+    <form method="get" class="admin-artist-filter">
+      <input type="hidden" name="range" value="<?= h($range) ?>">
+      <label class="sbar admin-section-search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" name="artist_q" list="music-artist-options" value="<?= h($artistQuery) ?>" placeholder="Todos os artistas" aria-label="Pesquisar artista ou cliente" onchange="this.form.submit()">
+        <datalist id="music-artist-options">
+          <?php foreach ($artistOptions as $artistOption): ?>
+            <option value="<?= h($artistOption['nome']) ?>"></option>
+          <?php endforeach; ?>
+        </datalist>
+      </label>
+    </form>
+  </div>
 </div>
 
 <section class="stats-grid admin-top-stats">
@@ -233,7 +303,7 @@ include 'admin_header.php';
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input type="search" data-admin-search="music-search" placeholder="Pesquisar..." data-admin-tp="admin_search_placeholder">
         </label>
-        <span class="badge badge-light"><?= count($topTracks) ?></span>
+        <span class="badge badge-light"><?= (int)$totalTrackRows ?></span>
       </div>
     </div>
     <div class="tbl-wrap admin-music-track-table-wrap">
@@ -273,6 +343,13 @@ include 'admin_header.php';
         </tbody>
       </table>
     </div>
+    <?php if ($trackTotalPages > 1): ?>
+      <nav class="pager" aria-label="Pagination">
+        <?= $trackPage > 1 ? '<a class="btn btn-ghost btn-sm" href="' . h($musicTrackPageUrl($trackPage - 1)) . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
+        <span class="pager-status">Página <?= (int)$trackPage ?> de <?= (int)$trackTotalPages ?></span>
+        <?= $trackPage < $trackTotalPages ? '<a class="btn btn-ghost btn-sm" href="' . h($musicTrackPageUrl($trackPage + 1)) . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
+      </nav>
+    <?php endif; ?>
   </section>
 </div>
 
