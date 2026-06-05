@@ -134,11 +134,11 @@ function admin_can(string $permission, ?array $admin = null): bool
     }
 
     $map = [
-        'admin' => ['dashboard', 'products', 'categories', 'releases', 'users', 'messages', 'reports', 'home', 'maintenance', 'settings', 'music'],
+        'admin' => ['dashboard', 'products', 'categories', 'releases', 'users', 'messages', 'reports', 'orders', 'home', 'maintenance', 'settings', 'music'],
         'products' => ['products', 'categories'],
         'releases' => ['releases', 'music'],
         'messages' => ['messages'],
-        'reports' => ['dashboard', 'reports', 'music'],
+        'reports' => ['dashboard', 'reports', 'orders', 'music'],
     ];
 
     $rawRoles = array_filter(array_map('trim', explode(',', (string)($admin['cargo'] ?? $_SESSION['admin_role'] ?? ''))));
@@ -172,6 +172,7 @@ function admin_default_page(?array $admin = null): string
         'releases' => 'releases.php',
         'messages' => 'messages.php',
         'reports' => 'reports.php',
+        'orders' => 'orders.php',
         'music' => 'music.php',
         'users' => 'users.php',
         'home' => 'home_curator.php',

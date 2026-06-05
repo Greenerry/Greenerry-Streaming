@@ -20,6 +20,7 @@ $adminPageLabels = [
     'music.php' => ['key' => 'nav_music_listening', 'label' => 'Relatório musical'],
     'users.php' => ['key' => 'nav_users', 'label' => 'Utilizadores'],
     'messages.php' => ['key' => 'nav_messages', 'label' => 'Mensagens'],
+    'orders.php' => ['key' => 'nav_orders', 'label' => 'Encomendas'],
     'reports.php' => ['key' => 'nav_reports', 'label' => 'Relatórios'],
     'admins.php' => ['key' => 'nav_admins', 'label' => 'Admins'],
     'home_curator.php' => ['key' => 'nav_home_curator', 'label' => 'Homepage'],
@@ -91,6 +92,12 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
       <a href="home_curator.php" class="<?= $page === 'home_curator.php' ? 'on' : '' ?>">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3 3 10h2v10h14V10h2z"/><path d="M9 20v-6h6v6"/></svg>
         <span data-admin-t="nav_home_curator">Homepage</span>
+      </a>
+      <?php endif; ?>
+      <?php if (admin_can('orders', $adminAccount)): ?>
+      <a href="orders.php" class="<?= $page === 'orders.php' ? 'on' : '' ?>">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+        <span data-admin-t="nav_orders">Encomendas</span>
       </a>
       <?php endif; ?>
     </div>

@@ -7824,3 +7824,195 @@ html body:has(.admin-shell) .admin-donut-legend em {
   font-style:normal !important;
   font-weight:900 !important;
 }
+
+html body:has(.admin-shell) .admin-top-stats--five {
+  grid-template-columns:repeat(5, minmax(120px, 1fr));
+}
+
+html body:has(.admin-shell) .admin-order-stack {
+  display:grid;
+  gap:14px;
+}
+
+html body:has(.admin-shell) .admin-order-card {
+  border:1px solid var(--admin-line);
+  border-radius:18px;
+  background:var(--admin-panel-2);
+  overflow:hidden;
+}
+
+html body:has(.admin-shell) .admin-order-card.is-cancelled {
+  border-color:rgba(239, 104, 118, .38);
+  background:color-mix(in srgb, var(--admin-panel-2) 88%, #ef6876 12%);
+}
+
+html body:has(.admin-shell) .admin-order-summary {
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:minmax(280px, 1fr) auto;
+  gap:18px;
+  align-items:center;
+  padding:18px;
+  list-style:none;
+}
+
+html body:has(.admin-shell) .admin-order-summary::-webkit-details-marker {
+  display:none;
+}
+
+html body:has(.admin-shell) .admin-order-buyer,
+html body:has(.admin-shell) .admin-order-summary-meta {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+html body:has(.admin-shell) .admin-order-buyer > span:last-child {
+  min-width:0;
+}
+
+html body:has(.admin-shell) .admin-order-buyer strong,
+html body:has(.admin-shell) .admin-order-buyer small {
+  display:block;
+}
+
+html body:has(.admin-shell) .admin-order-buyer small,
+html body:has(.admin-shell) .admin-order-summary-meta small {
+  color:var(--admin-soft);
+}
+
+html body:has(.admin-shell) .admin-order-body {
+  display:grid;
+  gap:16px;
+  padding:0 18px 18px;
+}
+
+html body:has(.admin-shell) .admin-order-progress {
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:28px;
+  padding:14px;
+  border:1px solid var(--admin-line);
+  border-radius:16px;
+  background:var(--admin-panel);
+}
+
+html body:has(.admin-shell) .admin-order-progress span {
+  position:relative;
+  display:grid;
+  place-items:center;
+  min-height:38px;
+  border-radius:999px;
+  color:var(--admin-soft);
+  font-size:.78rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+
+html body:has(.admin-shell) .admin-order-progress span:not(:last-child)::after {
+  content:"";
+  position:absolute;
+  left:calc(100% + 8px);
+  width:12px;
+  height:12px;
+  border-top:2px solid var(--admin-soft);
+  border-right:2px solid var(--admin-soft);
+  transform:rotate(45deg);
+  opacity:.55;
+}
+
+html body:has(.admin-shell) .admin-order-progress span.on {
+  background:var(--admin-text);
+  color:var(--admin-bg);
+}
+
+html body:has(.admin-shell) .admin-order-progress.is-cancelled {
+  grid-template-columns:1fr;
+}
+
+html body:has(.admin-shell) .admin-order-detail-grid {
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:14px;
+}
+
+html body:has(.admin-shell) .admin-order-info-panel,
+html body:has(.admin-shell) .admin-order-messages {
+  border:1px solid var(--admin-line);
+  border-radius:16px;
+  background:var(--admin-panel);
+  padding:16px;
+}
+
+html body:has(.admin-shell) .admin-order-info-panel p {
+  margin:5px 0;
+  color:var(--admin-text);
+}
+
+html body:has(.admin-shell) .admin-order-items {
+  display:grid;
+  gap:10px;
+}
+
+html body:has(.admin-shell) .admin-order-item {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto;
+  gap:14px;
+  align-items:center;
+  padding:12px;
+  border:1px solid var(--admin-line);
+  border-radius:16px;
+  background:var(--admin-panel);
+}
+
+html body:has(.admin-shell) .admin-order-item-side {
+  display:grid;
+  justify-items:end;
+  gap:5px;
+  text-align:right;
+}
+
+html body:has(.admin-shell) .admin-order-item-side small {
+  color:var(--admin-soft);
+}
+
+html body:has(.admin-shell) .admin-order-message {
+  margin-top:10px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--admin-panel-2);
+}
+
+html body:has(.admin-shell) .admin-order-message strong,
+html body:has(.admin-shell) .admin-order-message small {
+  display:block;
+}
+
+html body:has(.admin-shell) .admin-order-message small {
+  margin-top:3px;
+  color:var(--admin-soft);
+}
+
+html body:has(.admin-shell) .admin-order-message p {
+  margin:8px 0 0;
+}
+
+@media (max-width: 1180px) {
+  html body:has(.admin-shell) .admin-top-stats--five,
+  html body:has(.admin-shell) .admin-order-detail-grid {
+    grid-template-columns:1fr;
+  }
+
+  html body:has(.admin-shell) .admin-order-summary,
+  html body:has(.admin-shell) .admin-order-item {
+    grid-template-columns:1fr;
+  }
+
+  html body:has(.admin-shell) .admin-order-summary-meta,
+  html body:has(.admin-shell) .admin-order-item-side {
+    justify-items:start;
+    text-align:left;
+  }
+}
