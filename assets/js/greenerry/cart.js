@@ -177,6 +177,23 @@ function initProductPage(root = document) {
     galleryImages = [];
   }
 
+  const normalizeGalleryUrl = (url) => {
+    try {
+      return new URL(url, window.location.href).pathname;
+    } catch {
+      return String(url || '');
+    }
+  };
+
+  const syncGalleryIndex = () => {
+    if (!mainImage || !galleryImages.length) return;
+    const current = normalizeGalleryUrl(mainImage.getAttribute('src') || mainImage.src);
+    const index = galleryImages.findIndex((image) => normalizeGalleryUrl(image) === current);
+    if (index >= 0) galleryIndex = index;
+  };
+
+  syncGalleryIndex();
+
   const unitLabel = (stock) => commerceLang() === 'en'
     ? (stock === 1 ? 'unit' : 'units')
     : (stock === 1 ? 'unidade' : 'unidades');
@@ -231,6 +248,7 @@ function initProductPage(root = document) {
 
   root.querySelectorAll?.('[data-gallery-step]').forEach((button) => {
     button.addEventListener('click', () => {
+      syncGalleryIndex();
       showGalleryImage(galleryIndex + Number(button.dataset.galleryStep || 0));
     });
   });

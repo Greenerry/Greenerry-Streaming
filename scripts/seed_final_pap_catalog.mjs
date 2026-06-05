@@ -13,29 +13,16 @@ for (const dir of [imgDir, audioDir]) {
 }
 
 const artists = [
-  { name: 'Bladee', wiki: 'Bladee', genre: 'Cloud rap', bio: 'Artista sueco ligado ao universo Drain Gang, com uma identidade visual fria, digital e muito reconhecivel.', releases: ['Crest', 'Icedancer'], singles: ['Be Nice 2 Me'] },
-  { name: 'The Weeknd', wiki: 'The Weeknd', genre: 'R&B', bio: 'Artista canadiano conhecido por misturar R&B, pop e uma estetica cinematografica nocturna.', releases: ['After Hours', 'Dawn FM'], singles: ['Blinding Lights'] },
-  { name: 'Cocteau Twins', wiki: 'Cocteau Twins', genre: 'Dream pop', bio: 'Banda escocesa essencial do dream pop, marcada por guitarras atmosfericas e vozes etereas.', releases: ['Heaven or Las Vegas', 'Treasure'], singles: ['Cherry-coloured Funk'] },
-  { name: 'Rihanna', wiki: 'Rihanna', genre: 'Pop', bio: 'Artista global de Barbados, reconhecida pela versatilidade entre pop, R&B, dancehall e moda.', releases: ['ANTI', 'LOUD'], singles: ['Work'] },
-  { name: 'Young Thug', wiki: 'Young Thug', genre: 'Hip hop', bio: 'Rapper norte-americano com voz elastica, flow experimental e enorme influencia no trap moderno.', releases: ['So Much Fun', 'JEFFERY'], singles: ['Hot'] },
-  { name: 'Dean Blunt', wiki: 'Dean Blunt', genre: 'Experimental', bio: 'Musico britanico de linguagem minimalista, ambigua e experimental, entre pop, dub e art music.', releases: ['Black Metal', 'The Redeemer'], singles: ['100'] },
-  { name: 'Miguel', wiki: 'Miguel (singer)', genre: 'R&B', bio: 'Cantor e compositor norte-americano que une R&B moderno, soul, rock e sensualidade futurista.', releases: ['Kaleidoscope Dream', 'Wildheart'], singles: ['Sure Thing'] },
-  { name: 'Childish Gambino', wiki: 'Donald Glover', genre: 'Funk', bio: 'Projeto musical de Donald Glover, com fases entre rap, soul, funk psicadelico e pop conceptual.', releases: ['Awaken, My Love!', 'Because the Internet'], singles: ['Redbone'] },
-  { name: 'Kanye West', wiki: 'Kanye West', genre: 'Hip hop', bio: 'Produtor e rapper norte-americano, importante pela producao, conceito visual e impacto cultural.', releases: ['Graduation', 'My Beautiful Dark Twisted Fantasy'], singles: ['Stronger'] },
-  { name: 'Justin Bieber', wiki: 'Justin Bieber', genre: 'Pop', bio: 'Artista canadiano de pop e R&B, conhecido por grandes singles globais e varias fases visuais.', releases: ['Purpose', 'Justice'], singles: ['Sorry'] },
-  { name: 'Lil Uzi Vert', wiki: 'Lil Uzi Vert', genre: 'Rap', bio: 'Rapper norte-americano de trap melodico, visual colorido e forte ligacao a moda e cultura digital.', releases: ['Luv Is Rage 2', 'Pink Tape'], singles: ['XO Tour Llif3'] },
-  { name: 'Frank Ocean', wiki: 'Frank Ocean', genre: 'Alternative R&B', bio: 'Artista norte-americano de R&B alternativo, conhecido por escrita emotiva, minimalismo e direcao visual muito forte.', releases: ['channel ORANGE', 'Blonde'], singles: ['Pink + White'] },
-  { name: 'Tyler, The Creator', wiki: 'Tyler, the Creator', genre: 'Hip hop', bio: 'Rapper, produtor e diretor criativo com mundos visuais muito marcados, entre rap, soul e pop alternativo.', releases: ['IGOR', 'CALL ME IF YOU GET LOST'], singles: ['EARFQUAKE'] },
-  { name: 'SZA', wiki: 'SZA', genre: 'R&B', bio: 'Cantora e compositora de R&B contemporaneo, com escrita intima, melodias fluidas e estetica visual suave.', releases: ['SOS', 'Ctrl'], singles: ['Kill Bill'] },
-  { name: 'Travis Scott', wiki: 'Travis Scott', genre: 'Hip hop', bio: 'Artista e produtor conhecido por concertos imersivos, trap atmosferico e uma identidade visual de grande escala.', releases: ['ASTROWORLD', 'UTOPIA'], singles: ['SICKO MODE'] },
-  { name: 'Playboi Carti', wiki: 'Playboi Carti', genre: 'Rap', bio: 'Rapper norte-americano com som minimalista, energia punk e estetica muito forte ligada a moda e performance.', releases: ['Whole Lotta Red', 'Die Lit'], singles: ['Magnolia'] },
-  { name: 'A$AP Rocky', wiki: 'ASAP Rocky', genre: 'Hip hop', bio: 'Rapper de Harlem ligado a moda, videos cinematograficos e uma mistura entre rap, luxo e cultura alternativa.', releases: ['LONG.LIVE.A$AP', 'AT.LONG.LAST.A$AP'], singles: ['Praise The Lord'] },
-  { name: 'ZAYN', wiki: 'Zayn Malik', genre: 'Pop', bio: 'Cantor britanico com som entre pop e R&B, marcado por vocais suaves, atmosfera escura e imagem editorial.', releases: ['Mind Of Mine', 'Nobody Is Listening'], singles: ['PILLOWTALK'] },
-  { name: 'Lana Del Rey', wiki: 'Lana Del Rey', genre: 'Alternative', bio: 'Artista norte-americana com universo cinematografico, melancolia pop e estetica vintage muito reconhecivel.', releases: ['Born To Die', 'Ultraviolence'], singles: ['Summertime Sadness'] },
-  { name: 'Charli XCX', wiki: 'Charli XCX', genre: 'Pop', bio: 'Artista britanica ligada ao pop futurista, club music e cultura digital, com identidade visual muito atual.', releases: ['BRAT', 'how i am feeling now'], singles: ['360'] },
-  { name: 'FKA twigs', wiki: 'FKA twigs', genre: 'Alternative R&B', bio: 'Artista britanica de musica, performance e visual art, cruzando R&B, electronica, coreografia e moda.', releases: ['MAGDALENE', 'LP1'], singles: ['cellophane'] },
-  { name: 'Bjork', wiki: 'Bjork', genre: 'Art pop', bio: 'Artista islandesa de art pop e electronica experimental, conhecida por mundos visuais organicos e futuristas.', releases: ['Homogenic', 'Vespertine'], singles: ['Joga'] },
-  { name: 'Beyonce', wiki: 'Beyoncé', genre: 'Pop', bio: 'Artista global com espetaculos visuais de grande producao, pop, R&B, dance e conceitos culturais fortes.', releases: ['RENAISSANCE', 'COWBOY CARTER'], singles: ['CUFF IT'] },
+  { name: 'Bladee', wiki: 'Bladee', genre: 'Cloud rap', bio: 'Artista sueco ligado ao universo Drain Gang, com uma identidade visual fria, digital e muito reconhecivel.', releases: ['Crest', 'Icedancer', '333'], singles: ['Be Nice 2 Me', 'The Flag Is Raised'] },
+  { name: 'The Weeknd', wiki: 'The Weeknd', genre: 'R&B', bio: 'Artista canadiano conhecido por misturar R&B, pop e uma estetica cinematografica nocturna.', releases: ['After Hours', 'Dawn FM', 'Starboy'], singles: ['Blinding Lights', 'Save Your Tears'] },
+  { name: 'Cocteau Twins', wiki: 'Cocteau Twins', genre: 'Dream pop', bio: 'Banda escocesa essencial do dream pop, marcada por guitarras atmosfericas e vozes etereas.', releases: ['Heaven or Las Vegas', 'Treasure', 'Blue Bell Knoll'], singles: ['Cherry-coloured Funk', 'Lorelei'] },
+  { name: 'Dean Blunt', wiki: 'Dean Blunt', genre: 'Experimental', bio: 'Musico britanico de linguagem minimalista, ambigua e experimental, entre pop, dub e art music.', releases: ['Black Metal', 'The Redeemer'], singles: ['100', 'Mersh'] },
+  { name: '2hollis', wiki: '2hollis', genre: 'Electronic', bio: 'Artista norte-americano associado a pop experimental, rap digital e producao electronica intensa.', releases: ['boy', 'white tiger'], singles: ['jeans', 'trauma'] },
+  { name: 'Childish Gambino', wiki: 'Donald Glover', genre: 'Funk', bio: 'Projeto musical de Donald Glover, com fases entre rap, soul, funk psicadelico e pop conceptual.', releases: ['Awaken, My Love!', 'Because the Internet', 'Camp'], singles: ['Redbone', 'This Is America'] },
+  { name: 'Kanye West', wiki: 'Kanye West', genre: 'Hip hop', bio: 'Produtor e rapper norte-americano, importante pela producao, conceito visual e impacto cultural.', releases: ['Graduation', 'My Beautiful Dark Twisted Fantasy', 'Yeezus'], singles: ['Stronger', 'Heartless'] },
+  { name: 'Justin Bieber', wiki: 'Justin Bieber', genre: 'Pop', bio: 'Artista canadiano de pop e R&B, conhecido por grandes singles globais e varias fases visuais.', releases: ['Purpose', 'Justice', 'Believe'], singles: ['Sorry', 'Peaches'] },
+  { name: 'Lil Uzi Vert', wiki: 'Lil Uzi Vert', genre: 'Rap', bio: 'Rapper norte-americano de trap melodico, visual colorido e forte ligacao a moda e cultura digital.', releases: ['Luv Is Rage 2', 'Pink Tape', 'Eternal Atake'], singles: ['XO Tour Llif3', 'Just Wanna Rock'] },
+  { name: 'Drake', wiki: 'Drake (musician)', genre: 'Hip hop', bio: 'Rapper e cantor canadiano, com catalogo entre hip hop, R&B e pop global.', releases: ['Take Care', 'Nothing Was The Same', 'Scorpion'], singles: ['Hotline Bling', 'Gods Plan'] },
 ];
 
 const demoBuyers = [
@@ -47,12 +34,11 @@ const demoBuyers = [
 ];
 
 const productTypes = [
-  { category: 3, suffix: 'vinil de colecao', price: 34.99, sizes: false },
-  { category: 4, suffix: 'CD deluxe', price: 18.99, sizes: false },
-  { category: 1, suffix: 't-shirt grafica', price: 29.99, sizes: true },
-  { category: 2, suffix: 'hoodie oficial', price: 64.99, sizes: true },
-  { category: 5, suffix: 'poster de parede', price: 14.99, sizes: true },
-  { category: 6, suffix: 'pack de acessorios', price: 12.99, sizes: false },
+  { category: 1, suffix: 'official graphic t-shirt', price: 34.99, sizes: true },
+  { category: 2, suffix: 'official tour hoodie', price: 74.99, sizes: true },
+  { category: 3, suffix: 'album vinyl LP', price: 38.99, sizes: false },
+  { category: 4, suffix: 'album CD', price: 18.99, sizes: false },
+  { category: 5, suffix: 'official poster print', price: 19.99, sizes: false },
 ];
 
 const orderStates = ['pendente', 'em_preparacao', 'enviada', 'entregue', 'cancelada'];
@@ -340,12 +326,10 @@ function resetDatabase() {
     DELETE FROM playlist;
     DELETE FROM mensagem_admin;
     DELETE FROM notificacao;
-    DELETE f FROM faixa f JOIN release_musical r ON r.idRelease=f.idRelease WHERE r.idCliente <> 5;
-    DELETE FROM release_musical WHERE idCliente <> 5;
+    DELETE FROM faixa;
+    DELETE FROM release_musical;
     DELETE FROM cliente WHERE idCliente <> 5;
     UPDATE cliente SET nome='Green', slug='green', estado='ativo', bio='Projetos pessoais, demos e lancamentos originais dentro da Greenerry.' WHERE idCliente=5;
-    UPDATE release_musical SET estado='aprovado', ativo=1, bloqueado_admin=0, aprovado_em=NOW() WHERE idCliente=5;
-    UPDATE faixa f JOIN release_musical r ON r.idRelease=f.idRelease SET f.estado='aprovada', f.ativo=1 WHERE r.idCliente=5;
     SET FOREIGN_KEY_CHECKS=1;
   `);
 }
@@ -372,20 +356,31 @@ const allProducts = [];
     const artistTrackTitles = new Set();
     let releaseIndex = 0;
     for (const rel of wanted) {
+      const playableTracks = [];
+      for (const track of rel.tracks.slice(0, rel.type === 'Album' ? 6 : 3)) {
+        const trackKey = String(track.title || '').trim().toLowerCase();
+        if (!track.preview || (trackKey && artistTrackTitles.has(trackKey))) continue;
+        const audio = await download(track.preview, `pap_preview_${slug(artist.name)}_${slug(track.title)}`, audioDir);
+        if (!audio) continue;
+        if (trackKey) artistTrackTitles.add(trackKey);
+        playableTracks.push({ ...track, audio });
+      }
+
+      if (!playableTracks.length) {
+        console.warn(`Skipping ${artist.name} - ${rel.title}: no preview audio found.`);
+        continue;
+      }
+
       const cover = await downloadFirst([rel.art, firstRelease.art, artist.image, wiki.main, wiki.thumb, banner ? `file://${join(imgDir, banner).replace(/\\/g, '/')}` : null], `pap_final_release_${slug(artist.name)}_${releaseIndex + 1}`, imgDir);
       const idRelease = mysqlId(`
         INSERT INTO release_musical (idCliente, titulo, tipo, descricao, capa, data_lancamento, estado, ativo, bloqueado_admin, idAdminAprovacao, aprovado_em, criado_em, atualizado_em)
         VALUES (${idCliente}, ${sql(rel.title)}, ${sql(rel.type)}, ${sql(`Lancamento de ${artist.name} preparado para a biblioteca musical da Greenerry, com capa real e previews legais para demonstracao.`)}, ${sql(cover)}, ${sql(rel.date)}, 'aprovado', 1, 0, 1, NOW(), NOW(), NOW())
       `);
       let trackNo = 1;
-      for (const track of rel.tracks.slice(0, rel.type === 'Album' ? 6 : 3)) {
-        const trackKey = String(track.title || '').trim().toLowerCase();
-        if (trackKey && artistTrackTitles.has(trackKey)) continue;
-        if (trackKey) artistTrackTitles.add(trackKey);
-        const audio = await download(track.preview, `pap_preview_${slug(artist.name)}_${slug(track.title)}`, audioDir) || ensureSilencePreview();
+      for (const track of playableTracks) {
         const idFaixa = mysqlId(`
           INSERT INTO faixa (idRelease, numero_faixa, titulo, genero, ficheiro_audio, duracao_segundos, estado, ativo, criado_em, atualizado_em)
-          VALUES (${idRelease}, ${trackNo}, ${sql(track.title)}, ${sql(track.genre || artist.genre)}, ${sql(audio || '')}, ${track.duration || 30}, 'aprovada', 1, NOW(), NOW())
+          VALUES (${idRelease}, ${trackNo}, ${sql(track.title)}, ${sql(track.genre || artist.genre)}, ${sql(track.audio)}, ${track.duration || 30}, 'aprovada', 1, NOW(), NOW())
         `);
         allTrackIds.push(idFaixa);
         trackNo += 1;
@@ -394,11 +389,11 @@ const allProducts = [];
     }
 
     const artPool = releaseImagesByArtist.get(artist.name);
-    const productCount = artist.name === 'Fakemink' || artist.name === 'The Hellp' ? 4 : 5;
+    const productCount = productTypes.length;
     for (let i = 0; i < productCount; i++) {
       const type = productTypes[i % productTypes.length];
       const mainTitle = wanted[i % wanted.length]?.title || artist.releases[0];
-      const pending = (allProducts.length + i) % 11 === 0;
+      const pending = false;
       const stock = 18 + ((allProducts.length + i) % 27);
       const price = Number(type.price + ((allProducts.length + i) % 5) * 3).toFixed(2);
       const productName = `${artist.name} ${mainTitle} ${type.suffix}`;

@@ -85,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['place_order'])) {
                  WHERE p.idProduto = ?
                    AND p.estado = 'aprovado'
                    AND p.ativo = 1
+                   AND cat.estado = 'ativo'
                    AND c.estado = 'ativo'
                  LIMIT 1",
                 'i',

@@ -77,6 +77,7 @@ $featuredProducts = $showShopArea ? db_all(
      JOIN cliente c ON c.idCliente = p.idCliente
      WHERE p.estado = 'aprovado'
        AND p.ativo = 1
+       AND cat.estado = 'ativo'
        AND c.estado = 'ativo'
      ORDER BY p.criado_em DESC
      LIMIT 10"
@@ -141,6 +142,7 @@ if ($showShopArea && $curatedProductId > 0) {
          WHERE p.idProduto = {$curatedProductId}
            AND p.estado = 'aprovado'
            AND p.ativo = 1
+           AND cat.estado = 'ativo'
            AND c.estado = 'ativo'
          LIMIT 1"
     );
@@ -154,7 +156,7 @@ if ($showShopArea && $curatedProductId > 0) {
 $homeStats = [
     'tracks' => $showMusicArea ? (int)(db_one($conn, "SELECT COUNT(*) AS total FROM faixa WHERE estado = 'aprovada' AND ativo = 1")['total'] ?? 0) : 0,
     'artists' => $showArtistArea ? (int)(db_one($conn, "SELECT COUNT(*) AS total FROM ({$publicArtistsSql}) public_artists")['total'] ?? 0) : 0,
-    'products' => $showShopArea ? (int)(db_one($conn, "SELECT COUNT(*) AS total FROM produto p JOIN cliente c ON c.idCliente = p.idCliente WHERE p.estado = 'aprovado' AND p.ativo = 1 AND c.estado = 'ativo'")['total'] ?? 0) : 0,
+    'products' => $showShopArea ? (int)(db_one($conn, "SELECT COUNT(*) AS total FROM produto p JOIN categoria cat ON cat.idCategoria = p.idCategoria JOIN cliente c ON c.idCliente = p.idCliente WHERE p.estado = 'aprovado' AND p.ativo = 1 AND cat.estado = 'ativo' AND c.estado = 'ativo'")['total'] ?? 0) : 0,
 ];
 $heroSpotlight = $featuredReleases[0] ?? null;
 $homeMusicCloud = [];

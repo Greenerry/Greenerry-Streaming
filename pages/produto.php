@@ -16,6 +16,7 @@ $product = db_one(
      WHERE p.idProduto = {$productId}
        AND p.estado = 'aprovado'
        AND p.ativo = 1
+       AND cat.estado = 'ativo'
        AND c.estado = 'ativo'
      LIMIT 1"
 );
@@ -114,11 +115,13 @@ $relatedProducts = db_all(
     $conn,
     "SELECT p.idProduto, p.nomeProduto, p.precoAtual
      FROM produto p
+     JOIN categoria cat ON cat.idCategoria = p.idCategoria
      JOIN cliente c ON c.idCliente = p.idCliente
      WHERE p.idCategoria = " . (int)$product['idCategoria'] . "
        AND p.idProduto != {$productId}
        AND p.estado = 'aprovado'
        AND p.ativo = 1
+       AND cat.estado = 'ativo'
        AND c.estado = 'ativo'
      ORDER BY p.criado_em DESC
      LIMIT 3"
@@ -170,16 +173,6 @@ $sizeSummary = array_map(static function ($size) {
 $productImages = product_images($conn, $productId);
 $mainImage = $productImages[0] ?? '';
 $productMediaCloud = [];
-foreach ($productImages as $image) {
-    $url = asset_url('img', $image);
-    if ($url !== '') {
-        $productMediaCloud[$url] = [
-            'src' => $url,
-            'label' => (string)$product['nomeProduto'],
-            'type' => 'store',
-        ];
-    }
-}
 foreach ($relatedProducts as $related) {
     $image = asset_url('img', product_main_image($conn, (int)$related['idProduto']));
     if ($image !== '') {

@@ -7,7 +7,7 @@ $search = trim($_GET['q'] ?? '');
 $perPage = 16;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
-$whereParts = ["p.estado = 'aprovado'", 'p.ativo = 1', "c.estado = 'ativo'"];
+$whereParts = ["p.estado = 'aprovado'", 'p.ativo = 1', "c.estado = 'ativo'", "cat.estado = 'ativo'"];
 $types = '';
 $params = [];
 if ($category > 0) {
@@ -32,6 +32,7 @@ $totalProducts = (int)(db_one_prepared(
     $conn,
     "SELECT COUNT(*) AS total
      FROM produto p
+     JOIN categoria cat ON cat.idCategoria = p.idCategoria
      JOIN cliente c ON c.idCliente = p.idCliente
      {$where}",
     $types,

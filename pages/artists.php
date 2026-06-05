@@ -3,7 +3,7 @@ require_once '../includes/config.php';
 
 // Artist search is simple: it filters active artists by name.
 $search = trim($_GET['q'] ?? '');
-$perPage = 18;
+$perPage = 20;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 $searchSql = '';
 $types = '';

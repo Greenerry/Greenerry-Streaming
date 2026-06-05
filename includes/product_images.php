@@ -23,9 +23,11 @@ function product_images(mysqli $conn, int $productId): array
     );
 
     $images = [];
+    $seen = [];
     foreach ($rows as $row) {
         $image = clean_product_image_name($row['ficheiro'] ?? '');
-        if ($image !== '') {
+        if ($image !== '' && !isset($seen[$image])) {
+            $seen[$image] = true;
             $images[] = $image;
         }
     }
@@ -45,9 +47,16 @@ function save_product_images(mysqli $conn, int $productId, array $images): void
         return;
     }
 
-    $clean = array_values(array_filter(array_map(static function ($image): string {
-        return clean_product_image_name((string)$image);
-    }, $images)));
+    $clean = [];
+    $seen = [];
+    foreach ($images as $image) {
+        $image = clean_product_image_name((string)$image);
+        if ($image === '' || isset($seen[$image])) {
+            continue;
+        }
+        $seen[$image] = true;
+        $clean[] = $image;
+    }
 
     db_prepared($conn, "DELETE FROM produto_imagem WHERE idProduto = ?", 'i', [$productId]);
     foreach ($clean as $index => $image) {

@@ -1264,6 +1264,14 @@ select.finput { cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg 
   gap:28px 20px;
 }
 
+@media (min-width:901px) {
+  .shop-catalog-grid,
+  .main.sr-open .shop-catalog-grid {
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:28px 20px;
+  }
+}
+
 .shop-catalog-grid .mcard {
   border-radius:8px;
 }
@@ -10793,16 +10801,55 @@ body.sr-animating .player-bar {
   }
 }
 
-/* Final PAP mobile and homepage artist polish */
+/* Homepage artists: keep this section aligned with the music/store sections. */
 @media (min-width:901px) {
   .home-section--artists {
-    min-height:100vh;
-    display:flex;
-    align-items:center;
+    min-height:auto;
+    display:block;
+  }
+
+  .home-section--artists > .wrap {
+    width:100%;
+  }
+
+  .home-section--artists .section-band {
+    align-items:flex-end;
+    margin-bottom:24px;
+  }
+
+  .home-section--artists .page-intro h2 {
+    font-size:clamp(3.2rem, 4.7vw, 4.25rem) !important;
+    line-height:1 !important;
+    margin:0 !important;
   }
 
   .home-section--artists .home-artist-grid {
     grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+    gap:18px !important;
+    width:100%;
+  }
+
+  .home-section--artists .acard--panel {
+    min-height:216px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:28px 14px;
+  }
+
+  .home-section--artists .acard--panel .avatar {
+    width:92px;
+    height:92px;
+    margin-bottom:16px;
+  }
+
+  .home-section--artists .acard--panel h4 {
+    font-size:1rem;
+  }
+
+  .home-section--artists .acard--panel p {
+    font-size:.84rem;
   }
 }
 

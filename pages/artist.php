@@ -39,10 +39,12 @@ $totalTracks = $showMusicArea ? (int)(db_one(
 $totalProducts = $showShopArea ? (int)(db_one(
     $conn,
     "SELECT COUNT(*) AS total
-     FROM produto
-     WHERE idCliente = {$artistId}
-       AND estado = 'aprovado'
-       AND ativo = 1"
+     FROM produto p
+     JOIN categoria cat ON cat.idCategoria = p.idCategoria
+     WHERE p.idCliente = {$artistId}
+       AND p.estado = 'aprovado'
+       AND p.ativo = 1
+       AND cat.estado = 'ativo'"
 )['total'] ?? 0) : 0;
 $totalFollowers = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_artista WHERE idArtista = {$artistId}")['total'] ?? 0);
 $totalFollowing = (int)(db_one($conn, "SELECT COUNT(*) AS total FROM seguir_artista WHERE idSeguidor = {$artistId}")['total'] ?? 0);
@@ -95,6 +97,7 @@ $artistCategories = $showShopArea ? db_all(
      WHERE p.idCliente = {$artistId}
        AND p.estado = 'aprovado'
        AND p.ativo = 1
+       AND cat.estado = 'ativo'
      ORDER BY cat.nomeCategoria ASC"
 ) : [];
 
@@ -139,6 +142,7 @@ $products = $showShopArea ? db_all(
      WHERE p.idCliente = {$artistId}
        AND p.estado = 'aprovado'
        AND p.ativo = 1
+       AND cat.estado = 'ativo'
      ORDER BY p.criado_em DESC
      LIMIT {$artistProductsPerPage} OFFSET {$artistProductOffset}"
 ) : [];
