@@ -3,6 +3,8 @@ require_once '../includes/config.php';
 
 // Artist search is simple: it filters active artists by name.
 $search = trim($_GET['q'] ?? '');
+$perPage = 18;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
 $searchSql = '';
 $types = '';
 $params = [];
@@ -11,6 +13,34 @@ if ($search !== '') {
     $types = 's';
     $params[] = '%' . $search . '%';
 }
+
+$totalArtists = (int)(db_one_prepared(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM cliente c
+     WHERE c.estado = 'ativo'
+       {$searchSql}
+       AND EXISTS (
+         SELECT 1
+         FROM release_musical r
+         WHERE r.idCliente = c.idCliente
+           AND r.estado = 'aprovado'
+           AND r.ativo = 1
+       )",
+    $types,
+    $params
+)['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalArtists / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$offset = ($pageNumber - 1) * $perPage;
+$paginationQuery = [];
+if ($search !== '') {
+    $paginationQuery['q'] = $search;
+}
+$pageUrl = static function (int $targetPage) use ($paginationQuery): string {
+    return 'artists.php?' . http_build_query($paginationQuery + ['page' => $targetPage]);
+};
+
 // This list only includes artists who already have at least one approved release.
 $artists = db_all_prepared(
     $conn,
@@ -36,7 +66,8 @@ $artists = db_all_prepared(
      WHERE c.estado = 'ativo'
        {$searchSql}
      GROUP BY c.idCliente, c.nome, c.email, c.foto, c.banner, c.bio, c.slug
-     ORDER BY total_releases DESC, nome ASC",
+     ORDER BY total_releases DESC, nome ASC
+     LIMIT {$perPage} OFFSET {$offset}",
     $types,
     $params
 );
@@ -115,6 +146,24 @@ include '../includes/header.php';
           </a>
         <?php endforeach; ?>
       </div>
+      <?php if ($totalPages > 1): ?>
+        <nav class="pager" aria-label="Pagination">
+          <?php if ($pageNumber > 1): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber - 1)) ?>" data-t="pagination_previous">Anterior</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+          <?php endif; ?>
+          <span class="pager-status">
+            <span data-t="pagination_page">Página</span> <?= (int)$pageNumber ?>
+            <span data-t="pagination_of">de</span> <?= (int)$totalPages ?>
+          </span>
+          <?php if ($pageNumber < $totalPages): ?>
+            <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber + 1)) ?>" data-t="pagination_next">Seguinte</a>
+          <?php else: ?>
+            <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
     <?php endif; ?>
     </div>
   </div>

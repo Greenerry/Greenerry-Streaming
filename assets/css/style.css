@@ -4034,6 +4034,13 @@ a.nav-user-name:hover { color:var(--text); }
   gap:16px;
 }
 
+@media (min-width:901px) {
+  .artist-grid-panels,
+  .main.sr-open .artist-grid-panels {
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+  }
+}
+
 .artist-panel {
   position:relative;
   display:grid;
