@@ -46,6 +46,7 @@ Thumbs.db
 
 # XAMPP specific
 backup/
+database_backups/
 *.sql.backup
 
 # Config files with sensitive data
