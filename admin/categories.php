@@ -6,6 +6,22 @@ $adminId = current_admin_id();
 $feedback = '';
 $error = '';
 
+function category_public_product_count(mysqli $conn, int $categoryId): int
+{
+    if ($categoryId <= 0) {
+        return 0;
+    }
+
+    return (int)(db_one(
+        $conn,
+        "SELECT COUNT(*) AS total
+         FROM produto
+         WHERE idCategoria = {$categoryId}
+           AND estado = 'aprovado'
+           AND ativo = 1"
+    )['total'] ?? 0);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
     $action = $_POST['action'] ?? '';
@@ -81,6 +97,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 $feedback = tr('success.category_created');
             } elseif ($categoryId > 0) {
+                $currentCategory = db_one($conn, "SELECT estado FROM categoria WHERE idCategoria = {$categoryId} LIMIT 1");
+                $publicProducts = category_public_product_count($conn, $categoryId);
+                $confirmedImpact = (string)($_POST['confirm_impact'] ?? '') === '1';
+
+                if (($currentCategory['estado'] ?? '') === 'ativo' && $state === 'inativo' && $publicProducts > 0 && !$confirmedImpact) {
+                    $error = current_lang() === 'en'
+                        ? "Confirm before deactivating this category. It will hide {$publicProducts} public product(s)."
+                        : "Confirma antes de inativar esta categoria. Vai esconder {$publicProducts} produto(s) publico(s).";
+                }
+            }
+
+            if (!$error && $action === 'update' && $categoryId > 0) {
                 mysqli_query(
                     $conn,
                     "UPDATE categoria
@@ -99,8 +127,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $category = db_one($conn, "SELECT estado FROM categoria WHERE idCategoria = {$categoryId} LIMIT 1");
         if ($category) {
             $nextState = $category['estado'] === 'ativo' ? 'inativo' : 'ativo';
-            mysqli_query($conn, "UPDATE categoria SET estado = '{$nextState}' WHERE idCategoria = {$categoryId}");
-            $feedback = tr('success.category_state_updated');
+            $publicProducts = category_public_product_count($conn, $categoryId);
+            $confirmedImpact = (string)($_POST['confirm_impact'] ?? '') === '1';
+            if ($nextState === 'inativo' && $publicProducts > 0 && !$confirmedImpact) {
+                $error = current_lang() === 'en'
+                    ? "Confirm before deactivating this category. It will hide {$publicProducts} public product(s)."
+                    : "Confirma antes de inativar esta categoria. Vai esconder {$publicProducts} produto(s) publico(s).";
+            } else {
+                mysqli_query($conn, "UPDATE categoria SET estado = '{$nextState}' WHERE idCategoria = {$categoryId}");
+                $feedback = tr('success.category_state_updated');
+            }
         }
     }
 }
@@ -290,8 +326,14 @@ include 'admin_header.php';
   <?php else: ?>
     <div class="admin-card-list">
       <?php foreach ($categories as $category): ?>
+        <?php
+          $categoryProductCount = (int)($category['total_produtos'] ?? 0);
+          $categoryConfirm = current_lang() === 'en'
+              ? "Deactivate this category? Products inside it will disappear from the public store until you reactivate it."
+              : "Inativar esta categoria? Os produtos dentro dela desaparecem da loja publica ate reativares.";
+        ?>
         <article class="admin-review-card" data-admin-state="<?= h($category['estado']) ?>">
-          <form method="post" class="stack-form admin-category-edit-form">
+          <form method="post" class="stack-form admin-category-edit-form" <?= $categoryProductCount > 0 && $category['estado'] === 'ativo' ? 'data-confirm="' . h($categoryConfirm) . '" data-confirm-if-state="inativo"' : '' ?>>
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="category_id" value="<?= (int)$category['idCategoria'] ?>">

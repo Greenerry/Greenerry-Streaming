@@ -1285,6 +1285,43 @@
 
   bindAdminReplyEnter();
 
+  document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const submitter = event.submitter;
+    const confirmMessage = submitter?.dataset?.confirm || form.dataset.confirm || '';
+    if (!confirmMessage || form.dataset.confirmedImpact === '1') return;
+
+    const confirmState = form.dataset.confirmIfState;
+    if (confirmState) {
+      const stateField = form.querySelector('[name="estado"]');
+      const states = confirmState.split(',').map((state) => state.trim()).filter(Boolean);
+      if (!stateField || !states.includes(stateField.value)) return;
+    }
+
+    const confirmActive = form.dataset.confirmIfActive;
+    if (confirmActive !== undefined) {
+      const activeField = form.querySelector('[name="ativo"]');
+      if (!activeField || activeField.value !== confirmActive) return;
+    }
+
+    if (!window.confirm(confirmMessage)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
+    form.dataset.confirmedImpact = '1';
+    if (!form.querySelector('input[name="confirm_impact"]')) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'confirm_impact';
+      input.value = '1';
+      form.appendChild(input);
+    }
+  }, true);
+
   document.addEventListener('submit', async (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !form.matches('.admin-review-actions')) return;

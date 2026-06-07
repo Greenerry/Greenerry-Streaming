@@ -414,7 +414,7 @@ include 'admin_header.php';
                 <div class="admin-row-actions">
                 <details class="admin-inline-editor">
                   <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
-                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data">
+                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data" data-confirm="Inativar este lancamento? As faixas deixam de aparecer no site publico ate ser reativado." data-confirm-if-state="inativo">
                     <?= csrf_input() ?>
                     <input type="hidden" name="release_id" value="<?= (int)$release['idRelease'] ?>">
                     <label><span data-admin-t="label_title">Titulo</span><input name="titulo" class="finput" value="<?= h($release['titulo']) ?>" required></label>

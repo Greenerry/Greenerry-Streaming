@@ -327,7 +327,7 @@ include 'admin_header.php';
                 <div class="admin-row-actions">
                 <details class="admin-inline-editor">
                   <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
-                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data">
+                  <form method="post" class="admin-inline-edit-form" enctype="multipart/form-data" data-confirm="Inativar este produto? Ele deixa de aparecer na loja publica ate ser reativado." data-confirm-if-state="inativo">
                     <?= csrf_input() ?>
                     <input type="hidden" name="product_id" value="<?= (int)$product['idProduto'] ?>">
                     <label><span data-admin-t="label_product">Produto</span><input name="nomeProduto" class="finput" value="<?= h($product['nomeProduto']) ?>" required></label>

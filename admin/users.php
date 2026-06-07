@@ -169,12 +169,19 @@ include 'admin_header.php';
                 <div class="admin-user-actions">
                   <?php foreach (['ativo', 'inativo', 'bloqueado'] as $quickState): ?>
                     <?php if ($quickState !== (string)$user['estado']): ?>
+                      <?php
+                        $quickConfirm = $quickState === 'bloqueado'
+                            ? 'Bloquear este utilizador? Ele deixa de conseguir entrar na conta.'
+                            : ($quickState === 'inativo'
+                                ? 'Inativar este utilizador? A conta deixa de aparecer como ativa.'
+                                : '');
+                      ?>
                       <form method="post" class="admin-user-quick-form">
                         <?= csrf_input() ?>
                         <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
                         <input type="hidden" name="estado" value="<?= h($quickState) ?>">
                         <input type="hidden" name="quick_action" value="<?= h($quickState) ?>">
-                        <button type="submit" class="btn btn-ghost btn-sm <?= $quickState === 'bloqueado' ? 'btn-danger' : '' ?>">
+                        <button type="submit" class="btn btn-ghost btn-sm <?= $quickState === 'bloqueado' ? 'btn-danger' : '' ?>" <?= $quickConfirm !== '' ? 'data-confirm="' . h($quickConfirm) . '"' : '' ?>>
                           <?= h($quickState === 'ativo' ? order_status_label('ativo') : ($quickState === 'inativo' ? 'Inativar' : 'Bloquear')) ?>
                         </button>
                       </form>
@@ -182,7 +189,7 @@ include 'admin_header.php';
                   <?php endforeach; ?>
                 <details class="admin-inline-editor">
                   <summary class="btn btn-ghost btn-sm" data-admin-t="btn_edit">Editar</summary>
-                  <form method="post" class="admin-inline-edit-form">
+                  <form method="post" class="admin-inline-edit-form" data-confirm="Guardar este estado? Se bloqueares/inativares, o utilizador pode perder acesso ao site." data-confirm-if-state="inativo,bloqueado">
                     <?= csrf_input() ?>
                     <input type="hidden" name="user_id" value="<?= (int)$user['idCliente'] ?>">
                     <label><span data-admin-t="users_name">Nome</span><input name="nome" class="finput" value="<?= h($user['nome']) ?>" required></label>

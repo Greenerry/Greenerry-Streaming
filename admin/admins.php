@@ -258,7 +258,7 @@ include 'admin_header.php';
                   <small data-admin-t="admins_locked_help">Esta conta mantem o controlo total.</small>
                 </div>
               <?php else: ?>
-                <form method="post" class="admin-team-action-form">
+                <form method="post" class="admin-team-action-form" data-confirm="Inativar este admin? Esta pessoa deixa de conseguir entrar no painel de administracao." data-confirm-if-active="0">
                   <?= csrf_input() ?>
                   <input type="hidden" name="action" value="update">
                   <input type="hidden" name="admin_id" value="<?= (int)$row['idAdmin'] ?>">
