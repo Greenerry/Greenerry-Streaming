@@ -6,6 +6,28 @@ $uid = current_user_id();
 $feedback = '';
 $error = '';
 
+function artist_order_state_from_counts(array $order): string
+{
+    $totalItems = (int)($order['artist_total_items'] ?? 0);
+    $cancelledItems = (int)($order['artist_cancelados'] ?? 0);
+    $activeItems = max(0, $totalItems - $cancelledItems);
+
+    if ($totalItems > 0 && $cancelledItems === $totalItems) {
+        return 'cancelada';
+    }
+    if ($activeItems > 0 && (int)($order['artist_entregues'] ?? 0) === $activeItems) {
+        return 'entregue';
+    }
+    if ($activeItems > 0 && (int)($order['artist_enviados'] ?? 0) + (int)($order['artist_entregues'] ?? 0) === $activeItems) {
+        return 'enviada';
+    }
+    if ((int)($order['artist_em_preparacao'] ?? 0) > 0) {
+        return 'em_preparacao';
+    }
+
+    return 'pendente';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = verify_csrf_request() ?? '';
     $orderId = (int)($_POST['order_id'] ?? 0);
@@ -176,7 +198,13 @@ $orders = db_all(
         me.telefone,
         me.morada,
         me.cidade,
-        me.codigo_postal
+        me.codigo_postal,
+        SUM(ei.estado_item = 'pendente') AS artist_pendentes,
+        SUM(ei.estado_item = 'em_preparacao') AS artist_em_preparacao,
+        SUM(ei.estado_item = 'enviado') AS artist_enviados,
+        SUM(ei.estado_item = 'entregue') AS artist_entregues,
+        SUM(ei.estado_item = 'cancelado') AS artist_cancelados,
+        COUNT(*) AS artist_total_items
      FROM encomenda e
      JOIN encomenda_item ei ON ei.idEncomenda = e.idEncomenda
      JOIN cliente c ON c.idCliente = e.idCliente
@@ -195,7 +223,7 @@ $orderCounts = [
     'cancelada' => 0,
 ];
 foreach ($orders as $orderRow) {
-    $state = (string)$orderRow['estado_encomenda'];
+    $state = artist_order_state_from_counts($orderRow);
     if (isset($orderCounts[$state])) {
         $orderCounts[$state]++;
     }
@@ -239,7 +267,7 @@ include '../includes/header.php';
             <span class="orders-filter-count"><?= (int)$orderCounts['pendente'] ?></span>
           </button>
           <button type="button" data-order-filter="em_preparacao">
-            <span data-t="orders_action_prepare">Em prepara??o</span>
+            <span data-t="orders_action_prepare">Em preparação</span>
             <span class="orders-filter-count"><?= (int)$orderCounts['em_preparacao'] ?></span>
           </button>
           <button type="button" data-order-filter="enviada">
@@ -260,6 +288,7 @@ include '../includes/header.php';
       <div class="order-stack" id="orders-list">
         <?php foreach ($orders as $order): ?>
           <?php
+          $artistOrderState = artist_order_state_from_counts($order);
           $items = db_all(
               $conn,
               "SELECT ei.*, t.etiqueta
@@ -280,7 +309,7 @@ include '../includes/header.php';
           <details
             class="order-accordion card surface-card order-shell"
             data-order-card
-            data-order-status="<?= h($order['estado_encomenda']) ?>"
+            data-order-status="<?= h($artistOrderState) ?>"
             data-order-search="<?= h(strtolower('#' . (int)$order['idEncomenda'] . ' ' . $order['cliente_nome'] . ' ' . $order['morada'] . ' ' . $order['cidade'] . ' ' . $order['codigo_postal'] . ' ' . ($order['telefone'] ?? '') . ' ' . ($order['observacoes'] ?? ''))) ?>"
           >
             <summary class="order-accordion-summary">
@@ -290,7 +319,7 @@ include '../includes/header.php';
                 <p class="order-accordion-meta"><?= date('d/m/Y', strtotime($order['criado_em'])) ?></p>
               </div>
               <div class="order-accordion-summary-side">
-                <span class="badge <?= h(state_badge_class($order['estado_encomenda'])) ?>" data-status-label="<?= h($order['estado_encomenda']) ?>"><?= h(order_status_label($order['estado_encomenda'])) ?></span>
+                <span class="badge <?= h(state_badge_class($artistOrderState)) ?>" data-status-label="<?= h($artistOrderState) ?>"><?= h(order_status_label($artistOrderState)) ?></span>
                 <strong class="order-accordion-total"><?= h(format_eur((float)$order['total_final'])) ?></strong>
                 <span class="order-accordion-chevron" aria-hidden="true">
                   <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
@@ -384,7 +413,7 @@ include '../includes/header.php';
               </div>
 
               <div class="order-actions-bar mt6">
-                <?php if ($hasEditableItems && $order['estado_encomenda'] !== 'cancelada'): ?>
+                <?php if ($hasEditableItems && $artistOrderState !== 'cancelada'): ?>
                   <form method="post" class="order-actions-form order-actions-form--stepper">
                     <?= csrf_input() ?>
                     <input type="hidden" name="order_id" value="<?= (int)$order['idEncomenda'] ?>">

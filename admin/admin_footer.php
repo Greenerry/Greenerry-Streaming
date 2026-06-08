@@ -846,6 +846,16 @@
   const adminMenuButton = document.getElementById('admin-mobile-menu');
   const adminPeekButton = document.getElementById('admin-sidebar-peek');
   const adminOverlay = document.getElementById('admin-mobile-overlay');
+  const adminSidebarStorageKey = 'g_admin_sidebar_expanded';
+
+  function setAdminDesktopSidebar(expanded) {
+    document.body.classList.toggle('admin-sidebar-expanded', expanded);
+    adminPeekButton?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    adminPeekButton?.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
+    if (adminPeekButton) adminPeekButton.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+  }
+
+  setAdminDesktopSidebar(localStorage.getItem(adminSidebarStorageKey) === '1');
 
   function setAdminSidebar(open) {
     adminSidebar?.classList.toggle('mobile-open', open);
@@ -853,13 +863,19 @@
     adminMenuButton?.classList.toggle('is-open', open);
     adminMenuButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
     document.body.style.overflow = open ? 'hidden' : '';
+    if (window.innerWidth <= 768) {
+      document.body.classList.toggle('admin-sidebar-expanded', open);
+    }
   }
 
   adminMenuButton?.addEventListener('click', () => {
     setAdminSidebar(!adminSidebar?.classList.contains('mobile-open'));
   });
   adminPeekButton?.addEventListener('click', () => {
-    setAdminSidebar(!adminSidebar?.classList.contains('mobile-open'));
+    const expanded = !document.body.classList.contains('admin-sidebar-expanded');
+    localStorage.setItem(adminSidebarStorageKey, expanded ? '1' : '0');
+    setAdminSidebar(false);
+    setAdminDesktopSidebar(expanded);
   });
 
   adminOverlay?.addEventListener('click', () => setAdminSidebar(false));

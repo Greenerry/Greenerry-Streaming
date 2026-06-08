@@ -234,6 +234,7 @@ function openMobileSidebar() {
   document.getElementById('sl')?.classList.add('open');
   document.getElementById('sl-overlay')?.classList.add('visible');
   document.body?.classList.add('nav-open');
+  if (window.innerWidth <= 768) document.body?.classList.add('sidebar-expanded');
 
   const playerBar = document.getElementById('player-bar');
   if (playerBar) playerBar.style.display = 'none';
@@ -245,6 +246,7 @@ function closeMobileSidebar() {
   if (sidebar) sidebar.classList.remove('open');
   if (overlay) overlay.classList.remove('visible');
   document.body?.classList.remove('nav-open');
+  if (window.innerWidth <= 768) document.body?.classList.remove('sidebar-expanded');
 
   const playerBar = document.getElementById('player-bar');
   if (playerBar && (playerBar.classList.contains('sr-open') || _cur)) {

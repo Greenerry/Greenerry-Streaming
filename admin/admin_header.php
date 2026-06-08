@@ -184,6 +184,9 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         <span data-admin-t="nav_logout">Sair</span>
       </a>
     </div>
+    <button type="button" class="admin-sidebar-peek" id="admin-sidebar-peek" aria-label="Expand sidebar" aria-expanded="false">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
   </aside>
 
   <header class="admin-commandbar">

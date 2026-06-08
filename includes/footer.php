@@ -20,8 +20,8 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
     <div class="wrap">
       <div class="maintenance-panel">
         <span class="slabel">Greenerry</span>
-        <h1><?= h(tr('maintenance.title')) ?></h1>
-        <p><?= h(tr('maintenance.text')) ?></p>
+        <h1 data-t="maintenance_title"><?= h(tr('maintenance.title')) ?></h1>
+        <p data-t="maintenance_text"><?= h(tr('maintenance.text')) ?></p>
       </div>
     </div>
   </section>

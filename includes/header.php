@@ -125,11 +125,11 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
           </a>
           <a href="<?= $_base ?>/pages/my_orders.php" class="sl-link <?= $page === 'my_orders.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M8 10h6"/><path d="M8 14h6"/><path d="M8 18h6"/></svg>
-            <span data-t="nav_my_orders">As minhas compras</span>
+            <span data-t="nav_my_orders">Compras</span>
           </a>
           <a href="<?= $_base ?>/pages/contact_admin.php" class="sl-link sl-link--contact-admin <?= $page === 'contact_admin.php' ? 'on' : '' ?>">
             <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
-            <span data-t="nav_contact_admin">Falar com o admin</span>
+            <span data-t="nav_contact_admin">Suporte</span>
           </a>
         </div>
 
@@ -212,7 +212,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
             <span class="artist-mode-icon">
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M17 8H9.5a3.5 3.5 0 0 0 0 7H15a3 3 0 0 1 0 6H7"/><path d="M6 3h12"/></svg>
             </span>
-            <span data-t="nav_artist_side">Artist side</span>
+            <span data-t="nav_artist_side">Artista</span>
             <span class="artist-mode-cue">→</span>
           </button>
         <?php endif; ?>
@@ -222,6 +222,9 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         </a>
       <?php endif; ?>
     </div>
+    <button type="button" class="sl-peek" id="sl-peek" aria-label="Expand sidebar" aria-expanded="false">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
   </aside>
 
   <div class="main footer-wrap">

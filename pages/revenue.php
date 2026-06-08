@@ -276,7 +276,7 @@ include '../includes/header.php';
           </div>
         </article>
 
-        <article class="client-revenue-card client-revenue-bars-card">
+        <article class="client-revenue-card client-revenue-bars-card client-revenue-line-card">
           <div class="client-revenue-card-head">
             <div>
               <span class="slabel" data-t="revenue_monthly_chart">Rendimento mensal</span>
@@ -286,15 +286,31 @@ include '../includes/header.php';
           <?php if (!$monthlyRevenue): ?>
             <p data-t="revenue_empty">Ainda não tens vendas registadas.</p>
           <?php else: ?>
-            <div class="client-revenue-bars">
-              <?php foreach ($monthlyRevenue as $entry): ?>
-                <?php $height = $maxMonthly > 0 ? max(14, (int)round(((float)$entry['artist_value'] / $maxMonthly) * 100)) : 14; ?>
-                <div>
-                  <span><?= h(format_eur((float)$entry['artist_value'])) ?></span>
-                  <i style="height: <?= $height ?>%"></i>
-                  <strong><?= h($entry['period_label']) ?></strong>
-                </div>
-              <?php endforeach; ?>
+            <svg class="client-revenue-line-chart client-revenue-line-chart--mini" viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" role="img" aria-label="Monthly revenue line chart">
+              <defs>
+                <linearGradient id="clientRevenueMiniGlow" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#c9d0db" stop-opacity=".34"/>
+                  <stop offset="100%" stop-color="#c9d0db" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g class="client-chart-grid-lines">
+                <line x1="28" y1="64" x2="592" y2="64"/>
+                <line x1="28" y1="122" x2="592" y2="122"/>
+                <line x1="28" y1="180" x2="592" y2="180"/>
+              </g>
+              <?php if ($chartAreaPoints): ?>
+                <polygon points="<?= h(implode(' ', $chartAreaPoints)) ?>" fill="url(#clientRevenueMiniGlow)"/>
+                <polyline points="<?= h(implode(' ', $chartPoints)) ?>" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <?php foreach ($chartPoints as $index => $point): ?>
+                  <?php [$cx, $cy] = explode(',', $point); $entry = $monthlyRevenue[$index] ?? null; ?>
+                  <circle cx="<?= h($cx) ?>" cy="<?= h($cy) ?>" r="5">
+                    <?php if ($entry): ?><title><?= h($entry['period_label'] . ': ' . format_eur((float)$entry['artist_value'])) ?></title><?php endif; ?>
+                  </circle>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </svg>
+            <div class="client-revenue-months client-revenue-months--mini">
+              <?php foreach ($monthlyRevenue as $entry): ?><span><?= h($entry['period_label']) ?></span><?php endforeach; ?>
             </div>
           <?php endif; ?>
         </article>

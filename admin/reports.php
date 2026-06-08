@@ -158,6 +158,23 @@ $maxMonthlyRevenue = 0.0;
 foreach ($monthlyRevenue as $month) {
     $maxMonthlyRevenue = max($maxMonthlyRevenue, (float)$month['revenue']);
 }
+$moneyChartWidth = 620;
+$moneyChartHeight = 220;
+$moneyChartPadding = 28;
+$moneyChartPoints = [];
+$moneyChartAreaPoints = [];
+$moneyChartCount = max(1, count($monthlyRevenue) - 1);
+foreach ($monthlyRevenue as $index => $month) {
+    $x = $moneyChartPadding + ($moneyChartCount > 0 ? ($index / $moneyChartCount) * ($moneyChartWidth - ($moneyChartPadding * 2)) : 0);
+    $ratio = $maxMonthlyRevenue > 0 ? ((float)$month['revenue'] / $maxMonthlyRevenue) : 0;
+    $y = ($moneyChartHeight - $moneyChartPadding) - ($ratio * ($moneyChartHeight - ($moneyChartPadding * 2)));
+    $moneyChartPoints[] = round($x, 1) . ',' . round($y, 1);
+}
+if ($moneyChartPoints) {
+    $firstX = explode(',', $moneyChartPoints[0])[0];
+    $lastX = explode(',', $moneyChartPoints[count($moneyChartPoints) - 1])[0];
+    $moneyChartAreaPoints = array_merge([$firstX . ',' . ($moneyChartHeight - $moneyChartPadding)], $moneyChartPoints, [$lastX . ',' . ($moneyChartHeight - $moneyChartPadding)]);
+}
 
 $maxCategoryRevenue = 0.0;
 foreach ($categoryRevenue as $category) {
@@ -813,21 +830,32 @@ include 'admin_header.php';
   <?php if (!$monthlyRevenue): ?>
     <p data-admin-t="empty_monthly">Sem atividade suficiente para desenhar a evolucao mensal.</p>
   <?php else: ?>
-    <div class="admin-chart admin-chart--money">
-      <?php foreach ($monthlyRevenue as $month): ?>
-        <?php
-        $revenue = (float)$month['revenue'];
-        $height = $maxMonthlyRevenue > 0 ? max(22, (int)round(($revenue / $maxMonthlyRevenue) * 180)) : 22;
-        ?>
-        <div class="admin-chart-col admin-chart-tip" data-chart-tip="<?= h($month['period_label'] . ' | ' . $chartTipLabels['revenue'] . ': ' . format_eur($revenue) . ' | ' . $chartTipLabels['commission'] . ': ' . format_eur((float)$month['commission'])) ?>">
-          <span class="admin-chart-value"><?= h(format_eur($revenue)) ?></span>
-          <div class="admin-chart-bar-wrap">
-            <div class="admin-chart-bar" style="height: <?= $height ?>px"></div>
-          </div>
-          <strong><?= h($month['period_label']) ?></strong>
-          <span><?= h(format_eur((float)$month['commission'])) ?> <span data-admin-t="stat_platform_commission">comissao</span></span>
-        </div>
+    <svg class="dash-v4-line-chart admin-report-money-line" viewBox="0 0 <?= $moneyChartWidth ?> <?= $moneyChartHeight ?>" role="img" aria-label="Money line chart">
+      <defs>
+        <linearGradient id="reportsMoneyGlow" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#c9d0db" stop-opacity=".34"/>
+          <stop offset="100%" stop-color="#c9d0db" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <g class="chart-grid-lines">
+        <line x1="28" y1="48" x2="592" y2="48"/>
+        <line x1="28" y1="92" x2="592" y2="92"/>
+        <line x1="28" y1="136" x2="592" y2="136"/>
+        <line x1="28" y1="180" x2="592" y2="180"/>
+      </g>
+      <?php if ($moneyChartAreaPoints): ?><polygon points="<?= h(implode(' ', $moneyChartAreaPoints)) ?>" fill="url(#reportsMoneyGlow)"/><?php endif; ?>
+      <?php if ($moneyChartPoints): ?><polyline points="<?= h(implode(' ', $moneyChartPoints)) ?>" fill="none" stroke="#c9d0db" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><?php endif; ?>
+      <?php foreach ($moneyChartPoints as $index => $point): ?>
+        <?php [$cx, $cy] = explode(',', $point); $month = $monthlyRevenue[$index] ?? null; ?>
+        <circle cx="<?= h($cx) ?>" cy="<?= h($cy) ?>" r="5">
+          <?php if ($month): ?>
+            <title><?= h($month['period_label'] . ' | ' . $chartTipLabels['revenue'] . ': ' . format_eur((float)$month['revenue']) . ' | ' . $chartTipLabels['commission'] . ': ' . format_eur((float)$month['commission'])) ?></title>
+          <?php endif; ?>
+        </circle>
       <?php endforeach; ?>
+    </svg>
+    <div class="dash-v4-months dash-v4-months--mini">
+      <?php foreach ($monthlyRevenue as $month): ?><span><?= h($month['period_label']) ?></span><?php endforeach; ?>
     </div>
   <?php endif; ?>
 </section>

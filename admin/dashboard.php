@@ -163,6 +163,20 @@ $maxMusicListens = 0;
 foreach ($musicPerformance as $entry) {
     $maxMusicListens = max($maxMusicListens, (int)$entry['listens']);
 }
+$musicChartPoints = [];
+$musicChartAreaPoints = [];
+$musicChartCount = max(1, count($musicPerformance) - 1);
+foreach ($musicPerformance as $index => $entry) {
+    $x = $chartPadding + ($musicChartCount > 0 ? ($index / $musicChartCount) * ($chartWidth - ($chartPadding * 2)) : 0);
+    $ratio = $maxMusicListens > 0 ? ((int)$entry['listens'] / $maxMusicListens) : 0;
+    $y = ($chartHeight - $chartPadding) - ($ratio * ($chartHeight - ($chartPadding * 2)));
+    $musicChartPoints[] = round($x, 1) . ',' . round($y, 1);
+}
+if ($musicChartPoints) {
+    $firstX = explode(',', $musicChartPoints[0])[0];
+    $lastX = explode(',', $musicChartPoints[count($musicChartPoints) - 1])[0];
+    $musicChartAreaPoints = array_merge([$firstX . ',' . ($chartHeight - $chartPadding)], $musicChartPoints, [$lastX . ',' . ($chartHeight - $chartPadding)]);
+}
 
 $recentPlatformActivity = db_all(
     $conn,
@@ -297,26 +311,44 @@ include 'admin_header.php';
       </div>
     </section>
 
-    <section class="dash-v4-card dash-v4-bars-card">
+    <section class="dash-v4-card dash-v4-bars-card dash-v4-line-card">
       <div class="dash-v4-card-head">
         <div>
           <span class="admin-kicker" data-admin-t="dash_monthly_performance">Monthly performance</span>
           <h3 data-admin-t="stat_paid_revenue">Paid revenue</h3>
         </div>
       </div>
-      <div class="dash-v4-bars">
-        <?php foreach ($monthlyPerformance as $entry): ?>
-          <?php $height = $maxMonthlyRevenue > 0 ? max(14, (int)round(((float)$entry['total_revenue'] / $maxMonthlyRevenue) * 100)) : 14; ?>
-          <div class="admin-chart-tip" data-chart-tip="<?= h($entry['period_label'] . ' | ' . $chartTipLabels['revenue'] . ': ' . format_eur((float)$entry['total_revenue']) . ' | ' . $chartTipLabels['commission'] . ': ' . format_eur((float)$entry['total_commission']) . ' | ' . $chartTipLabels['orders'] . ': ' . (int)$entry['total_orders']) ?>">
-            <span><?= h(format_eur((float)$entry['total_revenue'])) ?></span>
-            <i style="height: <?= $height ?>%"></i>
-            <strong><?= h($entry['period_label']) ?></strong>
-          </div>
-        <?php endforeach; ?>
-      </div>
+      <?php if (count($monthlyPerformance) < 2): ?>
+        <p data-admin-t="empty_monthly">Sem atividade suficiente para desenhar a evolucao mensal.</p>
+      <?php else: ?>
+        <svg class="dash-v4-line-chart dash-v4-line-chart--mini" viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" role="img" aria-label="Paid revenue line chart">
+          <defs>
+            <linearGradient id="dashRevenueMiniGlow" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#c9d0db" stop-opacity=".34"/>
+              <stop offset="100%" stop-color="#c9d0db" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g class="chart-grid-lines">
+            <line x1="28" y1="64" x2="592" y2="64"/>
+            <line x1="28" y1="122" x2="592" y2="122"/>
+            <line x1="28" y1="180" x2="592" y2="180"/>
+          </g>
+          <?php if ($chartAreaPoints): ?><polygon points="<?= h(implode(' ', $chartAreaPoints)) ?>" fill="url(#dashRevenueMiniGlow)"/><?php endif; ?>
+          <?php if ($chartPoints): ?><polyline points="<?= h(implode(' ', $chartPoints)) ?>" fill="none" stroke="#c9d0db" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><?php endif; ?>
+          <?php foreach ($chartPoints as $index => $point): ?>
+            <?php [$cx, $cy] = explode(',', $point); $entry = $monthlyPerformance[$index] ?? null; ?>
+            <circle cx="<?= h($cx) ?>" cy="<?= h($cy) ?>" r="5">
+              <?php if ($entry): ?><title><?= h($entry['period_label'] . ' | ' . $chartTipLabels['revenue'] . ': ' . format_eur((float)$entry['total_revenue']) . ' | ' . $chartTipLabels['commission'] . ': ' . format_eur((float)$entry['total_commission']) . ' | ' . $chartTipLabels['orders'] . ': ' . (int)$entry['total_orders']) ?></title><?php endif; ?>
+            </circle>
+          <?php endforeach; ?>
+        </svg>
+        <div class="dash-v4-months dash-v4-months--mini">
+          <?php foreach ($monthlyPerformance as $entry): ?><span><?= h($entry['period_label']) ?></span><?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </section>
 
-    <section class="dash-v4-card dash-v4-bars-card admin-music-bars-card">
+    <section class="dash-v4-card dash-v4-bars-card dash-v4-line-card admin-music-bars-card">
       <div class="dash-v4-card-head">
         <div>
           <span class="admin-kicker" data-admin-t="dash_music_listening">Relatório musical</span>
@@ -327,15 +359,29 @@ include 'admin_header.php';
       <?php if (!$musicPerformance): ?>
         <p data-admin-t="dash_no_listening">Sem atividade de escuta neste período.</p>
       <?php else: ?>
-        <div class="dash-v4-bars">
-          <?php foreach ($musicPerformance as $entry): ?>
-            <?php $height = $maxMusicListens > 0 ? max(14, (int)round(((int)$entry['listens'] / $maxMusicListens) * 100)) : 14; ?>
-            <div class="admin-chart-tip" data-chart-tip="<?= h($entry['period_label'] . ' | Plays: ' . (int)$entry['listens'] . ' | Listeners: ' . (int)$entry['listeners']) ?>">
-              <span><?= (int)$entry['listens'] ?></span>
-              <i style="height: <?= $height ?>%"></i>
-              <strong><?= h($entry['period_label']) ?></strong>
-            </div>
+        <svg class="dash-v4-line-chart dash-v4-line-chart--mini" viewBox="0 0 <?= $chartWidth ?> <?= $chartHeight ?>" role="img" aria-label="Music listening line chart">
+          <defs>
+            <linearGradient id="dashMusicMiniGlow" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#c9d0db" stop-opacity=".34"/>
+              <stop offset="100%" stop-color="#c9d0db" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g class="chart-grid-lines">
+            <line x1="28" y1="64" x2="592" y2="64"/>
+            <line x1="28" y1="122" x2="592" y2="122"/>
+            <line x1="28" y1="180" x2="592" y2="180"/>
+          </g>
+          <?php if ($musicChartAreaPoints): ?><polygon points="<?= h(implode(' ', $musicChartAreaPoints)) ?>" fill="url(#dashMusicMiniGlow)"/><?php endif; ?>
+          <?php if ($musicChartPoints): ?><polyline points="<?= h(implode(' ', $musicChartPoints)) ?>" fill="none" stroke="#c9d0db" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><?php endif; ?>
+          <?php foreach ($musicChartPoints as $index => $point): ?>
+            <?php [$cx, $cy] = explode(',', $point); $entry = $musicPerformance[$index] ?? null; ?>
+            <circle cx="<?= h($cx) ?>" cy="<?= h($cy) ?>" r="5">
+              <?php if ($entry): ?><title><?= h($entry['period_label'] . ' | Plays: ' . (int)$entry['listens'] . ' | Listeners: ' . (int)$entry['listeners']) ?></title><?php endif; ?>
+            </circle>
           <?php endforeach; ?>
+        </svg>
+        <div class="dash-v4-months dash-v4-months--mini">
+          <?php foreach ($musicPerformance as $entry): ?><span><?= h($entry['period_label']) ?></span><?php endforeach; ?>
         </div>
       <?php endif; ?>
     </section>

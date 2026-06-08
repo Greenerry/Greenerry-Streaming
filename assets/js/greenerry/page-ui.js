@@ -157,6 +157,65 @@ function initOrderFilters(root = document) {
   }
 }
 
+function initOrderActionForms(root = document) {
+  const forms = Array.from(root.querySelectorAll?.('.order-actions-form') || document.querySelectorAll('.order-actions-form'));
+  forms.forEach((form) => {
+    if (form.dataset.ajaxOrderActionReady === '1') return;
+    form.dataset.ajaxOrderActionReady = '1';
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submitter = event.submitter || form.querySelector('button[type="submit"]');
+      if (submitter?.disabled) return;
+
+      const data = new FormData(form);
+      if (submitter?.name) data.set(submitter.name, submitter.value || '');
+      const buttons = Array.from(form.querySelectorAll('button'));
+      buttons.forEach((button) => { button.disabled = true; });
+
+      try {
+        const response = await fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: data,
+          headers: { 'X-Requested-With': 'fetch' }
+        });
+        if (!response.ok) throw new Error('order update failed');
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const nextFilterBar = doc.querySelector('.orders-filter-bar');
+        const nextList = doc.querySelector('#orders-list');
+        const nextEmpty = doc.querySelector('#orders-filter-empty');
+        const currentFilterBar = document.querySelector('.orders-filter-bar');
+        const currentList = document.querySelector('#orders-list');
+        const currentEmpty = document.querySelector('#orders-filter-empty');
+
+        if (!nextList || !currentList) {
+          window.location.reload();
+          return;
+        }
+
+        if (currentFilterBar && nextFilterBar) currentFilterBar.replaceWith(nextFilterBar);
+        currentList.replaceWith(nextList);
+        if (currentEmpty && nextEmpty) currentEmpty.replaceWith(nextEmpty);
+
+        initOrderFilters(document);
+        initOrderAccordions(document);
+        initOrderActionForms(document);
+        initOrderMessageForms(document);
+        if (typeof applyDynamicLabels === 'function') {
+          applyDynamicLabels(typeof lang !== 'undefined' ? lang : 'pt');
+        }
+      } catch (error) {
+        if (window.DEBUG_GREENERRY) console.warn('Order update failed:', error);
+        form.submit();
+      } finally {
+        buttons.forEach((button) => { button.disabled = false; });
+      }
+    });
+  });
+}
+
 function scrollToOrderDetails(details) {
   const target = details.querySelector('.order-delivery-card, .buyer-order-item, .simple-list, .order-actions-bar, .order-accordion-body') || details;
   const navOffset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav'), 10) || 68;
@@ -334,6 +393,71 @@ function initPlaylistTrackRemoval(root = document) {
         if (typeof toast === 'function') {
           toast(error.message || _tr('error.order_update', 'Não foi possível atualizar.'));
         }
+      }
+    });
+  });
+}
+
+function initLibraryPlaylistCreate(root = document) {
+  const forms = Array.from(root.querySelectorAll?.('.library-create-popover') || document.querySelectorAll('.library-create-popover'));
+  forms.forEach((form) => {
+    if (form.dataset.ajaxPlaylistCreateReady === '1') return;
+    form.dataset.ajaxPlaylistCreateReady = '1';
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const nameInput = form.querySelector('input[name="playlist_name"]');
+      const coverInput = form.querySelector('input[name="playlist_cover"]');
+      const name = (nameInput?.value || '').trim();
+      if (!name) {
+        nameInput?.focus();
+        return;
+      }
+
+      const button = form.querySelector('button[type="submit"]');
+      button?.setAttribute('disabled', 'disabled');
+
+      const body = new FormData();
+      body.set('action', 'create');
+      body.set('name', name);
+      const csrf = form.querySelector('input[name="csrf_token"]')?.value || window.CSRF_TOKEN || '';
+      if (csrf) body.set('csrf_token', csrf);
+      if (coverInput?.files?.[0]) body.set('cover', coverInput.files[0]);
+
+      try {
+        const response = await fetch((window.SITE_BASE || '') + '/api/playlists.php', {
+          method: 'POST',
+          body
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) throw new Error(result.error || 'playlist create failed');
+
+        const page = await fetch(window.location.href, { headers: { 'X-Requested-With': 'fetch' } });
+        const html = await page.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const nextShell = doc.querySelector('.library-shell');
+        const currentShell = document.querySelector('.library-shell');
+        if (!nextShell || !currentShell) {
+          window.location.reload();
+          return;
+        }
+
+        currentShell.replaceWith(nextShell);
+        initLibraryTabs(nextShell);
+        initPlaylistTrackRemoval(nextShell);
+        initLibraryPlaylistCreate(nextShell);
+        initPlaylistCoverFields(nextShell);
+        if (typeof applyDynamicLabels === 'function') {
+          applyDynamicLabels(typeof lang !== 'undefined' ? lang : 'pt');
+        }
+      } catch (error) {
+        if (typeof toast === 'function') {
+          toast(error.message || 'Error');
+        } else {
+          form.submit();
+        }
+      } finally {
+        button?.removeAttribute('disabled');
       }
     });
   });
@@ -572,6 +696,10 @@ function initNotificationMenus(root = document) {
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       const nextOpen = popover.hidden;
+      if (nextOpen && window.innerWidth <= 768 && popover.parentElement !== document.body) {
+        document.body.appendChild(popover);
+        popover.classList.add('notification-popover--mobile-fixed');
+      }
       document.querySelectorAll('.notification-popover').forEach((item) => {
         if (item !== popover) item.hidden = true;
       });
@@ -710,6 +838,28 @@ function initArtistModeSidebar(root = document) {
 
       window.setTimeout(navigate, 185);
     });
+  });
+}
+
+function initStreamSidebarToggle(root = document) {
+  const button = root.querySelector?.('#sl-peek') || document.getElementById('sl-peek');
+  if (!button || button.dataset.streamSidebarReady === '1') return;
+  button.dataset.streamSidebarReady = '1';
+
+  const storageKey = 'g_stream_sidebar_expanded_v5';
+  const apply = (expanded) => {
+    document.body.classList.toggle('sidebar-expanded', expanded);
+    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    button.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
+    button.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+  };
+
+  apply(localStorage.getItem(storageKey) === '1');
+
+  button.addEventListener('click', () => {
+    const expanded = !document.body.classList.contains('sidebar-expanded');
+    localStorage.setItem(storageKey, expanded ? '1' : '0');
+    apply(expanded);
   });
 }
 
@@ -852,9 +1002,11 @@ async function _initPageContent() {
   initArtistFilters();
   initOrderFilters();
   initOrderMessageForms();
+  initOrderActionForms();
   initOrderAccordions();
   initLibraryTabs();
   initPlaylistTrackRemoval();
+  initLibraryPlaylistCreate();
   if (typeof initPlaylistPicker === 'function') initPlaylistPicker();
   initPlaylistCoverFields();
   initFollowersModal();
@@ -863,6 +1015,7 @@ async function _initPageContent() {
   initNotificationMenus();
   initAccountMenus();
   initArtistModeSidebar();
+  initStreamSidebarToggle();
   initAnimeEnhancements();
   await syncGuestFavorites();
 
@@ -900,6 +1053,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadTranslations();
   initThemeToggle();
   initNavControls();
+  initStreamSidebarToggle();
   setLang(lang);
   _bindValidationToasts();
   _bindSoftNavigation();
