@@ -149,11 +149,13 @@ function send_welcome_email(array $user): void
 function send_email_verification(array $user, string $code): bool
 {
     $subject = tr('email.verify_subject');
+    $verifyUrl = absolute_site_url('pages/verify_email.php?email=' . urlencode((string)($user['email'] ?? '')) . '&sent=1');
     $body = tr('email.verify_body', [
         'name' => $user['nome'] ?? '',
         'code' => $code,
     ]);
-    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Enter this code to activate your account.' : 'Insere este código para ativar a conta.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><div style="display:inline-block;letter-spacing:8px;background:#111827;color:#fff;border-radius:16px;padding:16px 22px;font-size:28px;font-weight:800;">' . h($code) . '</div>');
+    $buttonLabel = current_lang() === 'en' ? 'Open verification page' : 'Abrir pagina de verificacao';
+    $html = greenerry_email_shell($subject, current_lang() === 'en' ? 'Enter this code to activate your account.' : 'Insere este codigo para ativar a conta.', '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($body)) . '</p><div style="display:inline-block;letter-spacing:8px;background:#111827;color:#fff;border-radius:16px;padding:16px 22px;font-size:28px;font-weight:800;">' . h($code) . '</div><p style="margin:22px 0 0;"><a href="' . h($verifyUrl) . '" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:700;">' . h($buttonLabel) . '</a></p>');
     return greenerry_send_email(
         (string)$user['email'],
         $subject,

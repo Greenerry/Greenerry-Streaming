@@ -16,6 +16,7 @@ $adminPageLabels = [
     'dashboard.php' => ['key' => 'nav_dashboard', 'label' => 'Painel'],
     'products.php' => ['key' => 'nav_products', 'label' => 'Produtos'],
     'categories.php' => ['key' => 'nav_categories', 'label' => 'Categorias'],
+    'genres.php' => ['key' => 'nav_genres', 'label' => 'Generos'],
     'releases.php' => ['key' => 'nav_releases', 'label' => 'Lançamentos'],
     'music.php' => ['key' => 'nav_music_listening', 'label' => 'Relatório musical'],
     'users.php' => ['key' => 'nav_users', 'label' => 'Utilizadores'],
@@ -126,6 +127,12 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
         <?php if ($adminPendingCounts['releases'] > 0): ?>
           <strong class="admin-nav-badge" data-admin-count="release"><?= $adminPendingCounts['releases'] ?></strong>
         <?php endif; ?>
+      </a>
+      <?php endif; ?>
+      <?php if (admin_can('genres', $adminAccount)): ?>
+      <a href="genres.php" class="<?= $page === 'genres.php' ? 'on' : '' ?>">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 7h8"/><path d="M6 15a6 6 0 0 0 12 0"/><path d="M4 21h16"/></svg>
+        <span data-admin-t="nav_genres">Generos</span>
       </a>
       <?php endif; ?>
     </div>

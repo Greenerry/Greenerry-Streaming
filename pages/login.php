@@ -110,6 +110,9 @@ include '../includes/header.php';
           <span data-t="login_no_account">Ainda não tens conta?</span>
           <a href="registar.php" data-t="login_create_account">Criar conta</a>
         </p>
+        <p class="auth-foot-note auth-foot-note--center">
+          <a href="verify_email.php"><?= h(current_lang() === 'en' ? 'Have a verification code?' : 'Tens um codigo de verificacao?') ?></a>
+        </p>
       <?php endif; ?>
     </div>
   </div>

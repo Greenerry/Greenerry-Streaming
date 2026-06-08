@@ -134,9 +134,9 @@ function admin_can(string $permission, ?array $admin = null): bool
     }
 
     $map = [
-        'admin' => ['dashboard', 'products', 'categories', 'releases', 'users', 'messages', 'reports', 'orders', 'home', 'maintenance', 'settings', 'music'],
+        'admin' => ['dashboard', 'products', 'categories', 'genres', 'releases', 'users', 'messages', 'reports', 'orders', 'home', 'maintenance', 'settings', 'music'],
         'products' => ['products', 'categories'],
-        'releases' => ['releases', 'music'],
+        'releases' => ['releases', 'genres', 'music'],
         'messages' => ['messages'],
         'reports' => ['dashboard', 'reports', 'orders', 'music'],
     ];
@@ -169,6 +169,7 @@ function admin_default_page(?array $admin = null): string
     $preferred = [
         'products' => 'products.php',
         'categories' => 'categories.php',
+        'genres' => 'genres.php',
         'releases' => 'releases.php',
         'messages' => 'messages.php',
         'reports' => 'reports.php',
