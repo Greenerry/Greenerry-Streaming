@@ -31,6 +31,42 @@ if (is_user_logged_in() && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $playlistOk = current_lang() === 'en' ? 'Playlist created.' : 'Playlist criada.';
             }
         }
+    } elseif (!$playlistErr && $playlistAction === 'update_playlist') {
+        $playlistId = (int)($_POST['playlist_id'] ?? 0);
+        $name = trim((string)($_POST['playlist_name'] ?? ''));
+        $removeCover = !empty($_POST['remove_playlist_cover']);
+        $playlist = $playlistId > 0
+            ? db_one_prepared($conn, "SELECT idPlaylist, capa FROM playlist WHERE idPlaylist = ? AND idCliente = ? LIMIT 1", 'ii', [$playlistId, $uid])
+            : null;
+
+        if (!$playlist || $name === '' || mb_strlen($name) > 140) {
+            $playlistErr = current_lang() === 'en' ? 'Choose a playlist name.' : 'Escolhe um nome para a playlist.';
+        } else {
+            $oldCover = (string)($playlist['capa'] ?? '');
+            $cover = $removeCover ? '' : $oldCover;
+
+            if (!empty($_FILES['playlist_cover']) && ($_FILES['playlist_cover']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $imageErr = validate_uploaded_image($_FILES['playlist_cover']);
+                if ($imageErr) {
+                    $playlistErr = $imageErr;
+                } else {
+                    [$savedCover, $saveErr] = save_uploaded_file($_FILES['playlist_cover'], 'img', 'playlist_' . $uid, ['jpg', 'jpeg', 'png', 'webp'], GREENERRY_MAX_IMAGE_BYTES);
+                    if ($saveErr) {
+                        $playlistErr = $saveErr;
+                    } else {
+                        $cover = $savedCover;
+                    }
+                }
+            }
+
+            if (!$playlistErr) {
+                db_prepared($conn, "UPDATE playlist SET nome = ?, capa = ? WHERE idPlaylist = ? AND idCliente = ?", 'ssii', [$name, $cover ?: null, $playlistId, $uid]);
+                if ($oldCover !== '' && $oldCover !== $cover) {
+                    delete_orphan_asset_file($conn, 'img', $oldCover);
+                }
+                $playlistOk = current_lang() === 'en' ? 'Playlist updated.' : 'Playlist atualizada.';
+            }
+        }
     } elseif (!$playlistErr && $playlistAction === 'remove_playlist_track') {
         $playlistId = (int)($_POST['playlist_id'] ?? 0);
         $trackId = (int)($_POST['track_id'] ?? 0);
@@ -204,12 +240,36 @@ include '../includes/header.php';
             <h1><?= h($playlist['nome']) ?></h1>
             <p><strong>Greenerry</strong> · <?= h(count_label((int)$playlist['total_faixas'], 'track')) ?></p>
           </div>
-          <form method="post" class="library-delete-form library-delete-form--hero" onsubmit="return confirm('<?= h(current_lang() === 'en' ? 'Delete this playlist?' : 'Apagar esta playlist?') ?>')">
-            <?= csrf_input() ?>
-            <input type="hidden" name="playlist_action" value="delete_playlist">
-            <input type="hidden" name="playlist_id" value="<?= (int)$playlist['idPlaylist'] ?>">
-            <button type="submit" class="cart-remove-btn" data-t="delete">Delete</button>
-          </form>
+          <div class="library-playlist-hero-actions">
+            <details class="library-edit-menu">
+              <summary class="btn btn-ghost btn-sm"><?= h(current_lang() === 'en' ? 'Edit' : 'Editar') ?></summary>
+              <form method="post" class="library-edit-popover" enctype="multipart/form-data">
+                <?= csrf_input() ?>
+                <input type="hidden" name="playlist_action" value="update_playlist">
+                <input type="hidden" name="playlist_id" value="<?= (int)$playlist['idPlaylist'] ?>">
+                <label class="flabel" for="playlist-name-<?= (int)$playlist['idPlaylist'] ?>"><?= h(current_lang() === 'en' ? 'Name' : 'Nome') ?></label>
+                <input id="playlist-name-<?= (int)$playlist['idPlaylist'] ?>" type="text" name="playlist_name" class="finput" maxlength="140" value="<?= h($playlist['nome']) ?>" required>
+                <label class="playlist-cover-field <?= $playlist['capa'] ? 'has-preview' : '' ?>" <?= $playlist['capa'] ? 'style="background-image:url(' . h(asset_url('img', (string)$playlist['capa'])) . ')"' : '' ?>>
+                  <input type="file" name="playlist_cover" accept=".jpg,.jpeg,.png,.webp">
+                  <span>+</span>
+                  <strong data-t="playlist_cover">Capa</strong>
+                </label>
+                <?php if (!empty($playlist['capa'])): ?>
+                  <label class="library-edit-check">
+                    <input type="checkbox" name="remove_playlist_cover" value="1">
+                    <span><?= h(current_lang() === 'en' ? 'Remove custom cover' : 'Remover capa personalizada') ?></span>
+                  </label>
+                <?php endif; ?>
+                <button type="submit" class="btn btn-dark btn-sm"><?= h(current_lang() === 'en' ? 'Save changes' : 'Guardar alterações') ?></button>
+              </form>
+            </details>
+            <form method="post" class="library-delete-form library-delete-form--hero" onsubmit="return confirm('<?= h(current_lang() === 'en' ? 'Delete this playlist?' : 'Apagar esta playlist?') ?>')">
+              <?= csrf_input() ?>
+              <input type="hidden" name="playlist_action" value="delete_playlist">
+              <input type="hidden" name="playlist_id" value="<?= (int)$playlist['idPlaylist'] ?>">
+              <button type="submit" class="cart-remove-btn" data-t="delete">Delete</button>
+            </form>
+          </div>
         </div>
         <div class="library-detail-actions">
           <?php if ($playlistTracks): ?>
