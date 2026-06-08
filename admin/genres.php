@@ -215,13 +215,13 @@ include 'admin_header.php';
               ? 'Deactivate this genre? It will stop appearing as an active suggestion/filter.'
               : 'Inativar este genero? Vai deixar de aparecer como sugestao/filtro ativo.';
         ?>
-        <article class="admin-review-card" data-admin-state="<?= h($genre['estado'] . ' ' . $genre['nome'] . ' ' . $genre['slug']) ?>">
-          <form method="post" class="stack-form admin-category-edit-form" <?= $genrePublicTracks > 0 && $genre['estado'] === 'ativo' ? 'data-confirm="' . h($genreConfirm) . '" data-confirm-if-state="inativo"' : '' ?>>
+        <article class="admin-review-card admin-genre-card" data-admin-state="<?= h($genre['estado'] . ' ' . $genre['nome'] . ' ' . $genre['slug']) ?>">
+          <form method="post" class="stack-form admin-genre-edit-form" <?= $genrePublicTracks > 0 && $genre['estado'] === 'ativo' ? 'data-confirm="' . h($genreConfirm) . '" data-confirm-if-state="inativo"' : '' ?>>
             <?= csrf_input() ?>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="genre_id" value="<?= (int)$genre['idGenero'] ?>">
 
-            <div class="admin-category-row">
+            <div class="admin-genre-fields">
               <div class="fg">
                 <label class="flabel" data-admin-t="categories_name">Nome</label>
                 <input type="text" name="nome" class="finput" value="<?= h($genre['nome']) ?>" required maxlength="80">
@@ -236,14 +236,14 @@ include 'admin_header.php';
               </div>
             </div>
 
-            <div class="admin-category-meta">
+            <div class="admin-genre-meta">
               <span class="badge <?= h(state_badge_class($genre['estado'])) ?>"><?= h(order_status_label($genre['estado'])) ?></span>
-              <span><?= (int)$genre['total_tracks'] ?> <span data-admin-t="label_tracks">faixas</span></span>
-              <span><?= (int)$genre['total_releases'] ?> <span data-admin-t="releases_title">lancamentos</span></span>
-              <span><?= h($genre['slug']) ?></span>
+              <span><strong><?= (int)$genre['total_tracks'] ?></strong> <span data-admin-t="label_tracks">faixas</span></span>
+              <span><strong><?= (int)$genre['total_releases'] ?></strong> <span data-admin-t="releases_title">lancamentos</span></span>
+              <span class="admin-genre-slug"><?= h($genre['slug']) ?></span>
             </div>
 
-            <div class="admin-action-buttons">
+            <div class="admin-genre-actions">
               <button type="submit" class="btn btn-dark btn-sm" data-admin-t="categories_save">Guardar</button>
             </div>
           </form>

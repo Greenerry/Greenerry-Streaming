@@ -1672,6 +1672,76 @@ tbody tr:hover {
   min-width: 108px;
 }
 
+#genres-search .admin-card-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: 16px;
+}
+
+#genres-search .admin-genre-card {
+  padding: 0;
+}
+
+#genres-search .admin-genre-edit-form {
+  display: grid;
+  gap: 18px;
+  height: 100%;
+  padding: 22px;
+}
+
+#genres-search .admin-genre-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(126px, .62fr);
+  gap: 14px;
+  align-items: end;
+}
+
+#genres-search .admin-genre-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+#genres-search .admin-genre-meta > span:not(.badge) {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  background: var(--admin-panel-2);
+  color: var(--admin-soft);
+  font-size: .8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+#genres-search .admin-genre-meta strong {
+  color: var(--admin-text);
+  font-size: .92rem;
+}
+
+#genres-search .admin-genre-slug {
+  overflow: hidden;
+  color: var(--admin-muted) !important;
+  text-overflow: ellipsis;
+}
+
+#genres-search .admin-genre-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+#genres-search .admin-genre-actions .btn {
+  min-width: 132px;
+  min-height: 42px;
+  justify-content: center;
+}
+
 .admin-size-create-form,
 .admin-size-row {
   display: grid;
@@ -2543,6 +2613,16 @@ tbody tr:hover {
   #categories-search .admin-category-meta,
   #categories-search .admin-action-buttons {
     grid-column: 1 / -1;
+  }
+
+  #genres-search .admin-genre-fields,
+  #genres-search .admin-genre-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  #genres-search .admin-genre-actions .btn {
+    width: 100%;
   }
 
   .dash-v4-top {
