@@ -1206,6 +1206,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       _updateFavIcon();
+      if (typeof refreshCurrentPlaylistButton === 'function') {
+        refreshCurrentPlaylistButton(saved.id);
+      }
 
       const sidebar = document.getElementById('sr');
       const button = document.getElementById('sr-open-btn');

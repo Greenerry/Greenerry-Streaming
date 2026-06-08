@@ -320,6 +320,9 @@ async function playTrack(title, artist, cover, audioSrc, artistId, artistFoto, m
   }
 
   _updateFavIcon();
+  if (typeof refreshCurrentPlaylistButton === 'function') {
+    refreshCurrentPlaylistButton(musicId);
+  }
   _renderQueue();
 
   const reopenButton = document.getElementById('sr-open-btn');

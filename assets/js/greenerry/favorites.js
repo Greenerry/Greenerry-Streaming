@@ -115,9 +115,50 @@ function _escapeHtml(value) {
 let _playlistTargetTrack = 0;
 let _playlistCache = [];
 let _playlistSearch = '';
+let _playlistIconRequest = 0;
+
+const PLAYLIST_ADD_ICON = '<svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
+const PLAYLIST_SAVED_ICON = '<svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.4 2.6 2.6L16.5 9"/></svg>';
 
 function _playlistText(pt, en) {
   return typeof commerceText === 'function' ? commerceText(pt, en) : ((lang || 'pt') === 'en' ? en : pt);
+}
+
+function _setPlaylistButtonsSaved(saved) {
+  document.querySelectorAll('.player-playlist-btn').forEach((button) => {
+    button.classList.toggle('is-saved', !!saved);
+    button.innerHTML = saved ? PLAYLIST_SAVED_ICON : PLAYLIST_ADD_ICON;
+    const label = saved
+      ? _playlistText('Guardada em playlist', 'Saved in playlist')
+      : _playlistText('Adicionar à playlist', 'Add to playlist');
+    button.setAttribute('aria-label', label);
+    button.title = label;
+  });
+}
+
+async function refreshCurrentPlaylistButton(trackId = _cur?.id) {
+  const currentTrackId = Number(trackId || 0);
+  if (!currentTrackId || !_isLoggedIn()) {
+    _setPlaylistButtonsSaved(false);
+    return false;
+  }
+
+  const requestId = ++_playlistIconRequest;
+  const url = new URL((window.SITE_BASE || '') + '/api/playlists.php', window.location.origin);
+  url.searchParams.set('action', 'list');
+  url.searchParams.set('trackId', String(currentTrackId));
+
+  try {
+    const response = await fetch(url.toString());
+    const result = await response.json();
+    if (requestId !== _playlistIconRequest) return false;
+    const saved = Array.isArray(result.playlists) && result.playlists.some((playlist) => Number(playlist.in_playlist || 0) > 0);
+    _setPlaylistButtonsSaved(saved);
+    return saved;
+  } catch (error) {
+    if (window.DEBUG_GREENERRY) console.warn('Playlist icon state failed:', error);
+    return false;
+  }
 }
 
 async function _loadPlaylistCache() {
@@ -207,6 +248,9 @@ async function _toggleTrackInPlaylist(playlistId, saved) {
 
   await _loadPlaylistCache();
   _renderPlaylistPicker();
+  if (_playlistTargetTrack && _cur?.id && Number(_cur.id) === Number(_playlistTargetTrack)) {
+    _setPlaylistButtonsSaved(_playlistCache.some((playlist) => Number(playlist.in_playlist || 0) > 0));
+  }
   if (!saved) toast(_playlistText('Musica adicionada a playlist.', 'Song added to playlist.'));
 }
 

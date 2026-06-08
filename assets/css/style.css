@@ -475,6 +475,8 @@ body.artist-sidebar-mode .artist-mode-cue::before {
 .fav-btn:hover { color:var(--red); transform:scale(1.15); }
 .player-playlist-btn { background:none; border:none; cursor:pointer; color:var(--text3); padding:4px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:color .15s, transform .15s, background .15s; flex-shrink:0; }
 .player-playlist-btn:hover { color:var(--text); background:var(--bg3); transform:scale(1.08); }
+.player-playlist-btn.is-saved { color:var(--text); background:var(--bg3); }
+.player-playlist-btn.is-saved:hover { color:var(--text); background:var(--bg4); }
 .pb-playlist-btn { margin-left:4px; }
 
 /* Queue */
