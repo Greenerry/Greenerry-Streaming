@@ -846,7 +846,7 @@ function initStreamSidebarToggle(root = document) {
   if (!button || button.dataset.streamSidebarReady === '1') return;
   button.dataset.streamSidebarReady = '1';
 
-  const storageKey = 'g_stream_sidebar_expanded_v5';
+  const storageKey = 'g_stream_sidebar_expanded_v6';
   const apply = (expanded) => {
     document.body.classList.toggle('sidebar-expanded', expanded);
     button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -854,7 +854,7 @@ function initStreamSidebarToggle(root = document) {
     button.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
   };
 
-  apply(localStorage.getItem(storageKey) === '1');
+  apply(false);
 
   button.addEventListener('click', () => {
     const expanded = !document.body.classList.contains('sidebar-expanded');
@@ -1212,9 +1212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const sidebar = document.getElementById('sr');
       const button = document.getElementById('sr-open-btn');
-      if (saved.srOpen && typeof openSr === 'function') {
-        openSr();
-      } else if (button && sidebar && !sidebar.classList.contains('open')) {
+      if (button && sidebar && !sidebar.classList.contains('open')) {
         button.classList.add('visible');
       }
     } else {

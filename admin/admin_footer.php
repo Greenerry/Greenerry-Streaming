@@ -864,7 +864,7 @@
   const adminMenuButton = document.getElementById('admin-mobile-menu');
   const adminPeekButton = document.getElementById('admin-sidebar-peek');
   const adminOverlay = document.getElementById('admin-mobile-overlay');
-  const adminSidebarStorageKey = 'g_admin_sidebar_expanded';
+  const adminSidebarStorageKey = 'g_admin_sidebar_expanded_v2';
 
   function setAdminDesktopSidebar(expanded) {
     document.body.classList.toggle('admin-sidebar-expanded', expanded);
@@ -873,7 +873,7 @@
     if (adminPeekButton) adminPeekButton.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
   }
 
-  setAdminDesktopSidebar(localStorage.getItem(adminSidebarStorageKey) === '1');
+  setAdminDesktopSidebar(false);
 
   function setAdminSidebar(open) {
     adminSidebar?.classList.toggle('mobile-open', open);
