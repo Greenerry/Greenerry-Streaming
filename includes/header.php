@@ -311,7 +311,6 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
             <?php endif; ?>
           <?php elseif (!is_admin_logged_in()): ?>
             <a href="<?= $_base ?>/pages/login.php" class="btn btn-outline btn-sm nav-auth-btn" data-t="nav_login">Entrar</a>
-            <a href="<?= $_base ?>/pages/login.php?type=admin" class="btn btn-outline btn-sm nav-auth-btn" data-t="nav_admin_login">Admin</a>
             <a href="<?= $_base ?>/pages/registar.php" class="btn btn-dark btn-sm nav-auth-btn" data-t="nav_register">Registar</a>
           <?php endif; ?>
           <button class="hamburger" id="ham" aria-label="Menu"><span></span><span></span><span></span></button>

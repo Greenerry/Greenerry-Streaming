@@ -210,6 +210,17 @@ function login_admin_session(array $admin): void
     $_SESSION['admin_role'] = $admin['cargo'] ?? 'Administrador';
 }
 
+function admin_entry_key_configured(): bool
+{
+    return trim((string)($GLOBALS['admin_entry_key'] ?? '')) !== '';
+}
+
+function admin_entry_key_matches(string $entryKey): bool
+{
+    $configuredKey = trim((string)($GLOBALS['admin_entry_key'] ?? ''));
+    return $configuredKey !== '' && hash_equals($configuredKey, trim($entryKey));
+}
+
 function logout_all_sessions(): void
 {
     $_SESSION = [];
@@ -250,14 +261,14 @@ function require_admin_login(): void
     global $conn;
 
     if (!is_admin_logged_in()) {
-        header('Location: ../pages/login.php');
+        header('Location: ../admin/login.php');
         exit;
     }
 
     $admin = current_admin($conn);
     if (!$admin || (int)($admin['ativo'] ?? 0) !== 1) {
         unset($_SESSION['admin_logged_in'], $_SESSION['admin_id'], $_SESSION['admin_email'], $_SESSION['admin_name'], $_SESSION['admin_role']);
-        header('Location: ../pages/login.php');
+        header('Location: ../admin/login.php');
         exit;
     }
 }

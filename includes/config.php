@@ -27,6 +27,10 @@ $db_user = getenv('GREENERRY_DB_USER') ?: ($db_user ?? ($_live ? '' : 'root'));
 $db_pass = getenv('GREENERRY_DB_PASS') ?: ($db_pass ?? '');
 $db_name = getenv('GREENERRY_DB_NAME') ?: ($db_name ?? ($_live ? '' : 'greenerry'));
 
+// Reserved admin entry key. On the live host this should be set outside the repo
+// through GREENERRY_ADMIN_ENTRY_KEY or includes/config.local.php.
+$admin_entry_key = getenv('GREENERRY_ADMIN_ENTRY_KEY') ?: ($admin_entry_key ?? ($_live ? '' : 'greenerry-admin-2026'));
+
 if ($db_host === '' || $db_user === '' || $db_name === '') {
     die('Configura as credenciais da base de dados em variaveis de ambiente ou em includes/config.local.php.');
 }

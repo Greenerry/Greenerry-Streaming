@@ -48,6 +48,50 @@ function pick2(array $items, int $index): array
     return $items[$index % count($items)];
 }
 
+function ensurePendingProductImages2(mysqli $conn): int
+{
+    $map = [
+        'The Weeknd After Hours collector pin set' => ['pap_real_product_658_1_the-weeknd_poster.jpg'],
+        'Drake Take Care tote bag' => ['pap_real_product_803_1_drake_poster.jpg'],
+        'Bladee PAP showcase t-shirt' => ['pap_real_product_651_1_bladee_t-shirt.jpg'],
+        'Lil Uzi Vert Pink Tape hoodie draft' => ['pap_real_product_702_1_lil-uzi-vert_hoodie.jpg'],
+        'Childish Gambino Camp anniversary vinyl' => ['pap_real_product_684_1_childish-gambino_vinil.jpg'],
+    ];
+
+    $added = 0;
+    foreach ($map as $productName => $images) {
+        $product = one2($conn, "SELECT idProduto FROM produto WHERE nomeProduto = " . esc2($conn, $productName) . " ORDER BY idProduto DESC LIMIT 1");
+        if (!$product) {
+            continue;
+        }
+
+        $productId = (int)$product['idProduto'];
+        $existing = one2($conn, "SELECT COUNT(*) AS total FROM produto_imagem WHERE idProduto = {$productId}");
+        if ((int)($existing['total'] ?? 0) > 0) {
+            continue;
+        }
+
+        foreach ($images as $order => $image) {
+            if (!is_file(__DIR__ . '/../assets/img/' . $image)) {
+                continue;
+            }
+            execute2(
+                $conn,
+                'INSERT INTO produto_imagem (idProduto, ficheiro, ordem) VALUES (' .
+                implode(',', [
+                    esc2($conn, $productId),
+                    esc2($conn, $image),
+                    esc2($conn, $order),
+                ]) .
+                ')'
+            );
+            $added++;
+        }
+    }
+
+    return $added;
+}
+
 function stateItem2(string $state): string
 {
     return match ($state) {
@@ -176,7 +220,9 @@ function addHistoricalOrder2(
 try {
     $existingSeed = one2($conn, "SELECT valor_configuracao FROM configuracao_site WHERE chave_configuracao = " . esc2($conn, $seedKey));
     if ($existingSeed) {
+        $addedImages = ensurePendingProductImages2($conn);
         echo "A seed '{$seedKey}' já foi aplicada em {$existingSeed['valor_configuracao']}.\n";
+        echo "Imagens pendentes adicionadas: {$addedImages}\n";
         exit(0);
     }
 
@@ -342,10 +388,13 @@ try {
         ') ON DUPLICATE KEY UPDATE valor_configuracao = VALUES(valor_configuracao)'
     );
 
+    $pendingImages = ensurePendingProductImages2($conn);
+
     $conn->commit();
 
     echo "Seed de gráficos aplicada com sucesso.\n";
     echo 'Produtos pendentes: ' . count($pendingProductIds) . "\n";
+    echo "Imagens pendentes adicionadas: {$pendingImages}\n";
     echo 'Lançamentos pendentes: ' . count($pendingReleaseIds) . "\n";
     echo "Encomendas históricas: {$historicalOrders}\n";
 } catch (Throwable $e) {

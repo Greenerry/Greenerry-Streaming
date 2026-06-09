@@ -44,7 +44,6 @@ foreach (['instagramUrl', 'xUrl'] as $socialUrlVar) {
         <div class="foot-col">
           <h5 data-t="foot_account">Account</h5>
           <a href="<?= $_base ?>/pages/login.php" data-t="nav_login">Login</a>
-          <a href="<?= $_base ?>/pages/login.php?type=admin" data-t="nav_admin_login">Admin</a>
           <a href="<?= $_base ?>/pages/registar.php" data-t="nav_register">Register</a>
           <a href="<?= $_base ?>/pages/profile.php" data-t="nav_profile">Profile</a>
         </div>
