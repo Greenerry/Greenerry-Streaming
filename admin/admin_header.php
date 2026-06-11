@@ -78,7 +78,17 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
   <div class="admin-mobile-overlay" id="admin-mobile-overlay"></div>
 
   <aside class="admin-sl" id="admin-sidebar">
-    <a href="<?= h($adminHomePage) ?>" class="brand"><span class="sl-brand-dot"></span>Greenerry</a>
+    <a href="<?= h($adminHomePage) ?>" class="brand greenerry-brand" aria-label="Greenerry Admin">
+      <span class="greenerry-brand-mark" aria-hidden="true">
+        <img class="greenerry-logo greenerry-logo--dark" src="<?= h($_base) ?>/assets/img/brand/greenerry-mark-dark.png" alt="">
+        <img class="greenerry-logo greenerry-logo--light" src="<?= h($_base) ?>/assets/img/brand/greenerry-mark-light.png" alt="">
+      </span>
+      <span class="greenerry-brand-wordmark" aria-hidden="true">
+        <img class="greenerry-logo greenerry-logo--dark" src="<?= h($_base) ?>/assets/img/brand/greenerry-wordmark-dark.png" alt="">
+        <img class="greenerry-logo greenerry-logo--light" src="<?= h($_base) ?>/assets/img/brand/greenerry-wordmark-light.png" alt="">
+      </span>
+      <span class="greenerry-brand-text">Greenerry</span>
+    </a>
 
     <nav class="admin-nav-card" aria-label="Admin">
     <div class="sec">

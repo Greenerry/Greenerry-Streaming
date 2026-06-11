@@ -210,17 +210,6 @@ function login_admin_session(array $admin): void
     $_SESSION['admin_role'] = $admin['cargo'] ?? 'Administrador';
 }
 
-function admin_entry_key_configured(): bool
-{
-    return trim((string)($GLOBALS['admin_entry_key'] ?? '')) !== '';
-}
-
-function admin_entry_key_matches(string $entryKey): bool
-{
-    $configuredKey = trim((string)($GLOBALS['admin_entry_key'] ?? ''));
-    return $configuredKey !== '' && hash_equals($configuredKey, trim($entryKey));
-}
-
 function logout_all_sessions(): void
 {
     $_SESSION = [];

@@ -17,6 +17,14 @@ from docx.shared import Cm, Pt, RGBColor
 ROOT = Path(__file__).resolve().parents[1]
 FIG_DIR = ROOT / ".pap_source" / "report_assets" / "figures"
 OUT = Path(os.environ.get("PAP_REPORT_OUT", ROOT / "docs" / "PAP_ENTREGA" / "Relatorio_PAP_Greenerry_Srijan_Gautam.docx"))
+REAL_FIGURES = {
+    "fig_arquitetura_greenerry.png",
+    "fig_modelo_dados_simplificado.png",
+    "fig_fluxo_compra_conteudo.png",
+}
+SCHOOL_LOGO = ROOT / ".pap_source" / "report_assets" / "school_logo_crop.png"
+REPUBLICA_LOGO = ROOT / ".pap_source" / "report_assets" / "republica_logo_crop.png"
+BRAND_WORDMARK = ROOT / "assets" / "img" / "brand" / "greenerry-wordmark-dark.png"
 
 
 def font_path(name: str = "arial.ttf") -> str:
@@ -239,59 +247,21 @@ def make_database_diagram() -> Path:
             ty += 104
 
     relation_color = "#334155"
-    relation_lines = [
-        ("cliente", "release_musical", "artista publica"),
-        ("genero", "release_musical", "classifica"),
-        ("genero", "faixa", "classifica faixa"),
-        ("release_musical", "faixa", "contém"),
-        ("faixa", "faixa_listen", "gera estatísticas"),
-        ("faixa", "playlist", "entra em"),
-        ("faixa", "favorito_musica", "é guardada"),
-        ("cliente", "produto", "artista vende"),
-        ("categoria", "produto", "classifica"),
-        ("produto", "produto_imagem", "tem imagens"),
-        ("produto", "produto_tamanho_stock", "tem stock"),
-        ("produto", "produto_review", "recebe avaliação"),
-        ("produto", "encomenda_item", "é comprado"),
-        ("encomenda", "encomenda_item", "contém"),
-        ("encomenda", "pagamento", "tem"),
-        ("cliente", "produto_review", "avalia"),
-        ("cliente", "mensagem_admin", "abre suporte"),
-        ("cliente", "notificacao", "recebe"),
+    module_links = [
+        ("Contas e segurança", "Música, géneros e biblioteca", "cliente -> artista, biblioteca e audições"),
+        ("Música, géneros e biblioteca", "Loja, stock e encomendas", "artista -> produtos e merchandising"),
+        ("Loja, stock e encomendas", "Comunicação e administração", "encomenda -> mensagens, notificações e controlo"),
     ]
 
-    def center_y(box):
-        return (box[1] + box[3]) // 2
-
-    def center_x(box):
-        return (box[0] + box[2]) // 2
-
-    def routed_arrow(a: str, b: str):
-        if a not in table_boxes or b not in table_boxes:
-            return
-        src = table_boxes[a]
-        dst = table_boxes[b]
-        same_module = abs(center_x(src) - center_x(dst)) < 100
-        if same_module:
-            lane = max(src[2], dst[2]) + 18
-            start = (src[2], center_y(src))
-            bend1 = (lane, center_y(src))
-            bend2 = (lane, center_y(dst))
-            end = (dst[2], center_y(dst))
-            draw.line([start, bend1, bend2], fill=relation_color, width=2)
-            arrow(draw, bend2, end, fill=relation_color, width=2)
-        elif center_x(src) < center_x(dst):
-            arrow(draw, (src[2], center_y(src)), (dst[0], center_y(dst)), fill=relation_color, width=2)
-        else:
-            arrow(draw, (src[0], center_y(src)), (dst[2], center_y(dst)), fill=relation_color, width=2)
-
-    for a, b, _label in relation_lines:
-        routed_arrow(a, b)
-
-    legend_y = 1240
-    draw.rounded_rectangle((70, legend_y, 1830, legend_y + 72), radius=18, fill="#ffffff", outline="#cbd5e1", width=2)
-    draw.text((95, legend_y + 18), "Leitura do modelo:", font=body, fill="#0f172a")
-    draw.text((260, legend_y + 18), "PK = chave primária | FK = chave estrangeira | género liga lançamentos e faixas | encomenda separa cabeçalho, itens e pagamento.", font=small, fill="#475467")
+    summary_y = 1220
+    draw.rounded_rectangle((70, summary_y, 1830, summary_y + 112), radius=18, fill="#ffffff", outline="#cbd5e1", width=2)
+    draw.text((95, summary_y + 16), "Leitura do modelo:", font=body, fill="#0f172a")
+    draw.text((300, summary_y + 17), "PK = chave primária | FK = chave estrangeira | as relações detalhadas estão documentadas no DER e no MER/FNN anexados.", font=small, fill="#475467")
+    draw.text((95, summary_y + 52), "Relações principais:", font=body, fill="#0f172a")
+    relation_text = " | ".join(label for _left, _right, label in module_links)
+    for idx, line in enumerate(wrapped_lines(draw, relation_text, small, 1400)[:2]):
+        draw.text((330, summary_y + 53 + idx * 18), line, font=small, fill="#475467")
+    draw.text((95, summary_y + 88), "Esta figura resume a base de dados por módulos para evitar linhas cruzadas no relatório final.", font=small, fill="#475467")
     img.save(path, quality=95)
     return path
 
@@ -515,7 +485,26 @@ def caption(doc: Document, text: str):
     return para
 
 
+def screenshot_placeholder(doc: Document, caption_text: str):
+    label = caption_text.split(" - ", 1)[1] if " - " in caption_text else caption_text
+    label = label.rstrip(".")
+    table = doc.add_table(rows=1, cols=1)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.style = "Table Grid"
+    cell = table.rows[0].cells[0]
+    shade_cell(cell, "F8FAFC")
+    set_cell_margins(cell, top=360, start=240, bottom=360, end=240)
+    set_cell_text(cell, f"Espaço reservado para captura final:\n{label}", bold=False, size=11)
+    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    for para in cell.paragraphs:
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+
 def add_figure(doc: Document, image: Path, caption_text: str, width_cm: float = 15.5):
+    if image.name not in REAL_FIGURES:
+        screenshot_placeholder(doc, caption_text)
+        caption(doc, caption_text)
+        return
     if not image.exists():
         return
     para = doc.add_paragraph()
@@ -526,28 +515,73 @@ def add_figure(doc: Document, image: Path, caption_text: str, width_cm: float = 
 
 
 def cover(doc: Document):
+    section = doc.sections[0]
+    section.page_width = Cm(21)
+    section.page_height = Cm(29.7)
+    section.top_margin = Cm(1.8)
+    section.bottom_margin = Cm(1.8)
+    section.left_margin = Cm(2.2)
+    section.right_margin = Cm(2.2)
+
+    logo_row = doc.add_table(rows=1, cols=2)
+    logo_row.alignment = WD_TABLE_ALIGNMENT.CENTER
+    logo_row.columns[0].width = Cm(8)
+    logo_row.columns[1].width = Cm(8)
+    left = logo_row.rows[0].cells[0]
+    right = logo_row.rows[0].cells[1]
+    left.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    right.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+    if SCHOOL_LOGO.exists():
+        r = left.paragraphs[0].add_run()
+        r.add_picture(str(SCHOOL_LOGO), width=Cm(4.7))
+    if REPUBLICA_LOGO.exists():
+        right.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        r = right.paragraphs[0].add_run()
+        r.add_picture(str(REPUBLICA_LOGO), width=Cm(4.2))
+
     for _ in range(2):
         p(doc, "", first_line=False)
-    p(doc, "Escola Secundária Cacilhas-Tejo", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False).runs[0].bold = True
+    school = p(doc, "Escola Secundária Cacilhas-Tejo", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+    school.runs[0].bold = True
+    school.runs[0].font.size = Pt(14)
     p(doc, "Curso Profissional de Técnico de Gestão e Programação de Sistemas Informáticos", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
     p(doc, "12.º K", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
-    for _ in range(3):
+
+    for _ in range(2):
         p(doc, "", first_line=False)
     title = p(doc, "PROVA DE APTIDÃO PROFISSIONAL", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
     title.runs[0].bold = True
-    title.runs[0].font.size = Pt(18)
-    main = p(doc, "Greenerry - Plataforma Web de Música, Artistas e Merchandising", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
-    main.runs[0].bold = True
-    main.runs[0].font.size = Pt(20)
-    p(doc, "Relatório Final", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False).runs[0].font.size = Pt(14)
-    for _ in range(5):
+    title.runs[0].font.size = Pt(17)
+    title.runs[0].font.color.rgb = RGBColor(15, 23, 42)
+    report = p(doc, "RELATÓRIO FINAL", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+    report.runs[0].bold = True
+    report.runs[0].font.size = Pt(26)
+    report.runs[0].font.color.rgb = RGBColor(17, 24, 39)
+
+    if BRAND_WORDMARK.exists():
+        logo = doc.add_paragraph()
+        logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        logo.add_run().add_picture(str(BRAND_WORDMARK), width=Cm(11.8))
+    else:
+        main = p(doc, "GREENERRY", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+        main.runs[0].bold = True
+        main.runs[0].font.size = Pt(24)
+    subtitle = p(doc, "Plataforma Web de Música, Artistas e Merchandising", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+    subtitle.runs[0].font.size = Pt(13)
+    subtitle.runs[0].font.color.rgb = RGBColor(71, 85, 105)
+
+    for _ in range(3):
         p(doc, "", first_line=False)
-    p(doc, "Aluno: Srijan Gautam", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
-    p(doc, "Professora orientadora: Elisabete Vaz", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
-    p(doc, "Ano letivo 2025/2026", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
-    for _ in range(4):
+    add_table(doc, ["Elemento", "Informação"], [
+        ["Aluno", "Srijan Gautam"],
+        ["Orientadora", "Elisabete Vaz"],
+        ["Ano letivo", "2025/2026"],
+    ], [4.2, 8.2])
+    for _ in range(2):
         p(doc, "", first_line=False)
-    p(doc, "Almada, junho de 2026", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+    place = p(doc, "Almada, junho de 2026", align=WD_ALIGN_PARAGRAPH.CENTER, first_line=False)
+    place.runs[0].font.size = Pt(11)
+    place.runs[0].font.color.rgb = RGBColor(71, 85, 105)
 
 
 def build():
@@ -863,6 +897,8 @@ def build():
     add_figure(doc, FIG_DIR / "fig_checkout_filled.png", "Figura 11 - Checkout com formulário de entrega e resumo da encomenda.")
     heading(doc, "9.6 Área de artista", 2)
     p(doc, "A área de artista permite acompanhar estatísticas, gerir produtos, consultar encomendas relacionadas com os seus produtos, responder mensagens e analisar desempenho das faixas. Esta área demonstra que o projeto não é apenas uma loja ou um catálogo, mas uma plataforma com vários tipos de utilizador.")
+    p(doc, "Um ponto importante desta área é a comunicação por encomenda. Cada compra pode ter uma pequena conversa associada entre comprador e artista, semelhante a um chat simples, permitindo esclarecer dúvidas sobre produtos, tamanhos, envio ou estado da encomenda sem sair da plataforma.")
+    p(doc, "O artista pode acompanhar estados como pendente, em preparação, enviado, entregue ou cancelado, mas a moderação administrativa tem prioridade. Quando a administração bloqueia ou inativa um lançamento/produto, o artista não consegue reativá-lo sozinho; deve aguardar nova decisão administrativa.")
     add_figure(doc, FIG_DIR / "fig_artist_dashboard.png", "Figura 12 - Dashboard de artista com resumo de atividade.")
     add_figure(doc, FIG_DIR / "fig_artist_products.png", "Figura 13 - Produtos na área de artista, com stock, vendas e estado.")
     add_figure(doc, FIG_DIR / "fig_artist_analytics_seeded.png", "Figura 14 - Análises de artista com reproduções, ouvintes, horas de escuta e faixas.")
@@ -1002,7 +1038,7 @@ def build():
         ["Login e registo", "Entradas para cliente e artista, criação de conta e recuperação.", "Valida e-mail, password, campos obrigatórios, CSRF e mensagens de erro."],
     ], [3.2, 6.2, 6.1])
     add_figure(doc, FIG_DIR / "fig_login_user_only.png", "Figura 22 - Login público sem botão direto de administração.")
-    add_figure(doc, FIG_DIR / "fig_admin_login_reserved.png", "Figura 23 - Login reservado da administração com chave de acesso.")
+    add_figure(doc, FIG_DIR / "fig_admin_login_reserved.png", "Figura 23 - Login reservado da administração com acesso por e-mail e palavra-passe.")
 
     heading(doc, "12.2.2 Cliente autenticado", 3)
     p(doc, "Depois de iniciar sessão, o utilizador passa a ter acesso a funções pessoais. O sistema apresenta opções adicionais no perfil e permite guardar preferências, criar biblioteca, consultar compras, comunicar com a administração e receber notificações.")
@@ -1031,8 +1067,9 @@ def build():
         ["Produtos de artista", "Lista merchandising criado pelo artista.", "Mostra estado, stock, preço e disponibilidade."],
         ["Upload de produto", "Permite criar produto com imagem, categoria, preço, stock e tamanhos.", "Valida imagem, preço, stock, categoria e tamanhos quando aplicável."],
         ["Análises", "Mostra reproduções, ouvintes, favoritos e desempenho musical.", "Consultas SQL juntam faixas, audições, utilizadores e datas."],
-        ["Rendimento", "Mostra valores associados a vendas e desempenho.", "Dados calculados a partir de encomendas e itens."],
-        ["Mensagens/clientes", "Apoia comunicação e leitura de atividade relacionada.", "Acesso limitado ao perfil do artista."],
+        ["Pedidos/encomendas", "Permite acompanhar preparação, envio, entrega e cancelamento de itens.", "Estados são refletidos no comprador, artista e administração."],
+        ["Rendimento", "Mostra valores associados a vendas e desempenho.", "Dados calculados a partir de encomendas, itens, comissões e entregas."],
+        ["Mensagens/clientes", "Apoia comunicação por encomenda entre comprador e artista.", "Funciona como uma conversa curta ligada à compra."],
     ], [3.4, 6.2, 5.9])
     add_figure(doc, FIG_DIR / "fig_artist_upload_music.png", "Figura 29 - Upload de música na área de artista.")
     add_figure(doc, FIG_DIR / "fig_artist_upload_merch.png", "Figura 30 - Upload de produto na área de artista.")
@@ -1043,6 +1080,7 @@ def build():
         ["Dashboard", "Resumo de receita, encomendas, utilizadores, lançamentos e atividade.", "Figura 16."],
         ["Curadoria da homepage", "Escolher conteúdos destacados na página inicial.", "Figura 31."],
         ["Encomendas", "Consultar compras, estados, clientes, valores e produtos.", "Figuras 19 e 21."],
+        ["Mensagens por encomenda", "Acompanhar conversas entre comprador e artista associadas a cada compra.", "Mostra contexto da encomenda no painel."],
         ["Produtos", "Rever produtos pendentes, aprovar/rejeitar e listar produtos com imagens.", "Figuras 18 e 21."],
         ["Categorias", "Listar, criar e editar categorias de produtos.", "Figura 32."],
         ["Lançamentos", "Rever singles, EPs e álbuns enviados por artistas.", "Figura 33."],
@@ -1067,16 +1105,17 @@ def build():
     add_figure(doc, FIG_DIR / "fig_admin_settings_light_en.png", "Figura 40 - Definições administrativas em tema claro e idioma inglês.")
 
     heading(doc, "12.3 Segurança, autenticação e validações", 2)
-    p(doc, "A segurança foi tratada de forma simples, mas adequada ao contexto do projeto. A entrada de administração deixou de estar exposta no login público. O utilizador normal vê apenas login e registo; a área administrativa usa uma página reservada, com chave de entrada adicional e credenciais de administrador.")
+    p(doc, "A segurança foi tratada de forma simples, mas adequada ao contexto do projeto. A entrada de administração deixou de estar exposta no login público. O utilizador normal vê apenas login e registo; a área administrativa usa uma página reservada e exige e-mail, palavra-passe, conta ativa e permissões de administrador.")
     add_table(doc, ["Área", "Validação aplicada", "Motivo"], [
         ["Login de cliente/artista", "E-mail, password, CSRF e regeneração da sessão.", "Evitar submissões inválidas e reduzir risco de sessão antiga."],
-        ["Login de admin", "Página reservada, chave de entrada, e-mail, password, conta ativa e permissão.", "Não expor o botão Admin no site público."],
+        ["Login de admin", "Página reservada, e-mail, password, conta ativa e permissão administrativa.", "Não expor o botão Admin no site público."],
         ["Verificação por e-mail", "Código enviado por e-mail e introduzido na página de verificação.", "Confirmar que a conta pertence ao utilizador."],
         ["Recuperação de password", "Código enviado por e-mail e usado na página de reset.", "Permitir recuperar acesso sem mostrar passwords antigas."],
         ["Carrinho/produto", "Sessão obrigatória, stock, quantidade e tamanho obrigatório quando existe.", "Evitar compras incompletas ou impossíveis."],
         ["Uploads", "Ficheiro obrigatório, tipo permitido, imagem/capa, áudio e campos principais.", "Evitar conteúdos incompletos ou ficheiros errados."],
         ["Admin CRUD", "Sessão administrativa, permissões e pedidos protegidos.", "Evitar alterações por utilizadores sem autorização."],
         ["Manutenção", "Páginas podem ser ativadas/inativadas no painel.", "Permitir controlar disponibilidade do site."],
+        ["Prioridade administrativa", "Conteúdos bloqueados ou inativados pelo admin não podem ser reativados pelo artista.", "Garantir que a moderação central prevalece."],
         ["Tema e idioma", "Preferência guardada e aplicada no frontend/admin.", "Melhorar acessibilidade e apresentação PT/EN."],
     ], [3.2, 6.6, 5.7])
 

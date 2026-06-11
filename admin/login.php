@@ -10,14 +10,10 @@ $err = '';
 $emailValue = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $entryKey = trim((string)($_POST['admin_entry_key'] ?? ''));
     $emailValue = trim((string)($_POST['email'] ?? ''));
     $password = (string)($_POST['senha'] ?? '');
 
     $err = verify_csrf_request()
-        ?? (!admin_entry_key_configured() ? tr('error.admin_entry_not_configured') : null)
-        ?? ($entryKey === '' ? tr('error.admin_entry_required') : null)
-        ?? (!admin_entry_key_matches($entryKey) ? tr('error.admin_entry_invalid') : null)
         ?? validate_email($emailValue)
         ?? ($password === '' ? tr('error.required_password') : null);
 
@@ -43,7 +39,7 @@ include '../includes/header.php';
     <div class="auth-card auth-card--premium">
       <div class="auth-card-head">
         <h2 data-t="login_admin_type">Administração</h2>
-        <p><?= h(current_lang() === 'en' ? 'Reserved access for the Greenerry team.' : 'Acesso reservado para a equipa Greenerry.') ?></p>
+        <p><?= h(current_lang() === 'en' ? 'Sign in with an active Greenerry admin account.' : 'Inicia sessão com uma conta administrativa Greenerry ativa.') ?></p>
       </div>
 
       <?php if ($err): ?>
@@ -52,11 +48,6 @@ include '../includes/header.php';
 
       <form method="post" class="auth-form" novalidate>
         <?= csrf_input() ?>
-
-        <div class="fg">
-          <label class="flabel" for="admin_entry_key"><?= h(current_lang() === 'en' ? 'Administrative entry key' : 'Chave de acesso administrativo') ?></label>
-          <input id="admin_entry_key" type="password" name="admin_entry_key" class="finput" required maxlength="120" autocomplete="off">
-        </div>
 
         <div class="fg">
           <label class="flabel" for="email">Email</label>

@@ -9546,3 +9546,71 @@ body.admin-sidebar-expanded .admin-sidebar-logout a {
     height: 170px !important;
   }
 }
+/* Greenerry brand assets in the admin rail. */
+.admin-sl .brand.greenerry-brand {
+  gap: 0 !important;
+}
+
+.admin-sl .brand.greenerry-brand::after {
+  content: none !important;
+}
+
+.admin-sl .brand.greenerry-brand .greenerry-brand-mark,
+.admin-sl .brand.greenerry-brand .greenerry-brand-wordmark {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.admin-sl .brand.greenerry-brand .greenerry-logo {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.admin-sl .brand.greenerry-brand .greenerry-logo--dark {
+  display: none !important;
+}
+
+:root[data-theme="light"] .admin-sl .brand.greenerry-brand .greenerry-logo--dark {
+  display: block !important;
+}
+
+:root[data-theme="light"] .admin-sl .brand.greenerry-brand .greenerry-logo--light {
+  display: none !important;
+}
+
+.admin-sl .brand.greenerry-brand .greenerry-brand-text {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+body.admin-sidebar-expanded .admin-sl .brand.greenerry-brand {
+  justify-content: flex-start !important;
+}
+
+body.admin-sidebar-expanded .admin-sl .brand.greenerry-brand .greenerry-brand-wordmark {
+  display: flex !important;
+  width: min(174px, 100%) !important;
+  max-height: 54px !important;
+}
+
+body.admin-sidebar-expanded .admin-sl .brand.greenerry-brand .greenerry-brand-mark {
+  display: none !important;
+}
+
+body:not(.admin-sidebar-expanded) .admin-sl .brand.greenerry-brand .greenerry-brand-wordmark {
+  display: none !important;
+}
+
+body:not(.admin-sidebar-expanded) .admin-sl .brand.greenerry-brand .greenerry-brand-mark {
+  display: flex !important;
+  width: 38px !important;
+  max-height: 38px !important;
+}

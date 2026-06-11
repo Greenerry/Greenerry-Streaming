@@ -1,151 +1,100 @@
-# Estrutura do Relatório da PAP - Greenerry
+# Estrutura do Relatorio da PAP - Greenerry
 
 ## 1. Capa
 
-Nome da escola, curso, título do projeto, nome do aluno, ano letivo e professor orientador.
+Usar capa profissional com escola, Republica Portuguesa, curso, titulo do projeto, nome do aluno, orientadora e ano letivo.
 
-Título recomendado: **Greenerry - Plataforma Web de Música, Artistas e Merchandising**
+Titulo recomendado: **Greenerry - Plataforma Web de Musica, Artistas e Merchandising**
 
-## 2. Índice automático
+## 2. Elementos iniciais
 
-Inserir no Word depois de aplicar estilos de títulos.
+- Resumo.
+- Indice automatico.
+- Indice de figuras.
+- Lista de siglas.
 
-## 3. Introdução
+## 3. Introducao e enquadramento
 
-Explicar que a PAP consiste no desenvolvimento de um website funcional. Apresentar a Greenerry como uma plataforma onde utilizadores descobrem música, seguem artistas, compram produtos e interagem com uma área administrativa.
+Apresentar a Greenerry como plataforma Web onde visitantes descobrem musica, artistas e produtos; clientes compram e guardam conteudos; artistas gerem publicacoes, pedidos e rendimento; administradores moderam e acompanham a plataforma.
 
-## 4. Identificação do problema / necessidade
+## 4. Problema, publico-alvo e objetivos
 
-Problema: artistas independentes precisam de um espaço único para divulgar música, gerir produtos e acompanhar encomendas. Utilizadores precisam de uma experiência simples para descobrir artistas, ouvir previews, comprar merchandising e consultar compras.
+- Problema: fragmentacao entre musica, loja, comunicacao e gestao de artistas.
+- Publico-alvo: visitantes, clientes, artistas independentes e administradores.
+- Objetivo geral: criar website funcional, responsivo e ligado a base de dados.
+- Objetivos especificos: autenticacao, verificacao por e-mail, loja, carrinho, compras, biblioteca, area de artista, mensagens por encomenda, relatorios e admin.
 
-Público-alvo: fãs de música, artistas independentes e administradores da plataforma.
+## 5. Metodologia
 
-## 5. Objetivos do projeto
+Explicar pesquisa, planeamento, divisao por modulos, construcao por etapas, testes em XAMPP, seed de dados de demonstracao, Git/GitHub e preparacao dos anexos.
 
-Objetivo geral: desenvolver um website funcional, responsivo e ligado a base de dados.
+## 6. Tecnologias utilizadas
 
-Objetivos específicos:
+- HTML, CSS e JavaScript.
+- PHP.
+- MySQL/MariaDB.
+- XAMPP e phpMyAdmin.
+- Composer.
+- PHPMailer.
+- Dompdf.
+- Git e GitHub.
 
-- Criar autenticação de utilizadores e administradores.
-- Implementar loja online com produtos, categorias, carrinho e checkout.
-- Criar histórico de encomendas e recibos.
-- Criar biblioteca/favoritos e seguimento de artistas.
-- Criar área de artista para uploads e gestão de vendas.
-- Criar painel administrativo para moderação, encomendas, mensagens, utilizadores e relatórios.
+## 7. Estrutura da base de dados
 
-## 6. Metodologia de trabalho
+Incluir a figura limpa por modulos no relatorio e remeter o detalhe tecnico para os anexos:
 
-Descrever pesquisa, planeamento, divisão por páginas, construção por módulos, testes no XAMPP e ajustes finais a partir das necessidades da PAP.
+- `docs/DER/DER_GREENERRY.pdf`
+- `docs/MER_FNN/greenerry_mer_fnn.pdf`
+- `docs/MER_FNN/greenerry_mer_fnn.drawio`
 
-## 7. Ferramentas e tecnologias utilizadas
+Explicar contas/seguranca, musica/biblioteca, loja/encomendas e comunicacao/admin.
 
-- HTML, CSS e JavaScript para frontend.
-- PHP para backend.
-- MySQL/MariaDB para base de dados.
-- XAMPP para servidor local.
-- phpMyAdmin para gestão da base de dados.
-- Composer para dependências.
-- PHPMailer para envio de emails.
-- Dompdf para geração de PDFs/faturas.
+## 8. Desenvolvimento do projeto
 
-## 8. Estrutura da base de dados
+Separar por secoes:
 
-Usar o DER já existente em `docs/DER_greenerry_Srijan.pdf`.
+- Frontend publico: inicio, musica, artistas, loja, produto e leitor.
+- Backend: ligacao a base de dados, sessoes, permissoes, validacoes e CSRF.
+- Cliente autenticado: perfil, carrinho, compras, suporte, notificacoes, favoritos e playlists.
+- Area de artista: dashboard, publicacoes, pedidos, mensagens por encomenda, analise e rendimento.
+- Administracao: dashboard, produtos, categorias, generos, lancamentos, encomendas, utilizadores, mensagens, relatorios, manutencao, admins e definicoes.
 
-Tabelas principais a explicar:
+## 9. Capturas de ecra
 
-- `cliente`
-- `admin`
-- `categoria`
-- `produto`
-- `produto_imagem`
-- `produto_tamanho_stock`
-- `release_musical`
-- `faixa`
-- `encomenda`
-- `encomenda_item`
-- `favorito_musica`
-- `mensagem_admin`
-- `notificacao`
+No relatorio atual, as capturas de interface devem ficar como espacos reservados identificados. As screenshots finais devem ser inseridas apenas depois de o website estar fechado visualmente.
 
-## 9. Desenvolvimento do projeto
+Exemplo: `Espaco reservado para captura final: Dashboard do artista`.
 
-Frontend:
+## 10. Seguranca e regras importantes
 
-- Layout responsivo.
-- Navegação lateral.
-- Catálogo de música, artistas e loja.
-- Páginas de perfil, carrinho, checkout e compras.
+- Login/admin apenas com e-mail e palavra-passe de admin ativo.
+- Verificacao e recuperacao por codigo enviado por e-mail.
+- Passwords com hash.
+- Prepared statements e CSRF.
+- Prioridade administrativa: produtos/lancamentos bloqueados ou inativados pelo admin nao podem ser reativados pelo artista.
 
-Backend:
+## 11. Testes
 
-- Ligação à base de dados.
-- Sessões de utilizador e admin.
-- CRUD de produtos, categorias, utilizadores, mensagens e encomendas.
-- Validação, CSRF e prepared statements.
-- Uploads e moderação.
+Documentar testes por fluxo:
 
-## 10. Funcionalidades implementadas e extras
+- Visitante.
+- Cliente.
+- Artista.
+- Administrador.
+- Carrinho/checkout/compras.
+- Mensagens por encomenda.
+- Relatorios.
+- Tema claro/escuro.
 
-Funcionalidades principais:
+## 12. Resultados, dificuldades e conclusao
 
-- Registo, login, logout e recuperação de password.
-- Pesquisa de música, artistas e produtos.
-- Carrinho, checkout, encomendas e faturas.
-- Favoritos/biblioteca.
-- Contacto com admin.
-- Dashboard administrativa.
+Apresentar resultado final, dificuldades tecnicas, resolucao das dificuldades, aprendizagens e melhorias futuras.
 
-Extras valorizáveis:
+## 13. Anexos
 
-- Área de artista.
-- Upload de música e merchandising.
-- Aprovação/rejeição de lançamentos e produtos.
-- Notificações.
-- Relatórios e estatísticas.
-- Exportações e faturas PDF.
-- Multi-idioma PT/EN e tema claro/escuro.
-
-## 11. Resultados obtidos
-
-Mostrar que o website está funcional, com dados reais de demonstração, produtos, músicas, encomendas e administração completa.
-
-## 12. Dificuldades sentidas
-
-Possíveis pontos a desenvolver:
-
-- Organização da base de dados.
-- Gestão de sessões diferentes para user/admin.
-- Checkout e estados das encomendas.
-- Uploads e imagens.
-- Responsividade.
-- Integração de emails e PDFs.
-
-## 13. Resolução das dificuldades
-
-Explicar como foram resolvidas com pesquisa, testes no XAMPP, prepared statements, organização por includes, validação de formulários e ajustes visuais.
-
-## 14. Conclusão
-
-Refletir sobre aprendizagens em PHP, MySQL, frontend, segurança básica, organização de projeto, documentação e apresentação de software.
-
-## 15. Melhorias futuras
-
-- Pagamentos reais.
-- Chat em tempo real.
-- Aplicação mobile.
-- API pública.
-- Recomendações musicais.
-- Melhorias de acessibilidade e segurança.
-
-## 16. Referências bibliográficas / webgrafia
-
-Incluir PHP Manual, MDN Web Docs, documentação MySQL/MariaDB, Bootstrap/recursos usados se aplicável, PHPMailer e Dompdf.
-
-## 17. Anexos
-
-- Capturas de ecrã finais.
 - DER.
-- Trechos de código relevantes.
-- Testes realizados.
-- Guião do vídeo.
+- MER/FNN.
+- Manual tecnico.
+- Roteiro do video.
+- Checklist de entrega.
+- Capturas finais, se a escola pedir anexos visuais separados.

@@ -86,7 +86,17 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
 
 <div class="shell">
   <aside class="sl" id="sl">
-    <a href="<?= $_base ?>/pages/index.php" class="sl-brand"><span class="sl-brand-dot"></span>Greenerry</a>
+    <a href="<?= $_base ?>/pages/index.php" class="sl-brand greenerry-brand" aria-label="Greenerry">
+      <span class="greenerry-brand-mark" aria-hidden="true">
+        <img class="greenerry-logo greenerry-logo--dark" src="<?= $_base ?>/assets/img/brand/greenerry-mark-dark.png" alt="">
+        <img class="greenerry-logo greenerry-logo--light" src="<?= $_base ?>/assets/img/brand/greenerry-mark-light.png" alt="">
+      </span>
+      <span class="greenerry-brand-wordmark" aria-hidden="true">
+        <img class="greenerry-logo greenerry-logo--dark" src="<?= $_base ?>/assets/img/brand/greenerry-wordmark-dark.png" alt="">
+        <img class="greenerry-logo greenerry-logo--light" src="<?= $_base ?>/assets/img/brand/greenerry-wordmark-light.png" alt="">
+      </span>
+      <span class="greenerry-brand-text">Greenerry</span>
+    </a>
     <nav class="sl-nav">
       <div class="sl-sec sl-main-nav">
         <span class="sl-lbl" data-t="nav_discover">Descobrir</span>

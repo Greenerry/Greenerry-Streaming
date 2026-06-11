@@ -1,114 +1,115 @@
-# Apresentação PAP - Outline Greenerry
+# Apresentacao PAP - Outline Greenerry
 
-Objetivo: preparar uma apresentação clara para cerca de 10 a 15 minutos, deixando tempo para perguntas do júri.
+Objetivo: preparar uma apresentacao clara para 10 a 15 minutos, deixando tempo para perguntas do juri.
 
-## Slide 1 - Título
+## Slide 1 - Titulo
 
-Greenerry - Plataforma Web de Música, Artistas e Merchandising
+Greenerry - Plataforma Web de Musica, Artistas e Merchandising
 
-Incluir nome do aluno, curso, escola e ano letivo.
+Incluir nome do aluno, curso, escola, orientadora e ano letivo.
 
-## Slide 2 - Problema e motivação
+## Slide 2 - Problema e motivacao
 
-- Artistas precisam de divulgar música e vender produtos.
-- Utilizadores querem descobrir música, seguir artistas e comprar merchandising.
-- A administração precisa de controlar conteúdos, encomendas e suporte.
+- Artistas precisam de divulgar musica, vender produtos e acompanhar encomendas.
+- Utilizadores querem descobrir musica, seguir artistas e comprar merchandising.
+- A administracao precisa de controlar conteudos, encomendas, suporte e relatorios.
 
 ## Slide 3 - Objetivos
 
-- Criar website funcional e responsivo.
-- Implementar autenticação.
-- Criar loja com carrinho e checkout.
-- Criar biblioteca musical e favoritos.
-- Criar área de artista.
-- Criar dashboard administrativa.
+- Criar website funcional, responsivo e ligado a base de dados.
+- Implementar autenticacao com verificacao por e-mail.
+- Criar loja com carrinho, checkout, compras e faturas.
+- Criar biblioteca musical, favoritos e seguimento de artistas.
+- Criar area de artista com uploads, pedidos, mensagens e rendimento.
+- Criar dashboard administrativa com moderacao e relatorios.
 
 ## Slide 4 - Tecnologias
 
 - PHP
 - MySQL/MariaDB
-- HTML, CSS, JavaScript
-- XAMPP
-- phpMyAdmin
+- HTML, CSS e JavaScript
+- XAMPP e phpMyAdmin
 - Composer
 - PHPMailer
 - Dompdf
+- Git e GitHub
 
 ## Slide 5 - Estrutura do website
 
-Mostrar mapa simples:
-
-- Visitante: home, música, artistas, loja.
-- Cliente: perfil, carrinho, compras, favoritos, suporte.
-- Artista: uploads, vendas, mensagens, receitas.
-- Admin: dashboard, produtos, categorias, encomendas, utilizadores, mensagens e relatórios.
+- Visitante: inicio, musica, artistas, loja, pesquisa e leitor.
+- Cliente: perfil, carrinho, compras, favoritos, notificacoes e suporte.
+- Artista: dashboard, publicar musica, produtos, pedidos, mensagens, analise e rendimento.
+- Admin: dashboard, homepage, produtos, categorias, generos, lancamentos, encomendas, utilizadores, mensagens, relatorios, manutencao e definicoes.
 
 ## Slide 6 - Base de dados
 
-Mostrar o DER e explicar as tabelas principais:
+Mostrar o modelo por modulos no relatorio e referir os anexos DER/MER/FNN.
 
-- cliente/admin
-- produto/categoria
-- release_musical/faixa
-- encomenda/encomenda_item
-- mensagem_admin/notificacao
+- contas e seguranca: `cliente`, `admin`, verificacao e recuperacao.
+- musica e biblioteca: `genero`, `release_musical`, `faixa`, playlists e favoritos.
+- loja e encomendas: `categoria`, `produto`, stock, `encomenda`, itens e pagamentos.
+- comunicacao/admin: notificacoes, mensagens, configuracoes e manutencao.
 
 ## Slide 7 - Funcionalidades principais
 
-- Login/registo.
+- Login, registo e codigos por e-mail.
 - Pesquisa e filtros.
-- Loja e checkout.
-- Histórico de encomendas.
-- Favoritos/biblioteca.
-- Suporte.
-- Administração.
+- Loja, detalhe de produto e Ver mais/Ver menos.
+- Carrinho, checkout, compras e faturas.
+- Favoritos, playlists e artistas seguidos.
+- Suporte, notificacoes e mensagens.
 
-## Slide 8 - Funcionalidades extra
+## Slide 8 - Area de artista
 
-- Área de artista.
-- Moderação por admin.
-- Notificações.
-- Relatórios.
-- Faturas PDF.
-- Tema claro/escuro.
-- Multi-idioma PT/EN.
+- Upload de musica e produto.
+- Lancamentos e merchandising pendentes de revisao.
+- Pedidos com estados: pendente, em preparacao, enviado, entregue e cancelado.
+- Mensagens por encomenda, semelhantes a uma conversa direta com o comprador.
+- Analise e rendimento.
+- Prioridade administrativa sobre conteudos bloqueados/inativados.
 
-## Slide 9 - Segurança e validação
+## Slide 9 - Administracao
+
+- Login reservado apenas com conta admin ativa.
+- Dashboard, curadoria da homepage e manutencao.
+- Gestao de produtos, categorias, generos e lancamentos.
+- Gestao de encomendas, utilizadores, mensagens e administradores.
+- Relatorios financeiro e musical.
+- Tema claro/escuro e idioma PT/EN.
+
+## Slide 10 - Seguranca e validacao
 
 - Passwords com hash.
 - Prepared statements.
-- Sessões separadas.
-- CSRF em formulários.
-- Validação de inputs.
-- Permissões no admin.
+- Sessoes separadas.
+- CSRF em formularios.
+- Validacao de inputs.
+- Permissoes no admin.
+- Login administrativo apenas com conta admin ativa.
 
-## Slide 10 - Dificuldades e soluções
+## Slide 11 - Dificuldades e solucoes
 
-- Base de dados complexa -> DER e organização por tabelas.
-- Carrinho/checkout -> testes com encomendas de demonstração.
-- Uploads -> validação e aprovação administrativa.
-- Responsividade -> ajustes em páginas principais.
-- Emails/PDF -> PHPMailer e Dompdf.
+- Base de dados complexa -> DER, MER/FNN e organizacao por modulos.
+- Carrinho/checkout -> testes com encomendas de demonstracao.
+- Uploads -> validacao e revisao administrativa.
+- Responsividade -> ajustes em paginas publicas e admin.
+- E-mails/PDF -> PHPMailer e Dompdf.
 
-## Slide 11 - Resultado final
+## Slide 12 - Resultado final
 
-Mostrar screenshots finais do site e dashboard.
+Mostrar capturas finais do site, area de artista, mensagens por encomenda e painel administrativo.
 
-## Slide 12 - Melhorias futuras
+## Slide 13 - Melhorias futuras
 
 - Pagamentos reais.
 - Chat em tempo real.
-- Recomendações musicais.
+- Recomendacoes musicais.
 - App mobile.
-- API pública.
-- Segurança avançada.
+- API publica.
+- Seguranca avancada.
 
-## Slide 13 - Conclusão
+## Slide 14 - Conclusao
 
-Resumo das aprendizagens:
-
-- Programação backend em PHP.
-- Modelação de base de dados.
-- Interface e experiência de utilizador.
-- Organização de projeto.
-- Testes, documentação e apresentação técnica.
+- Aplicacao pratica de PHP, MySQL, frontend e documentacao.
+- Experiencia com base de dados relacional, autenticacao, uploads, relatorios e permissões.
+- Projeto pronto para demonstracao local e avaliacao PAP.

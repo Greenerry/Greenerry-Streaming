@@ -1,117 +1,108 @@
-# Manual Técnico - Estrutura Greenerry
+# Manual Tecnico - Estrutura Greenerry
 
 ## 1. Objetivo
 
-Explicar como instalar, configurar e executar o website Greenerry através do XAMPP.
+Explicar como instalar, configurar, executar e validar o website Greenerry em ambiente local com XAMPP.
 
 ## 2. Requisitos
 
 - Windows com XAMPP instalado.
 - Apache ativo.
 - MySQL/MariaDB ativo.
-- PHP compatível com o XAMPP usado.
-- Composer instalado ou pasta `vendor` incluída no projeto.
+- PHP compativel com o projeto.
+- Composer instalado ou pasta `vendor/` incluida.
 - Navegador moderno.
+- Ficheiro `greenerry.sql` para importacao da base de dados.
 
 ## 3. Estrutura do projeto
 
-Pastas principais:
-
 - `admin/`: painel administrativo.
-- `api/`: endpoints usados por ações assíncronas.
-- `assets/`: CSS, JavaScript, imagens e áudio.
-- `docs/`: documentação, DER e ficheiros PAP.
-- `includes/`: configuração, ligação à base de dados, autenticação e helpers.
-- `pages/`: páginas públicas e área de utilizador/artista.
-- `vendor/`: dependências Composer.
+- `api/`: endpoints usados por acoes assincronas.
+- `assets/`: CSS, JavaScript, imagens, logos e ficheiros multimedia.
+- `docs/`: documentacao, DER, MER/FNN e materiais PAP.
+- `includes/`: configuracao, ligacao a base de dados, autenticacao e helpers.
+- `pages/`: paginas publicas, area de utilizador e area de artista.
+- `vendor/`: dependencias Composer.
+- `greenerry.sql`: script de criacao/importacao da base de dados.
 
-Ficheiros principais:
-
-- `index.php`: entrada do projeto.
-- `greenerry.sql`: base de dados final.
-- `composer.json`: dependências.
-
-## 4. Instalação em XAMPP
+## 4. Instalacao em XAMPP
 
 1. Copiar a pasta `greenerry` para `C:\xampp\htdocs\dashboard\greenerry`.
 2. Abrir o painel do XAMPP.
 3. Iniciar Apache.
 4. Iniciar MySQL.
 5. Abrir phpMyAdmin.
-6. Criar/importar a base de dados `greenerry`.
+6. Criar a base de dados `greenerry`, se ainda nao existir.
 7. Importar o ficheiro `greenerry.sql`.
 8. Aceder a `http://localhost/dashboard/greenerry/`.
 
-## 5. Configuração da base de dados local
-
-Configuração local esperada:
+## 5. Configuracao local
 
 - Host: `localhost`
 - Utilizador: `root`
 - Password: vazia
 - Base de dados: `greenerry`
+- Configuracao principal: `includes/config.php`
 
-O ficheiro `includes/config.php` carrega as configurações e liga ao MySQL. Em ambiente local, os valores acima são os usados por defeito.
+O acesso administrativo e feito numa pagina reservada com e-mail e palavra-passe de uma conta admin ativa.
 
-## 6. Dependências
+## 6. Dependencias
 
 O projeto usa Composer:
 
-- `phpmailer/phpmailer`: envio de emails, verificação e recuperação de password.
-- `dompdf/dompdf`: geração de documentos PDF, como faturas/recibos.
+- `phpmailer/phpmailer`: envio de e-mails de verificacao, recuperacao e notificacoes.
+- `dompdf/dompdf`: geracao de faturas/recibos em PDF.
 
-Se a pasta `vendor` não existir, executar:
+Se a pasta `vendor/` nao existir, executar:
 
 ```bash
 composer install
 ```
 
-## 7. Acessos de demonstração
+## 7. Acessos de demonstracao
 
 Admin principal:
 
 - Email: `greenerry333@gmail.com`
 - Password: `Srijan123@`
 
-Utilizadores de demonstração:
+Utilizadores de demonstracao:
 
-- Existem contas de artistas e clientes no ficheiro `greenerry.sql`.
-- Confirmar a password final antes da entrega, caso seja necessário demonstrar login com várias contas.
+- Existem contas de clientes e artistas no ficheiro `greenerry.sql`.
+- Antes da defesa, confirmar as palavras-passe finais que serao usadas no video e na demonstracao.
 
-## 8. Funcionalidades técnicas
+## 8. Funcionalidades tecnicas a explicar
 
-- Sessões PHP para user/admin.
+- Sessoes separadas para cliente/artista e administrador.
 - Passwords guardadas com hash.
-- Prepared statements em operações sensíveis.
-- CSRF em formulários.
-- Upload de imagens e músicas.
-- Aprovação/rejeição administrativa.
-- Notificações.
-- Geração de faturas PDF.
-- Envio de emails.
+- Prepared statements em operacoes sensiveis.
+- CSRF em formularios.
+- Verificacao por codigo enviado por e-mail.
+- Recuperacao de palavra-passe por codigo temporario.
+- Upload de capas, imagens de produto e ficheiros de audio.
+- Moderacao administrativa de produtos e lancamentos.
+- Prioridade administrativa: conteudos bloqueados/inativados pelo admin nao podem ser reativados pelo artista.
+- Carrinho, checkout, encomendas, estados e faturas PDF.
+- Mensagens por encomenda entre comprador e artista.
+- Notificacoes, relatorios, tema claro/escuro e idioma PT/EN.
 
 ## 9. Testes recomendados
 
-- Abrir homepage.
-- Pesquisar música.
-- Pesquisar produtos.
-- Criar conta.
-- Fazer login.
-- Editar perfil.
-- Adicionar produto ao carrinho.
-- Finalizar compra.
-- Ver histórico de compras.
-- Enviar mensagem ao admin.
-- Entrar no admin.
-- Gerir categorias.
-- Aprovar/rejeitar produto ou música.
-- Alterar estado de encomenda.
-- Ver relatórios.
+- Abrir homepage, Musica, Artistas e Loja sem login.
+- Criar conta e validar codigo de e-mail.
+- Fazer login, editar perfil, usar favoritos e playlists.
+- Adicionar produto ao carrinho e finalizar compra.
+- Consultar compras, fatura e notificacoes.
+- Entrar como artista, publicar musica/produto e consultar analise/rendimento.
+- Ver mensagens por encomenda.
+- Entrar como admin, gerir produtos, lancamentos, generos, categorias, utilizadores e encomendas.
+- Confirmar que o admin entra apenas com e-mail e palavra-passe.
+- Confirmar que produto/lancamento bloqueado pelo admin nao pode ser reativado pelo artista.
 
 ## 10. Problemas comuns
 
-- Se a página não abrir: confirmar Apache e caminho do projeto.
-- Se a base de dados falhar: confirmar que `greenerry.sql` foi importado e que o nome da base é `greenerry`.
-- Se emails não enviarem: confirmar SMTP nas definições.
-- Se imagens não aparecerem: confirmar a pasta `assets/img`.
-- Se dependências falharem: confirmar `vendor` ou executar `composer install`.
+- Pagina nao abre: confirmar Apache e caminho do projeto.
+- Base de dados falha: confirmar importacao de `greenerry.sql` e nome `greenerry`.
+- E-mails nao enviam: confirmar configuracao SMTP usada em ambiente local.
+- Imagens nao aparecem: confirmar caminhos em `assets/img/` e permissao das pastas.
+- Dependencias falham: confirmar `vendor/` ou executar `composer install`.

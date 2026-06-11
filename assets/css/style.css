@@ -5303,7 +5303,7 @@ a.nav-user-name:hover { color:var(--text); }
   text-decoration:underline;
   text-underline-offset:3px;
   cursor:pointer;
-  display:inline-block !important;
+  display:none;
 }
 
 .product-description-toggle:hover {
@@ -12110,5 +12110,164 @@ body.sidebar-expanded .sl-peek::after {
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
     pointer-events: auto !important;
+  }
+}
+/* Greenerry brand assets: transparent logo variants for dark/light modes. */
+.greenerry-brand {
+  position: relative !important;
+}
+
+.greenerry-brand::after {
+  content: none !important;
+}
+
+.greenerry-brand-mark,
+.greenerry-brand-wordmark {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.greenerry-logo {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.greenerry-logo--dark {
+  display: none !important;
+}
+
+:root[data-theme="light"] .greenerry-logo--dark {
+  display: block !important;
+}
+
+:root[data-theme="light"] .greenerry-logo--light {
+  display: none !important;
+}
+
+.greenerry-brand-text {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+.sl-brand.greenerry-brand {
+  gap: 0 !important;
+}
+
+body.sidebar-expanded .sl-brand.greenerry-brand,
+.sl.open .sl-brand.greenerry-brand {
+  justify-content: flex-start !important;
+}
+
+body.sidebar-expanded .sl-brand.greenerry-brand .greenerry-brand-wordmark,
+.sl.open .sl-brand.greenerry-brand .greenerry-brand-wordmark {
+  display: flex !important;
+  width: min(174px, 100%) !important;
+  max-height: 54px !important;
+}
+
+body.sidebar-expanded .sl-brand.greenerry-brand .greenerry-brand-mark,
+.sl.open .sl-brand.greenerry-brand .greenerry-brand-mark {
+  display: none !important;
+}
+
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-wordmark {
+  display: none !important;
+}
+
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-mark {
+  display: flex !important;
+  width: 38px !important;
+  max-height: 38px !important;
+}
+
+@media (max-width: 640px) {
+  .page-body > .home-hero {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    padding-inline: 12px !important;
+  }
+
+  .page-body > .home-hero > .wrap,
+  .page-body > .home-hero .home-hero-panel,
+  .page-body > .home-hero .home-hero-flipper,
+  .page-body > .home-hero .home-hero-face,
+  .page-body > .home-hero .home-hero-grid,
+  .page-body > .home-hero .home-hero-copy,
+  .page-body > .home-hero .home-hero-copy--editorial {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .page-body > .home-hero > .wrap {
+    padding-inline: 0 !important;
+  }
+
+  .page-body > .home-hero .home-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-body > .home-hero .home-hero-copy,
+  .page-body > .home-hero .home-hero-copy--editorial {
+    padding: 28px 18px !important;
+  }
+
+  .page-body > .home-hero .home-hero-copy h1 {
+    max-width: 11ch !important;
+    font-size: 2.05rem !important;
+    line-height: 1.08 !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .page-body > .home-hero .hero-actions,
+  .page-body > .home-hero .home-hero-stat-strip {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+  }
+
+  .page-body > .home-hero .hero-actions .btn,
+  .page-body > .home-hero .home-hero-stat {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .nav-inner {
+    padding-inline: 8px !important;
+  }
+
+  .nav-right {
+    gap: 6px !important;
+    max-width: calc(100vw - 16px) !important;
+    margin-right: 56px !important;
+    overflow: hidden !important;
+  }
+
+  .nav-right .sr-open-btn,
+  .nav-right #nav-lang,
+  .nav-right #theme-toggle {
+    display: none !important;
+  }
+
+  .nav-auth-btn {
+    flex: 0 0 auto !important;
+    padding: 7px 10px !important;
+    font-size: .74rem !important;
+  }
+
+  .nav-right .nav-auth-btn[href*="registar"] {
+    display: none !important;
   }
 }
