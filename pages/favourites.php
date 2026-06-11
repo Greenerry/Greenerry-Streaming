@@ -111,9 +111,10 @@ if (is_user_logged_in()) {
     foreach ($playlists as $playlist) {
         $playlistDetails[(int)$playlist['idPlaylist']] = db_all_prepared(
             $conn,
-            "SELECT f.idFaixa, f.titulo, f.genero, f.ficheiro_audio, r.titulo AS album_titulo, r.capa, c.nome AS artista_nome, c.idCliente AS artistId, c.foto AS artist_foto, pf.criado_em
+            "SELECT f.idFaixa, f.titulo, COALESCE(g.nome, f.genero) AS genero, f.ficheiro_audio, r.titulo AS album_titulo, r.capa, c.nome AS artista_nome, c.idCliente AS artistId, c.foto AS artist_foto, pf.criado_em
              FROM playlist_faixa pf
              JOIN faixa f ON f.idFaixa = pf.idFaixa
+             LEFT JOIN genero g ON g.idGenero = f.idGenero
              JOIN release_musical r ON r.idRelease = f.idRelease
              JOIN cliente c ON c.idCliente = r.idCliente
              WHERE pf.idPlaylist = ?

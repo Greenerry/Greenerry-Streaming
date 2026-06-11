@@ -193,6 +193,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$err) {
+        $releaseGenreId = null;
+        foreach ($tracks as $index => $track) {
+            $genreName = mb_substr(trim((string)($track['genre'] ?? '')), 0, 80);
+            $genreId = greenerry_resolve_genre_id($conn, $genreName);
+            $tracks[$index]['genre'] = $genreName;
+            $tracks[$index]['genre_id'] = $genreId;
+            if ($releaseGenreId === null && $genreId !== null) {
+                $releaseGenreId = $genreId;
+            }
+        }
+        $releaseGenreSql = $releaseGenreId !== null ? (string)$releaseGenreId : 'NULL';
         $titleSafe = db_escape($conn, $title);
         $typeSafe = db_escape($conn, $type);
         $descriptionSafe = db_escape($conn, $description);
@@ -211,6 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          descricao = '{$descriptionSafe}',
                          capa = '{$coverSafe}',
                          data_lancamento = {$dateSql},
+                         idGenero = {$releaseGenreSql},
                          estado = 'pendente',
                          ativo = 1,
                          motivo_rejeicao = NULL,
@@ -223,8 +235,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 mysqli_query(
                     $conn,
-                    "INSERT INTO release_musical (idCliente, titulo, tipo, descricao, capa, data_lancamento, estado, ativo)
-                     VALUES ({$uid}, '{$titleSafe}', '{$typeSafe}', '{$descriptionSafe}', '{$coverSafe}', {$dateSql}, 'pendente', 1)"
+                    "INSERT INTO release_musical (idCliente, titulo, tipo, idGenero, descricao, capa, data_lancamento, estado, ativo)
+                     VALUES ({$uid}, '{$titleSafe}', '{$typeSafe}', {$releaseGenreSql}, '{$descriptionSafe}', '{$coverSafe}', {$dateSql}, 'pendente', 1)"
                 );
                 $releaseId = (int)mysqli_insert_id($conn);
             }
@@ -232,12 +244,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($tracks as $index => $track) {
                 $trackTitleSafe = db_escape($conn, $track['title']);
                 $trackGenreSafe = db_escape($conn, mb_substr((string)($track['genre'] ?? ''), 0, 80));
+                $trackGenreIdSql = !empty($track['genre_id']) ? (string)(int)$track['genre_id'] : 'NULL';
                 $audioSafe = db_escape($conn, $track['audio']);
                 $trackNumber = $index + 1;
                 mysqli_query(
                     $conn,
-                    "INSERT INTO faixa (idRelease, numero_faixa, titulo, genero, ficheiro_audio, estado, ativo)
-                     VALUES ({$releaseId}, {$trackNumber}, '{$trackTitleSafe}', " . ($trackGenreSafe !== '' ? "'{$trackGenreSafe}'" : "NULL") . ", '{$audioSafe}', 'pendente', 1)"
+                    "INSERT INTO faixa (idRelease, numero_faixa, titulo, genero, idGenero, ficheiro_audio, estado, ativo)
+                     VALUES ({$releaseId}, {$trackNumber}, '{$trackTitleSafe}', " . ($trackGenreSafe !== '' ? "'{$trackGenreSafe}'" : "NULL") . ", {$trackGenreIdSql}, '{$audioSafe}', 'pendente', 1)"
                 );
             }
 
@@ -261,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $genreSuggestions = array_values(array_unique(array_filter(array_merge(
     ['Pop', 'Rock', 'Hip-hop', 'R&B', 'Afrobeat', 'Kizomba', 'Fado', 'Jazz', 'Electronic', 'House', 'Techno', 'Indie', 'Trap', 'Soul', 'Reggaeton'],
-    array_map(static fn($row) => (string)($row['genero'] ?? ''), db_all($conn, "SELECT DISTINCT genero FROM faixa WHERE genero IS NOT NULL AND genero != '' ORDER BY genero ASC LIMIT 30"))
+    array_map(static fn($row) => (string)($row['nome'] ?? ''), db_all($conn, "SELECT nome FROM genero WHERE estado = 'ativo' ORDER BY nome ASC LIMIT 60"))
 ))));
 
 include '../includes/header.php';

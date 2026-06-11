@@ -1,0 +1,128 @@
+Estrutura Recomendada — Relatório da PAP (GPSI) – Exemplo orientador
+Projeto: Desenvolvimento de um Website
+1. Capa
+Nome da escola | Logotipo
+Curso
+Título do projeto
+Nome complete do aluno
+Ano letivo
+Nome dos orientadores/professores
+2. Índice Automático
+3. Introdução
+Enquadramento da PAP
+Objetivos gerais do projeto
+Motivação para a escolha do tema
+Breve descrição do website desenvolvido
+4. Identificação do Problema / Necessidade
+Problema que o website pretende resolver
+Público-alvo
+Necessidades identificadas
+Importância do projeto
+5. Objetivos do Projeto
+Objetivo geral
+Exemplo:
+Desenvolver um website funcional e responsivo.
+Objetivos específicos
+Exemplos:
+Criar sistema de login
+Implementar base de dados
+Desenvolver carrinho de compras
+Criar área de administração
+Implementar sistema de pesquisa
+Etc….
+6. Metodologias de Trabalho
+Pesquisa realizada
+Planeamento do projeto
+Organização das tarefas
+Gestão de tempo
+Estratégias utilizadas durante o desenvolvimento
+7. Ferramentas e Tecnologias Utilizadas (exemplos)
+Linguagens
+HTML
+CSS
+Etc..
+Ferramentas
+Visual Studio Code
+XAMPP
+phpMyAdmin
+Bootstrap
+GitHub (se aplicável)
+Etc…
+Bibliotecas / APIs
+PHPMailer
+ChartJS
+TCPDF
+Outras
+8. Estrutura da Base de Dados
+Explicação das tabelas principais
+Relação entre tabelas
+Funcionalidade da base de dados
+Desenho da base de dados
+9. Desenvolvimento do Projeto
+Frontend
+Estrutura visual
+Navegação
+Responsividade
+Design
+Etc..
+Backend
+Ligação à base de dados
+Gestão de sessões
+CRUD
+Segurança básica
+Etc…
+10. Funcionalidades Implementadas e Extras
+Exemplos:
+Login e registo
+Recuperação de password
+Carrinho de compras
+Histórico de compras
+Dashboard administrativa
+Pesquisa e filtros
+Upload de imagens
+Sistema de suporte/contacto
+Etc..
+11. Resultados Obtidos
+Objetivos alcançados
+Funcionalidades concluídas
+Aspeto final do website
+Testes realizados
+12. Dificuldades Sentidas
+Exemplos:
+Ligação à base de dados
+Organização do código
+Gestão do tempo
+Problemas de responsividade
+Segurança
+Integração de bibliotecas
+13. Resolução das Dificuldades
+Estratégias utilizadas
+Pesquisa efetuada
+Ajuda recebida
+Soluções implementadas
+14. Conclusão
+Reflexão final sobre o projeto
+Competências desenvolvidas
+Aprendizagens adquiridas
+Importância da PAP no percurso profissional
+15. Melhorias Futuras
+Exemplos:
+Aplicação mobile
+Sistema de pagamentos
+Chat online
+Melhorias de segurança
+Integração com APIs externas
+16. Referências Bibliográficas / Webgrafia
+Exemplos:
+W3Schools
+Stack Overflow
+Bootstrap
+PHP Manual
+MDN Web Docs
+Tutoriais utilizados
+17. Anexos (Obrigatório)
+Capturas de ecrã
+Trechos de código
+Cronograma
+Testes realizados
+Diagramas

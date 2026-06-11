@@ -10,13 +10,13 @@ $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
 $genreOptions = db_all(
     $conn,
-    "SELECT DISTINCT genero
-     FROM faixa
-     WHERE genero IS NOT NULL
-       AND TRIM(genero) <> ''
-       AND estado = 'aprovada'
-       AND ativo = 1
-     ORDER BY genero ASC"
+    "SELECT DISTINCT g.nome AS genero
+     FROM genero g
+     JOIN faixa f ON f.idGenero = g.idGenero
+     WHERE g.estado = 'ativo'
+       AND f.estado = 'aprovada'
+       AND f.ativo = 1
+     ORDER BY g.nome ASC"
 );
 $validGenres = array_map(static fn($row) => (string)$row['genero'], $genreOptions);
 if ($genre !== '' && !in_array($genre, $validGenres, true)) {
@@ -40,7 +40,12 @@ if ($genre !== '') {
         WHERE fg.idRelease = r.idRelease
           AND fg.estado = 'aprovada'
           AND fg.ativo = 1
-          AND fg.genero = ?
+          AND fg.idGenero = (
+              SELECT g.idGenero
+              FROM genero g
+              WHERE g.nome = ?
+              LIMIT 1
+          )
     )";
     $types .= 's';
     $params[] = $genre;
@@ -57,7 +62,12 @@ if ($search !== '') {
             WHERE fsg.idRelease = r.idRelease
               AND fsg.estado = 'aprovada'
               AND fsg.ativo = 1
-              AND fsg.genero LIKE ?
+              AND COALESCE((
+                  SELECT g.nome
+                  FROM genero g
+                  WHERE g.idGenero = fsg.idGenero
+                  LIMIT 1
+              ), fsg.genero) LIKE ?
         )
         OR EXISTS (
             SELECT 1
@@ -101,7 +111,7 @@ $releases = db_all_prepared(
         COUNT(f.idFaixa) AS total_faixas,
         first_track.idFaixa AS first_track_id,
         first_track.titulo AS first_track_title,
-        first_track.genero AS first_track_genre,
+        COALESCE(first_track_genre.nome, first_track.genero) AS first_track_genre,
         first_track.ficheiro_audio AS first_track_audio
      FROM release_musical r
      JOIN cliente c ON c.idCliente = r.idCliente
@@ -119,8 +129,10 @@ $releases = db_all_prepared(
             ORDER BY f2.numero_faixa ASC
             LIMIT 1
         )
+     LEFT JOIN genero first_track_genre
+        ON first_track_genre.idGenero = first_track.idGenero
      {$where}
-     GROUP BY r.idRelease, r.titulo, r.tipo, r.capa, r.data_lancamento, r.criado_em, c.idCliente, c.nome, c.foto, first_track.idFaixa, first_track.titulo, first_track.genero, first_track.ficheiro_audio
+     GROUP BY r.idRelease, r.titulo, r.tipo, r.capa, r.data_lancamento, r.criado_em, c.idCliente, c.nome, c.foto, first_track.idFaixa, first_track.titulo, first_track_genre.nome, first_track.genero, first_track.ficheiro_audio
      ORDER BY COALESCE(r.data_lancamento, DATE(r.criado_em)) DESC, r.idRelease DESC
      LIMIT {$perPage} OFFSET {$offset}",
     $types,

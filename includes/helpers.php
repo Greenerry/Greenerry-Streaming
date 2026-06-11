@@ -170,6 +170,55 @@ function count_label(int $count, string $type): string
     return $count . ' ' . ($count === 1 ? $pair[0] : $pair[1]);
 }
 
+function greenerry_genre_slug(string $name): string
+{
+    $slug = trim(mb_strtolower($name));
+    $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $slug) ?: $slug;
+    $slug = preg_replace('/[^a-z0-9]+/i', '-', $slug) ?: '';
+    $slug = trim($slug, '-');
+
+    return mb_substr($slug !== '' ? $slug : 'genero', 0, 100);
+}
+
+function greenerry_resolve_genre_id(mysqli $conn, string $name): ?int
+{
+    $name = mb_substr(trim($name), 0, 80);
+    if ($name === '') {
+        return null;
+    }
+
+    $existing = db_one_prepared(
+        $conn,
+        "SELECT idGenero FROM genero WHERE LOWER(nome) = LOWER(?) LIMIT 1",
+        's',
+        [$name]
+    );
+    if ($existing) {
+        return (int)$existing['idGenero'];
+    }
+
+    $baseSlug = greenerry_genre_slug($name);
+    $slug = $baseSlug;
+    $suffix = 2;
+    while (db_one_prepared($conn, "SELECT idGenero FROM genero WHERE slug = ? LIMIT 1", 's', [$slug])) {
+        $slug = mb_substr($baseSlug, 0, 94) . '-' . $suffix;
+        $suffix++;
+    }
+
+    $stmt = db_prepared(
+        $conn,
+        "INSERT INTO genero (nome, slug) VALUES (?, ?)",
+        'ss',
+        [$name, $slug]
+    );
+    if (!$stmt) {
+        return null;
+    }
+    mysqli_stmt_close($stmt);
+
+    return (int)mysqli_insert_id($conn);
+}
+
 function create_notification(mysqli $conn, int $userId, string $title, string $message, string $type = 'sistema'): bool
 {
     // Stores a small message shown later in the notification menu/page.

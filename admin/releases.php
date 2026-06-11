@@ -53,11 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $trackTitles = $_POST['track_title'] ?? [];
             $trackGenres = $_POST['track_genre'] ?? [];
             $trackFiles = $_FILES['track_audio'] ?? null;
+            $releaseGenreId = null;
             if ($feedback === '' && is_array($trackTitles)) {
                 foreach ($trackTitles as $trackIdRaw => $trackTitleRaw) {
                     $trackId = (int)$trackIdRaw;
                     $trackTitle = trim((string)$trackTitleRaw);
-                    $trackGenre = trim((string)($trackGenres[$trackIdRaw] ?? ''));
+                    $trackGenre = mb_substr(trim((string)($trackGenres[$trackIdRaw] ?? '')), 0, 80);
+                    $trackGenreId = greenerry_resolve_genre_id($conn, $trackGenre);
+                    if ($releaseGenreId === null && $trackGenreId !== null) {
+                        $releaseGenreId = $trackGenreId;
+                    }
                     if ($trackId <= 0 || $trackTitle === '') continue;
                     $audioSql = '';
                     if ($trackFiles && !empty($trackFiles['name'][$trackIdRaw])) {
@@ -84,7 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $conn,
                         "UPDATE faixa
                          SET titulo = '" . db_escape($conn, $trackTitle) . "',
-                             genero = '" . db_escape($conn, $trackGenre) . "'{$audioSql}
+                             genero = " . ($trackGenre !== '' ? "'" . db_escape($conn, $trackGenre) . "'" : "NULL") . ",
+                             idGenero = " . ($trackGenreId !== null ? (int)$trackGenreId : "NULL") . "{$audioSql}
                          WHERE idFaixa = {$trackId} AND idRelease = {$releaseId}"
                     );
                 }
@@ -100,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      data_lancamento = " . ($dateSafe !== '' ? "'{$dateSafe}'" : "NULL") . ",
                      descricao = '{$descriptionSafe}',
                      capa = '" . db_escape($conn, $cover) . "',
+                     idGenero = " . ($releaseGenreId !== null ? (int)$releaseGenreId : "NULL") . ",
                      estado = '{$stateSafe}',
                      ativo = {$active}
                  WHERE idRelease = {$releaseId}"

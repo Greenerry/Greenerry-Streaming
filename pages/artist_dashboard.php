@@ -77,12 +77,13 @@ for ($offset = min(364, max(6, $rangeDays - 1)); $offset >= 0; $offset--) {
 
 $topTracks = db_all_prepared(
     $conn,
-    "SELECT f.titulo, f.genero, r.capa, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners
+    "SELECT f.titulo, COALESCE(g.nome, f.genero) AS genero, r.capa, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners
      FROM faixa f
      JOIN release_musical r ON r.idRelease = f.idRelease
+     LEFT JOIN genero g ON g.idGenero = f.idGenero
      LEFT JOIN faixa_listen fl ON fl.idFaixa = f.idFaixa AND fl.criado_em >= {$dateFromSql}
      WHERE r.idCliente = ?
-     GROUP BY f.idFaixa, f.titulo, f.genero, r.capa
+     GROUP BY f.idFaixa, f.titulo, g.nome, f.genero, r.capa
      ORDER BY listens DESC, f.idFaixa DESC
      LIMIT 6",
     'i',

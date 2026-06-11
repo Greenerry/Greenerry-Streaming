@@ -1,0 +1,116 @@
+GUIA DE ELABORAÇÃO DO RELATÓRIO DA
+PROVA DE APTIDÃO PROFISSIONAL
+2025/2026
+ÍNDICE
+1 - Introdução	3
+2 - Estrutura do Relatório	3
+2.1 - Relatório final	3
+3 - Como elaborar um relatório	5
+3.1 - Qualidades de um bom relatório	5
+3.2 - Regras e cuidados a ter na redação do texto	5
+4 - Apresentação gráfica do relatório	6
+4.1 - Papel a utilizar	6
+4.2 - Margens	6
+4.3 - Tipo de letra e parágrafos	6
+4.4 - Cabeçalho e rodapé	7
+4.5 – Numeração	7
+4.6 - Notas	7
+4.7	- Gírias e Estrangeirismos	7
+Bibliografia	7
+1 - Introdução
+Este guia visa auxiliar os alunos finalistas na elaboração do relatório da Prova de Aptidão Profissional transmitindo-lhes a forma como deverá ser elaborado, que estrutura deverá ter, que cuidados devem ter com as regras de escrita e apresentação do mesmo, etc.
+É recomendável, por isso, que os destinatários o leiam e o consultem sempre que necessário e, se no final persistir ainda alguma dúvida, é conveniente consultarem o regulamento específico da PAP e/ou contactarem o professor acompanhante.
+2 - Estrutura do Relatório
+2.1 - Relatório final
+O relatório final deverá ter uma clara e coerente apresentação das ideias que se pretendem transmitir, de acordo com a seguinte estruturação:
+Capa, nos moldes já descritos.
+Índice do trabalho, onde serão referenciados os capítulos, subcapítulos, e secções, pelas respetivas páginas, conforme modelo informático.
+Introdução onde deverá ser apresentado o tema do trabalho, descrevendo e justificando os objetivos e as metodologias principais, explicitando o que já tinha sido apresentado de forma resumida no plano. No caso de ser relevante para o correto entendimento de todo o trabalho, deverá ser incluída uma breve análise ou descrição de trabalhos ou estudos anteriores que tenham servido de apoio ou influenciado o desenvolvimento deste. Deverá, ainda, fazer-se uma breve descrição da forma como se estruturou o trabalho, isto é, deverá indicar-se, sucintamente, o conteúdo de cada um dos capítulos seguintes.
+A introdução não deve ter o título numerado e deve começar no início da página.
+Corpo do relatório onde deverá ser analisado o problema e dar-se a conhecer as ferramentas (Linguagens de Programação, Software específico, métodos matemáticos, métodos e ambientes de trabalho na empresa, etc.) escolhidas para implementar a solução do mesmo.
+Depois devem ser referidos todos os detalhes, julgados relevantes, da implementação, antes devem ser incluídos os dados necessários para se avaliar o trabalho finalmente desenvolvido (Diagrama Entidade-Relacionamento (ER), Base de dados (tabelas e Relacionamentos), Código relevante, Estrutura e funcionalidades do Website).
+Na análise dos resultados, deverá ser considerada a comparação dos resultados obtidos durante a execução do projeto com os previstos, clarificando a sua concordância/discordância. Apenas serão incluídos aqueles com interesse direto para a discussão dos resultados.
+A informação dada no corpo do relatório não deve ser muito detalhada. As descrições da teoria, dos métodos e dos resultados devem ser suficientes para permitir que, sem dificuldade, qualquer especialista no domínio considerado, possa aperceber-se das etapas do trabalho.
+Se forem necessárias provas matemáticas, económicas, etc. ou programas de computador, devem aparecer em anexo.
+Todas as ilustrações ou quadros essenciais à compreensão do texto principal devem ser incluídas no corpo do relatório. O Corpo do relatório deverá ser dividido em Capítulos numerados, colocados sempre no início da página, que abranjam assuntos tais como: a fundamentação teórica, o método e a implementação, os resultados e a discussão dos mesmos.
+Considerações finais/Conclusão em função da análise dos resultados finais, deverão ser apresentadas as conclusões primordiais, bem como considerações e sugestões a adotar em futuras evoluções do trabalho. Poderá ainda incluir-se, nesta parte, um relato de eventuais problemas encontrados e propostas de solução, fazendo uma análise crítica do trabalho realizado.
+As considerações finais/conclusão, tal como a Introdução e a Referências Bibliográficas não devem ter o título numerado e este terá de ser colocado no início de uma nova página.
+Bibliografia, Referências Bibliográficas onde deverá constar a listagem de todas as fontes consultadas, livros, publicações governamentais, artigos, fontes informáticas, etc.
+As referências bibliográficas poderão ser listadas por ordem alfabética ou de ocorrência no texto, de acordo com as seguintes normas:
+A) Livros (monografias):
+Um autor:
+APELIDO, nome - Título. N.° edição. Local de publicação: Editor, Ano.
+FRADA, J.J.C - Guia Prático para a elaboração de Trabalhos Científicos. 2a ed. Lisboa: Editorial Cosmos, 1993.
+Dois autores até três:
+BOURDIEU, P.; PASSERON, J.C. - A Reprodução - elementos para uma teoria do sistema de ensino. 1a ed. Lisboa: Editorial Veja, 1970.
+Mais do que três autores:
+CHEVALIER, Brigitte [et al] - Semântica e Pragmática do Discurso. 3a ed. Coimbra: Almedina, 1998.
+B)	Publicações em série (revistas, jornais...)
+Título: Complemento do Título. Responsabilidade. Edição. Numeração. Local de publicação: Editor, Ano.
+Mini-Micro's: revista de computadores, vídeo e som. Dir. Luís Oliveira. Ano, n.° 1(Maio 1983). Lisboa: Socedite, 1983.
+C)	Fontes informáticas (base de dados, CD-ROM, sites...)
+Título: Complemento do título. Responsabilidade, Ano. [fonte informática].
+Hotelaria em Portugal: Evolução das qualificações e diagnostico das necessidades de formação. INOFOR,1999. [CD-ROM]
+Placas-mãe. Jonh C. Dvorak, 2002. [Site]. Acesso: http://www.dvorak.org/motherboards.htm
+Neste último caso deve acrescentar-se à referência a palavra Acesso: seguida do endereço da página.
+Nota: Se o documento não possuir o local, nome da editora e data da publicação deverão utilizar-se as abreviaturas s.I., s.n. e s.d. respetivamente.
+Anexos que serão utilizados para apresentar um documento:
+Que completa necessariamente o texto mas que, se fosse inserido no corpo do relatório romperia a apresentação lógica e ordenada do trabalho.
+Que não pode ser facilmente colocado no corpo do relatório por causa da sua dimensão ou do método de reprodução utilizado.
+Que pode ser perfeitamente omitido numa leitura menos técnica, mas que é necessário para uma análise mais aprofundada.
+Os eventuais elementos que podem figurar num anexo são: exemplos de experiências, descrições de procedimentos e cálculos, listagens de programas de computador, ilustrações, fotografias, mapas, desenhos e quadros suplementares que não podem ser facilmente incorporados no texto devido às suas dimensões ou porque são reproduzidos de uma maneira diferente da utilizada no relatório.
+Cada anexo deverá começar numa nova página e a sua identificação será feita por intermédio de uma letra maiúscula na sequência do alfabeto (Anexo A, Anexo B, ...) seguida do respectivo título:
+Anexo A - Listagem do material utilizado
+Anexo B - Listagens de Software
+3 - Como elaborar um relatório
+3.1 - Qualidades de um bom relatório
+Apresentam-se de seguida algumas características que deverão estar presentes num relatório:
+Completo - contendo todos os pontos essenciais e pormenores relevantes.
+Equilibrado - realçando os assuntos importantes e evitando pormenores pouco relevantes.
+Simples e de agradável leitura. Para isso devem evitar-se expressões ou descrições ambíguas, abreviaturas e termos em gíria, a não ser que sejam indispensáveis e se tenha a certeza que o leitor entenderá. Deve ainda apresentar uma linguagem clara, coerente e uma boa apresentação.
+3.2 - Regras e cuidados a ter na redação do texto
+Para que um relatório tenha as qualidades antes enunciadas deverá ser elaborado seguindo algumas regras e cuidados:
+O aluno deverá usar na redação dos seus trabalhos termos claros e diretos. Deverá, sempre que necessário, empregar uma terminologia técnica, e assegurar-se de que o seu significado seja compreensível. O uso de frases curtas, concisas e pouco complexas permitirão maior clareza, elucidação e objetividade na sua exposição temática. Deverá tomar em consideração a concordância gramatical - tempo e modo dos verbos e pessoas - e evitar o uso de gírias bem como linguagem complicada e longa simplesmente com a intenção de impressionar.
+As ideias deverão ser expostas de uma forma lógica coerente e objetiva. Não se deverá partir do princípio de que o leitor sabe o que pretende dizer. É aconselhável que os relatório/manuais sejam submetidos à apreciação de alguém (colega, professor) que domine minimamente a matéria a que o documento se refere. Provavelmente, dessa forma, poderá obter-se algumas pistas ou comentários pertinentes que enriquecerão o corpo do trabalho.
+Deverá ainda o aluno apoiar o raciocínio em provas facultadas pelas leituras e conhecimentos adquiridos ao longo dos estudos e da experiência. Uma afirmação que se faça tem muito mais valor e aceitação se for devidamente apoiada e fundamentada em trabalhos já realizados.
+Para ser relevante e significativo, o documento deverá conter informação científica e conceitos básicos reveladores de uma progressiva assimilação no domínio da aquisição de conhecimentos filtrados ao longo do curso. Ignorar estas ideias, especialmente quando estão diretamente relacionados com o assunto sobre o qual se está a escrever, diminuirá substancialmente o valor do trabalho e do esforço despendido.
+Qual a extensão do relatório? Isso depende do que se pretende dizer, do que se tem para dizer e da forma como se dirá. No entanto deverá existir um certo equilíbrio no desenvolvimento e aprofundamento da temática de forma a criar um todo homogéneo, dando clara impressão ao leitor do seu perfeito domínio sobre a matéria, sem passar à frente dos assuntos, nem explorá-los à exaustão.
+O documento deve traduzir claramente o objeto da pesquisa, mesmo que esta seja baseada num único trabalho ou em parte do trabalho de outrem e não no simples acesso ao trabalho de outro ou em qualquer análise e apreciação da(s) obra(s) sobre a qual (quais) se tenha debruçado. Deverá em todas as situações consultar-se a(s) fonte(s).
+O aluno deverá ainda:
+Expor claramente os objetivos e/ou problemas da investigação (o que é que se espera descobrir na pesquisa?).
+Descrever os métodos e as técnicas que foram usados no seu estudo. Se a pesquisa foi feita em bibliotecas, que problemas especiais foram encontrados? Se foi feito um estudo de terreno ou de laboratório, deve dizer-se como foi elaborado. Como foi orientado, construído e administrado os questionários e/ou entrevistas? Foram sentidos alguns problemas na observação do grupo alvo que foi investigado? Houve alguns problemas com a linguagem utilizada?
+Descrever apenas o que foi descoberto e não aquilo que se gostaria de ter descoberto, ou se pensava que se iria descobrir. Dar alguns exemplos das mesmas, não apenas para animar a leitura, mas também para revelar ao leitor a impressão dos dados de forma a convencê-lo com as provas.
+Quais as conclusões e interpretações? Estas devem derivar diretamente dos dados obtidos e descobertas realizadas no decurso da investigação. A conclusão é a síntese global do trabalho: deverá conter, de forma sucinta, o ponto de vista do autor e perspetivar algumas considerações críticas que, entretanto, ao longo do trabalho, já foram devidamente justificadas. Devem diferenciar-se as conclusões das interpretações ou deduções que derivem destas.
+Que problemas novos, se alguns se levantaram no decorrer do estudo (ou análise), podem induzir à perspetivação de futuras e novas áreas/domínios de investigação? Terá o estudo confirmado a existência de anteriores estudos relevantes, ou ainda existem dúvidas associadas às descobertas, conclusões, interpretações, e métodos utilizados?
+4 - Apresentação gráfica do relatório
+Referem-se agora alguns critérios gráficos para a apresentação de todos os documentos envolvidos do processo da PAP que poderão contribuir para a produção de documentos normalizados e mais agradáveis à leitura. Note-se que se os alunos forem orientados para a utilização dos modelos informáticos que estarão à sua disposição, a normalização referida e as regras a seguir descritas ficam automaticamente implementadas.
+4.1 - Papel a utilizar
+O formato do papel a utilizar deverá ser do tipo A4, branco ou reciclado, impresso somente numa face da folha. Se o documento incluir, por exemplo, gráficos ou tabelas que necessitem de papel de formatos superiores, as folhas deverão ser dobradas de forma a apresentar a configuração pretendida.
+4.2 - Margens
+As margens devem respeitar as seguintes distâncias (ver figura 2):
+Superior: 3 cm
+Inferior: 2,5 cm
+Esquerda: 3 cm
+Direita: 2,5 cm
+Medianiz: 1 cm
+4.3 - Tipo de letra e parágrafos
+O texto principal dos documentos a apresentar deverá ser sempre do mesmo tipo de letra, Arial 11 ou Times New Roman (TNR) 12, com linha e meia de espaçamento, justificado e avanço da 1a linha (Tab) de 1,25 cm.
+Os parágrafos correspondentes aos títulos dos capítulos, secções e secções de 2a ordem (ver figura 3), deverão ter um espaçamento antes e/ou depois de 6 a 18 pontos (o correspondente a uma mudança de linha).
+Todos os títulos deverão ser do tipo de letra adotado, mas de tamanhos imediatamente superiores ou destacados de acordo com a sua hierarquia. Assim, os capítulos e títulos principais deverão ser escritos em maiúsculas, negrito e tamanho 12 (Arial) / 13 (TNR), as secções e subtítulos deverão ser escritos em negrito 12 (Arial) / 13 (TNR) e se houver necessidade de mais um nível (secções de 2a ordem) negritoll (Arial) / 12 (TNR).
+Certos destaques no texto podem ser conseguidos com estilos e/ou efeitos do tipo de letra, como sublinhados, itálico, negrito, etc. que, no entanto, não deverão ser usados em demasia.
+4.4 - Cabeçalho e rodapé
+O cabeçalho deverá distar do limite da página de 1,25 cm e o rodapé 1,5cm (ver figura 2). O cabeçalho deverá conter o tema da PAP alinhado à direita; o rodapé deverá conter a numeração das páginas alinhada à direita e o nome da escola alinhado à esquerda.
+O cabeçalho e o rodapé deverão ser escritos no tipo de letra adotado mas em tamanho 10. Uma linha fina deverá separar o cabeçalho e o rodapé do corpo do texto.
+4.5 – Numeração
+As páginas deverão ser identificadas por números árabes em sucessão contínua ao longo do documento.
+A capa deve ser contabilizada como a página 1, mas este número não deverá aparecer impresso.
+Os capítulos, secções e secções de 2ª ordem (se existirem) devem ser numeradas conforme a figura ao lado indica.
+Os quadros, tabelas e gráficos deverão ser identificados e numerados no canto superior esquerdo. Figuras, esquemas, fotografias e mapas, identificados e numerados por baixo das mesmas e ao centro. Equações e fórmulas imediatamente a seguir à sua transcrição, na margem direita. As legendas, identificação e numeração referidas, deverão ser escritas no mesmo tipo de letra do texto principal, mas no tamanho imediatamente inferior.
+Os anexos não devem ser paginados podendo, no entanto, aí aparecer documentos independentes paginados. A identificação dos anexos deverá ser feita por uma letra maiúscula na sequência do alfabeto (Anexo A, Anexo B, ...) seguida do respetivo título.
+4.6 - Notas
+São informações destinadas a complementar, precisar ou acrescentar o conteúdo do texto de um documento.
+As notas, se existirem, poderão surgir no fundo da página onde a anotação aparecer (separadas do texto com um traço mais forte e obedecendo a uma numeração progressiva) ou no fim do capítulo a que respeitar. Estas notas deverão ser rápidas e sucintas para evitar que a sequência natural do texto seja prejudicada. Se, afinal, a nota for algo de mais extenso deverá considerar-se a sua inclusão como anexo.
+4.7	- Gírias e Estrangeirismos
+Não é aconselhável a utilização de termos ambíguos e gírias (nos casos em que esta situação não possa ser evitada, esses termos devem ser escritos entre aspas). Também as palavras estrangeiras (estrangeirismos), quando não puderem ser evitadas devem ser escritas em itálico. Ex. Esta "coisa" do hardware e do software o que é?
+Bibliografia
+NP405 - 1.1994. Informação e Documentação - Referências Bibliográficas: documentos impressos. Lisboa: IPQ.

@@ -84,7 +84,7 @@ $topTracksAll = db_all(
     "SELECT
         f.idFaixa,
         f.titulo,
-        f.genero,
+        COALESCE(g.nome, f.genero) AS genero,
         f.ficheiro_audio,
         r.titulo AS release_title,
         r.capa,
@@ -95,10 +95,11 @@ $topTracksAll = db_all(
         MAX(fl.criado_em) AS last_played
      FROM faixa_listen fl
      JOIN faixa f ON f.idFaixa = fl.idFaixa
+     LEFT JOIN genero g ON g.idGenero = f.idGenero
      JOIN release_musical r ON r.idRelease = f.idRelease
      JOIN cliente c ON c.idCliente = fl.idArtista
      WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
-     GROUP BY f.idFaixa, f.titulo, f.genero, f.ficheiro_audio, r.titulo, r.capa, c.nome
+     GROUP BY f.idFaixa, f.titulo, g.nome, f.genero, f.ficheiro_audio, r.titulo, r.capa, c.nome
      ORDER BY listens DESC, last_played DESC
      LIMIT 120"
 );
@@ -150,11 +151,12 @@ foreach ($listeningTrend as $entry) {
 
 $genrePerformance = db_all(
     $conn,
-    "SELECT COALESCE(NULLIF(TRIM(f.genero), ''), 'Sem genero') AS genre,
+    "SELECT COALESCE(NULLIF(TRIM(g.nome), ''), NULLIF(TRIM(f.genero), ''), 'Sem genero') AS genre,
             COUNT(fl.idListen) AS listens,
             COUNT(DISTINCT fl.idCliente) AS listeners
      FROM faixa_listen fl
      JOIN faixa f ON f.idFaixa = fl.idFaixa
+     LEFT JOIN genero g ON g.idGenero = f.idGenero
      WHERE fl.criado_em >= {$dateFromSql}{$artistListenWhere}
      GROUP BY genre
      ORDER BY listens DESC

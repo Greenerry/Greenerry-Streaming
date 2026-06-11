@@ -7,7 +7,7 @@ $tracks = db_all(
     "SELECT
         f.idFaixa AS id,
         f.titulo AS title,
-        f.genero AS genre,
+        COALESCE(g.nome, f.genero) AS genre,
         f.ficheiro_audio AS audio,
         r.capa AS cover,
         r.tipo AS type,
@@ -18,6 +18,7 @@ $tracks = db_all(
         c.foto AS artistFoto,
         CONCAT(r.idRelease, '-', c.idCliente) AS releaseKey
      FROM faixa f
+     LEFT JOIN genero g ON g.idGenero = f.idGenero
      JOIN release_musical r ON r.idRelease = f.idRelease
      JOIN cliente c ON c.idCliente = r.idCliente
      WHERE r.estado = 'aprovado'

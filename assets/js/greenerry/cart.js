@@ -158,7 +158,75 @@ function handleProductAddToCart(button = null) {
   );
 }
 
+function isProductDescriptionTruncated(text) {
+  if (!text) return false;
+
+  const clone = text.cloneNode(true);
+  Object.assign(clone.style, {
+    position: 'absolute',
+    visibility: 'hidden',
+    pointerEvents: 'none',
+    height: 'auto',
+    maxHeight: 'none',
+    display: 'block',
+    overflow: 'visible',
+    WebkitLineClamp: 'unset',
+    width: `${text.clientWidth}px`
+  });
+  text.parentElement?.appendChild(clone);
+  const truncated = clone.scrollHeight > text.clientHeight + 1;
+  clone.remove();
+  return truncated;
+}
+
+function syncProductDescriptionToggle(root = document) {
+  const description = root.querySelector?.('#product-description') || document.getElementById('product-description');
+  const text = root.querySelector?.('#product-description-text') || document.getElementById('product-description-text');
+  const toggle = root.querySelector?.('#product-description-toggle') || document.getElementById('product-description-toggle');
+  if (!description || !text || !toggle) return;
+
+  const isExpanded = description.classList.contains('is-expanded');
+  const key = isExpanded ? 'product_read_less' : 'product_read_more';
+  const fallback = isExpanded
+    ? commerceText('Ver menos', 'Show less')
+    : commerceText('Ver mais', 'Read more');
+  toggle.dataset.t = key;
+  toggle.textContent = (typeof T !== 'undefined' && T[commerceLang()]?.[key]) ? T[commerceLang()][key] : fallback;
+  toggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+
+  if (isExpanded) {
+    toggle.style.display = 'inline-block';
+    return;
+  }
+
+  // Use style display instead of hidden attribute to avoid being overridden
+  // by other code or browser quirks. The JS will show the toggle only when
+  // the description is truncated.
+  toggle.style.display = isProductDescriptionTruncated(text) ? 'inline-block' : 'none';
+}
+
+function toggleProductDescription() {
+  const description = document.getElementById('product-description');
+  if (!description) return;
+  description.classList.toggle('is-expanded');
+  syncProductDescriptionToggle();
+}
+
+function initProductDescription(root = document) {
+  const description = root.querySelector?.('#product-description') || document.getElementById('product-description');
+  const toggle = root.querySelector?.('#product-description-toggle') || document.getElementById('product-description-toggle');
+  if (!description || !toggle || description.dataset.descriptionReady === '1') return;
+  description.dataset.descriptionReady = '1';
+
+  toggle.addEventListener('click', toggleProductDescription);
+  syncProductDescriptionToggle(root);
+  window.addEventListener('greenerry:langchange', () => syncProductDescriptionToggle(root));
+  window.addEventListener('resize', () => syncProductDescriptionToggle(root));
+}
+
 function initProductPage(root = document) {
+  initProductDescription(root);
+
   const box = root.querySelector?.('.product-buy-box') || document.querySelector('.product-buy-box');
   if (!box || box.dataset.commerceReady === '1') return;
   box.dataset.commerceReady = '1';

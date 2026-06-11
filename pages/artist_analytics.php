@@ -64,12 +64,13 @@ $averagePerActiveDay = $activeDays > 0 ? (int)round(((int)($summary['listens'] ?
 
 $topTracks = db_all_prepared(
     $conn,
-    "SELECT f.titulo, f.genero, r.capa, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners, COALESCE(SUM(fl.segundos_ouvidos), 0) AS seconds_listened
+    "SELECT f.titulo, COALESCE(g.nome, f.genero) AS genero, r.capa, COUNT(fl.idListen) AS listens, COUNT(DISTINCT fl.idCliente) AS listeners, COALESCE(SUM(fl.segundos_ouvidos), 0) AS seconds_listened
      FROM faixa f
      JOIN release_musical r ON r.idRelease = f.idRelease
+     LEFT JOIN genero g ON g.idGenero = f.idGenero
      LEFT JOIN faixa_listen fl ON fl.idFaixa = f.idFaixa AND fl.criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
      WHERE r.idCliente = ?
-     GROUP BY f.idFaixa, f.titulo, f.genero, r.capa
+     GROUP BY f.idFaixa, f.titulo, g.nome, f.genero, r.capa
      ORDER BY listens DESC, f.idFaixa DESC
      LIMIT 6",
     'ii',

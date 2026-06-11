@@ -1,0 +1,25 @@
+Data limite de entrega:
+                  - Até ao dia 22 de junho, às 22h00.
+Local de entrega (dois obrigatórios):
+                 - PBX da escola;
+                 - Plataforma Teams.
+Elementos obrigatórios a entregar:
+ 1) Projeto de software totalmente funcional gravado numa Pen Drive;
+ 2) Relatório da PAP;
+ 3) Manual Técnico;
+ 4) Manuais de Utilização em formato vídeo (USER e ADMIN);
+Informações adicionais:
+Todos os relatórios, manuais e anexos devidamente encadernados e impressos a cores.
+Todos os acessos, palavras-passe ou particularidades de instalação de aplicações ou framework, devidamente descritas no manual técnico.
+FORMATOS OBRIGATÓRIOS
+Formato Papel
+(O número de páginas fica ao critério dos alunos, desde que o conteúdo esteja completo e organizado.)
+Relatório da PAP:
+Deve apresentar de forma organizada todo o desenvolvimento do website realizado pelo aluno. Deve incluir a introdução e objetivos do projeto, as tecnologias e metodologias utilizadas, a descrição das funcionalidades implementadas e a estrutura da base de dados. É igualmente importante referir às dificuldades encontradas e respetivas soluções. Por fim, deve conter uma conclusão com reflexão sobre as aprendizagens e competências adquiridas ao longo do projeto.
+Consultar: Estrutura_Exemplo_Relatório_PAP.
+Manual Técnico:  Deve conter instruções detalhadas para a instalação e execução do website através da plataforma XAMPP, apresentadas passo a passo. Devem igualmente ser indicadas todas as configurações necessárias, incluindo nomes de bases de dados, utilizadores, passwords e outros dados de acesso relevantes (caso existam). Sempre que o projeto utilize bibliotecas, frameworks ou APIs específicas, deverá também ser explicada a respetiva instalação, configuração e integração no website.
+Consultar: Exemplo_aluna_anos anteriores.
+Vídeo – duração [10-25 min]
+Manual de Utilização: Administrador – Deve incluir uma descrição detalhada e guiada da navegação pela dashboard, área de acesso restrito ao administrador, a partir da qual são geridas e controladas as principais ações realizadas nas restantes áreas do website.
+Manual de Utilização (com sessão/sem sessão): Deve apresentar uma navegação pormenorizada e guiada por todas as áreas do website.
+Utilizador Comum (sem sessão iniciada): descrição detalhada das funcionalidades acessíveis a qualquer visitante do website, como navegação pelas páginas, pesquisa de produtos, consulta de informações, categorias, contactos, entre outras. Utilizador Comum com Sessão Iniciada: descrição detalhada das funcionalidades disponíveis para utilizadores autenticados, nomeadamente criação de conta, login, edição de perfil, realização de compras, acesso ao histórico de encomendas, gestão da wishlist/lista de desejos, carrinho de compras e outras funcionalidades exclusivas.

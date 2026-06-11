@@ -1,9 +1,19 @@
 <?php
 require_once '../includes/config.php';
 
-// Shop filters come from the URL, for example: shop.php?q=hoodie&cat=2
+// Shop filters come from the URL, for example: shop.php?q=hoodie&cat=2&price=25-50
 $category = (int)($_GET['cat'] ?? 0);
 $search = trim($_GET['q'] ?? '');
+$priceRange = (string)($_GET['price'] ?? '');
+$priceRanges = [
+    '0-25' => ['label_pt' => 'Até 25 €', 'label_en' => 'Up to €25', 'min' => null, 'max' => 25],
+    '25-50' => ['label_pt' => '25 € - 50 €', 'label_en' => '€25 - €50', 'min' => 25, 'max' => 50],
+    '50-100' => ['label_pt' => '50 € - 100 €', 'label_en' => '€50 - €100', 'min' => 50, 'max' => 100],
+    '100+' => ['label_pt' => '100 € ou mais', 'label_en' => '€100 or more', 'min' => 100, 'max' => null],
+];
+if (!isset($priceRanges[$priceRange])) {
+    $priceRange = '';
+}
 $perPage = 16;
 $pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
@@ -14,6 +24,19 @@ if ($category > 0) {
     $whereParts[] = 'p.idCategoria = ?';
     $types .= 'i';
     $params[] = $category;
+}
+if ($priceRange !== '') {
+    $range = $priceRanges[$priceRange];
+    if ($range['min'] !== null) {
+        $whereParts[] = 'p.precoAtual >= ?';
+        $types .= 'd';
+        $params[] = (float)$range['min'];
+    }
+    if ($range['max'] !== null) {
+        $whereParts[] = 'p.precoAtual <= ?';
+        $types .= 'd';
+        $params[] = (float)$range['max'];
+    }
 }
 if ($search !== '') {
     // Search matches product name, description, or artist name.
@@ -78,8 +101,11 @@ if ($search !== '') {
 if ($category > 0) {
     $paginationQuery['cat'] = $category;
 }
+if ($priceRange !== '') {
+    $paginationQuery['price'] = $priceRange;
+}
 $pageUrl = static function (int $targetPage) use ($paginationQuery): string {
-    // Pagination links preserve the current search and category.
+    // Pagination links preserve the current filters.
     return 'shop.php?' . http_build_query($paginationQuery + ['page' => $targetPage]);
 };
 
@@ -90,7 +116,7 @@ include '../includes/header.php';
 @media (min-width: 901px) {
   .catalog-hero--shop {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 440px) !important;
+    grid-template-columns: minmax(0, 1fr) minmax(500px, 560px) !important;
     align-items: end !important;
     justify-content: space-between !important;
     gap: 24px !important;
@@ -99,45 +125,77 @@ include '../includes/header.php';
   .catalog-hero--shop h1 {
     max-width: none !important;
     white-space: nowrap !important;
-    font-size: clamp(3.35rem, 4.25vw, 4rem) !important;
+    font-size: clamp(2.75rem, 3.35vw, 3.45rem) !important;
     line-height: .98 !important;
     margin: 0 !important;
   }
 
   .catalog-hero--shop .catalog-filter {
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 560px !important;
     justify-self: end !important;
     display: grid !important;
-    grid-template-columns: minmax(180px, 1fr) 150px !important;
+    grid-template-columns: minmax(180px, 1fr) 138px 150px !important;
     align-items: end !important;
     gap: 10px !important;
     margin: 0 !important;
   }
 
+  .catalog-hero--shop .catalog-search-field,
+  .catalog-hero--shop .catalog-filter select.finput {
+    height: 46px !important;
+    min-height: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .catalog-hero--shop .catalog-search-field input.finput,
+  .catalog-hero--shop .catalog-filter select.finput {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .catalog-hero--shop .catalog-search-field input.finput {
+    height: 100% !important;
+    min-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .catalog-hero--shop .catalog-filter select.finput {
+    padding: 0 34px 0 16px !important;
+  }
+
   .main.sr-open .catalog-hero--shop {
-    grid-template-columns: minmax(0, max-content) minmax(330px, 390px) !important;
+    grid-template-columns: minmax(0, 1fr) minmax(420px, 500px) !important;
     gap: 20px !important;
   }
 
   .main.sr-open .catalog-hero--shop h1 {
-    font-size: clamp(2.7rem, 3vw, 3.45rem) !important;
+    font-size: clamp(2.3rem, 2.55vw, 2.85rem) !important;
   }
 
   .main.sr-open .catalog-hero--shop .catalog-filter {
-    max-width: 390px !important;
-    grid-template-columns: minmax(160px, 1fr) 132px !important;
+    max-width: 500px !important;
+    grid-template-columns: minmax(160px, 1fr) 124px 132px !important;
     gap: 8px !important;
   }
 }
 
-@media (min-width: 901px) and (max-width: 1180px) {
+@media (min-width: 901px) and (max-width: 1500px) {
   .catalog-hero--shop {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) minmax(470px, 500px) !important;
+    gap: 18px !important;
+  }
+
+  .catalog-hero--shop h1 {
+    font-size: clamp(2.45rem, 3.1vw, 3rem) !important;
   }
 
   .catalog-hero--shop .catalog-filter {
-    justify-self: start !important;
+    max-width: 500px !important;
+    grid-template-columns: minmax(160px, 1fr) 124px 132px !important;
+    gap: 8px !important;
   }
 }
 </style>
@@ -159,6 +217,12 @@ include '../includes/header.php';
           <option value="0" data-t="shop_all_categories">All</option>
           <?php foreach ($categories as $cat): ?>
             <option value="<?= (int)$cat['idCategoria'] ?>" data-product-category="<?= h($cat['nomeCategoria']) ?>" <?= $category === (int)$cat['idCategoria'] ? 'selected' : '' ?>><?= h(category_label($cat['nomeCategoria'])) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <select name="price" class="finput">
+          <option value="" data-t="shop_all_prices">Any price</option>
+          <?php foreach ($priceRanges as $value => $range): ?>
+            <option value="<?= h($value) ?>" <?= $priceRange === $value ? 'selected' : '' ?>><?= h(current_lang() === 'en' ? $range['label_en'] : $range['label_pt']) ?></option>
           <?php endforeach; ?>
         </select>
       </form>

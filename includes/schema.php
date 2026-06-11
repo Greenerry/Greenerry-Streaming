@@ -34,6 +34,23 @@ function greenerry_index_exists(mysqli $conn, string $table, string $index): boo
     return (bool)$row;
 }
 
+function greenerry_constraint_exists(mysqli $conn, string $table, string $constraint): bool
+{
+    $row = db_one_prepared(
+        $conn,
+        "SELECT CONSTRAINT_NAME
+         FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND CONSTRAINT_NAME = ?
+         LIMIT 1",
+        'ss',
+        [$table, $constraint]
+    );
+
+    return (bool)$row;
+}
+
 function greenerry_column_type(mysqli $conn, string $table, string $column): ?string
 {
     $row = db_one_prepared(
@@ -53,9 +70,58 @@ function greenerry_column_type(mysqli $conn, string $table, string $column): ?st
 
 function greenerry_ensure_schema(mysqli $conn): void
 {
+    mysqli_query(
+        $conn,
+        "CREATE TABLE IF NOT EXISTS genero (
+            idGenero INT AUTO_INCREMENT PRIMARY KEY,
+            nome VARCHAR(80) NOT NULL,
+            slug VARCHAR(100) NOT NULL,
+            estado ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo',
+            criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_genero_nome (nome),
+            UNIQUE KEY uq_genero_slug (slug)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
     if (!greenerry_column_exists($conn, 'faixa', 'genero')) {
         mysqli_query($conn, "ALTER TABLE faixa ADD genero VARCHAR(80) NULL AFTER titulo");
     }
+
+    if (!greenerry_column_exists($conn, 'faixa', 'idGenero')) {
+        mysqli_query($conn, "ALTER TABLE faixa ADD idGenero INT NULL AFTER genero");
+    }
+
+    if (!greenerry_column_exists($conn, 'release_musical', 'idGenero')) {
+        mysqli_query($conn, "ALTER TABLE release_musical ADD idGenero INT NULL AFTER tipo");
+    }
+
+    foreach (db_all($conn, "SELECT DISTINCT TRIM(genero) AS nome FROM faixa WHERE genero IS NOT NULL AND TRIM(genero) <> ''") as $genreRow) {
+        $genreName = mb_substr(trim((string)($genreRow['nome'] ?? '')), 0, 80);
+        if ($genreName === '') {
+            continue;
+        }
+        greenerry_resolve_genre_id($conn, $genreName);
+    }
+
+    mysqli_query(
+        $conn,
+        "UPDATE faixa f
+         JOIN genero g ON LOWER(TRIM(g.nome)) = LOWER(TRIM(f.genero))
+         SET f.idGenero = g.idGenero
+         WHERE f.idGenero IS NULL
+           AND f.genero IS NOT NULL
+           AND TRIM(f.genero) <> ''"
+    );
+
+    mysqli_query(
+        $conn,
+        "UPDATE release_musical r
+         JOIN faixa f ON f.idRelease = r.idRelease AND f.numero_faixa = 1
+         SET r.idGenero = f.idGenero
+         WHERE r.idGenero IS NULL
+           AND f.idGenero IS NOT NULL"
+    );
 
     if (greenerry_column_exists($conn, 'playlist', 'nome') && !greenerry_column_exists($conn, 'playlist', 'capa')) {
         mysqli_query($conn, "ALTER TABLE playlist ADD capa VARCHAR(255) NULL AFTER descricao");
@@ -179,13 +245,21 @@ function greenerry_ensure_schema(mysqli $conn): void
         mysqli_query($conn, "CREATE INDEX idx_faixa_genero ON faixa (genero)");
     }
 
-    mysqli_query(
-        $conn,
-        "UPDATE produto
-         SET descricaoProduto = CONCAT(TRIM(SUBSTRING(descricaoProduto, 1, 107)), '...')
-         WHERE descricaoProduto IS NOT NULL
-           AND CHAR_LENGTH(descricaoProduto) > 110"
-    );
+    if (!greenerry_index_exists($conn, 'faixa', 'idx_faixa_id_genero')) {
+        mysqli_query($conn, "CREATE INDEX idx_faixa_id_genero ON faixa (idGenero)");
+    }
+
+    if (!greenerry_index_exists($conn, 'release_musical', 'idx_release_genero')) {
+        mysqli_query($conn, "CREATE INDEX idx_release_genero ON release_musical (idGenero)");
+    }
+
+    if (!greenerry_constraint_exists($conn, 'faixa', 'fk_faixa_genero')) {
+        mysqli_query($conn, "ALTER TABLE faixa ADD CONSTRAINT fk_faixa_genero FOREIGN KEY (idGenero) REFERENCES genero(idGenero) ON DELETE SET NULL");
+    }
+
+    if (!greenerry_constraint_exists($conn, 'release_musical', 'fk_release_genero')) {
+        mysqli_query($conn, "ALTER TABLE release_musical ADD CONSTRAINT fk_release_genero FOREIGN KEY (idGenero) REFERENCES genero(idGenero) ON DELETE SET NULL");
+    }
 
     mysqli_query(
         $conn,

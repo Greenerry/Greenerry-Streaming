@@ -1,0 +1,60 @@
+INTRODUÇÃO:
+O presente documento reúne todas as informações e orientações relativas à Prova de Aptidão Profissional (PAP) do curso Profissional de Técnico de Gestão e Programação de Sistemas Informáticos, definindo os procedimentos de entrega, os elementos obrigatórios, os formatos exigidos e os critérios de avaliação aplicáveis.
+Pretende-se que os alunos compreendam de forma clara a estrutura e os requisitos necessários para a conclusão da PAP, nomeadamente ao nível da elaboração do projeto de software, relatório, manuais técnicos e manuais de utilização em vídeo. São igualmente apresentadas orientações relativas à apresentação da prova perante júri, bem como informações importantes sobre prazos, submissão de materiais e critérios de classificação final.
+A leitura atenta deste documento é fundamental para garantir o cumprimento integral das normas definidas e assegurar a correta preparação da PAP.
+DATA LIMITE DE ENTREGA:
+- Até ao dia 22 de junho, às 22h00.
+LOCAL DE ENTREGA (DOIS OBRIGATÓRIOS):
+1) PBX da escola;
+                2) Plataforma Teams.
+ELEMENTOS OBRIGATÓRIOS A ENTREGAR:
+1) Projeto de software totalmente funcional gravado numa Pen Drive;
+2) Relatório da PAP;
+3) Manual Técnico;
+4) Manuais de Utilização em formato vídeo (USER e ADMIN);
+INFORMAÇÕES ADICIONAIS:
+Todos os relatórios, manuais e anexos devidamente encadernados e impressos a cores.
+Todos os acessos, palavras-passe ou particularidades de instalação de aplicações ou framework, devidamente descritas no manual técnico.
+FORMATOS OBRIGATÓRIOS
+FORMATO PAPEL (O número de páginas fica ao critério dos alunos, desde que o conteúdo esteja completo e organizado.)
+RELATÓRIO DA PAP:
+Deve apresentar, de forma organizada, todo o desenvolvimento do website realizado pelo aluno, incluindo a introdução e objetivos do projeto, as tecnologias e metodologias utilizadas, a descrição das funcionalidades implementadas e a estrutura da base de dados. É igualmente importante referir quais as dificuldades encontradas e respetivas soluções. Por fim, deve conter uma conclusão com reflexão sobre as aprendizagens e competências adquiridas ao longo do projeto.
+Consultar: Estrutura_Exemplo_Relatório_PAP.
+MANUAL TÉCNICO:
+Deve conter instruções detalhadas para a instalação e execução do website através da plataforma XAMPP, apresentadas passo a passo. Devem igualmente ser indicadas todas as configurações necessárias, incluindo nomes de bases de dados, utilizadores, passwords e outros dados de acesso relevantes (caso existam). Sempre que o projeto utilize bibliotecas, frameworks ou APIs específicas, deverá também ser explicada a respetiva instalação, configuração e integração no website.
+Consultar: Exemplo_aluna_anos anteriores | outro_exemplo.
+2. FORMATO VÍDEO (A duração total do vídeo [10-30 min], juntar num único vídeo)
+MANUAL DE UTILIZAÇÃO_ Administrador:
+Administrador – Deve incluir uma descrição detalhada e guiada da navegação pela dashboard, área de acesso restrito ao administrador, a partir da qual são geridas e controladas as principais ações realizadas nas restantes áreas do website.
+MANUAL DE UTILIZAÇÃO_Utilizador:
+Deve apresentar uma navegação pormenorizada e guiada por todas as áreas do website, descrevendo detalhadamente as funcionalidades disponíveis para os diferentes tipos de utilizador. Deve incluir a navegação pelas páginas, pesquisa de produtos, consulta de informações, categorias, contactos e restantes áreas públicas do website, bem como funcionalidades destinadas a utilizadores autenticados, nomeadamente criação de conta, login, edição de perfil, realização de compras, acesso ao histórico de encomendas, gestão da wishlist/lista de desejos, por exemplo.
+ADVERTÊNCIA: Os alunos que não cumprirem com o estipulado só poderão realizar a PAP na época do ano letivo seguinte.
+Após a entrega da PAP, bem como dos respetivos manuais e relatório, os alunos deverão aguardar a divulgação da lista de alunos elegíveis para apresentação da PAP.
+Nessa lista constarão os respetivos dias, horários e sala de apresentação. A mesma será posteriormente afixada na escola.
+APRESENTAÇÃO DA PAP (PROVA DE APTIDÃO PROFISSIONAL):
+O início das apresentações das provas está previsto para a primeira quinzena de julho, na presença de um júri constituído por quatro elementos. Com duração média de 40 minutos por aluno. O produto apresentado é exatamente o mesmo que o produto entregue no dia 22/06.
+SIMULAÇÃO DA APRESENTAÇÃO DA PAP QUANDO SOLICITADA:
+Simulação da apresentação [29 e/ou 30 de junho] quando solicitada pelo aluno (a mesma deverá ser requerida até dia 22 de junho). As mesmas serão realizadas após o horário de estágio.
+Inscrição: Lista de inscrição pré-treino+convidados
+CLASSIFICAÇÃO DA PAP
+É obtida pela média aferida dos três domínios, avaliados na escala de 0 a 20 valores, arredondados à décima, com os pesos de:
+Desenvolvimento do projeto/produto (DPP) 	|	60%
+Defesa do projeto / apresentação (DP) 		|	20%
+Relatório/Manuais (R) 				|	20%
+C.F. = (0,6 DPP) + (0,2 DP) + (0,2 R) …. arredondada à unidade.
+As funcionalidades extra implementadas no desenvolvimento do projeto/produto, que demonstrem iniciativa, criatividade, autonomia e aprofundamento técnico por parte do aluno serão valorizadas. Ex.: sistema de notificações, integração de APIs, dashboards avançadas, filtros dinâmicos, exportação de dados, entre outras.
+Todas as funcionalidades abordadas e analisadas ao longo das duas avaliações intermédias da PAP são consideradas critérios básicos e obrigatórios de avaliação, correspondendo aos requisitos mínimos esperados para o desenvolvimento do projeto.
+Antes da defesa do projeto, será enviado um formulário individual onde cada aluno deverá identificar e listar as funcionalidades extra implementadas no seu projeto, bem como proceder à sua autoavaliação relativamente a todos os elementos entregues no âmbito da PAP.
+CLASSIFICAÇÃO FINAL DO CURSO
+A classificação final do curso obtém-se mediante a aplicação da seguinte fórmula:
+CFC= 0,22*FSC + 0,22*FC + 0,22*FT + 0,11*FCT + 0,23*PAP
+sendo:
+- CFC = classificação final do curso, arredondada às unidades;
+- FSC = média aritmética simples das classificações finais de todas as disciplinas que integram o plano de estudos na componente de formação sociocultural, arredondada às décimas;
+- FC = média aritmética simples das classificações finais de todas as disciplinas que integram o plano de estudos na componente de formação científica, arredondada às décimas;
+- FT = média aritmética simples das classificações finais de todas as UFCD que integram o plano de estudos na componente de formação tecnológica, arredondada às unidades;
+- FCT = classificação da formação em contexto de trabalho, arredondada às unidades;
+- PAP = classificação da prova de aptidão profissional.
+Ver   tabela_notas_genéricas – A preencher pelo aluno (solicitar notas na secretaria).
+A Diretora de Curso
+Prof.ª Elisabete Vaz 							         Almada, 05/06/2026

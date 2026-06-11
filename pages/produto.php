@@ -236,9 +236,34 @@ if (!function_exists('product_rating_stars')) {
           </div>
 
           <?php if (!empty($product['descricaoProduto'])): ?>
-            <div class="message-reply-box">
-              <span class="slabel" data-t="product_description">Descrição</span>
-              <p><?= nl2br(h($product['descricaoProduto'])) ?></p>
+            <div class="product-description" id="product-description">
+              <p class="product-description-text" id="product-description-text"><?= nl2br(h($product['descricaoProduto'])) ?></p>
+              <button type="button" class="product-description-toggle" id="product-description-toggle" data-t="product_read_more" aria-controls="product-description-text" aria-expanded="false" onclick="toggleProductDescription()">Ver mais</button>
+              <script>
+                (function(){
+                  const btn = document.getElementById('product-description-toggle');
+                  if (!btn) return;
+                  // Attach a robust fallback click handler in case the main script
+                  // didn't initialize (race conditions or load errors).
+                  if (!btn.dataset.fallbackAttached) {
+                    btn.addEventListener('click', function(e){
+                      try {
+                        // Prefer calling existing function if available
+                        if (typeof toggleProductDescription === 'function') return toggleProductDescription();
+                        const desc = document.getElementById('product-description');
+                        if (!desc) return;
+                        desc.classList.toggle('is-expanded');
+                        // best-effort to call sync if available
+                        if (typeof syncProductDescriptionToggle === 'function') syncProductDescriptionToggle();
+                      } catch (err) {
+                        // swallow errors — clicking should not break the page
+                        console.warn('product description toggle fallback failed', err);
+                      }
+                    });
+                    btn.dataset.fallbackAttached = '1';
+                  }
+                })();
+              </script>
             </div>
           <?php endif; ?>
 
