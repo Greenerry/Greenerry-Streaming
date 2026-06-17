@@ -195,6 +195,10 @@ include '../includes/header.php';
                         </div>
                       </div>
                       <div class="buyer-order-actions">
+                        <span class="order-item-price">
+                          <strong><?= h(format_eur((float)$item['preco_unitario'])) ?></strong>
+                          <small><?= (int)$item['quantidade'] > 1 ? h(format_eur((float)$item['total_linha'])) . ' total' : 'por unidade' ?></small>
+                        </span>
                         <span class="badge <?= h(state_badge_class($item['estado_item'])) ?>" data-status-label="<?= h($item['estado_item']) ?>"><?= h(order_status_label($item['estado_item'])) ?></span>
                         <?php if ($isDeliveredItem): ?>
                           <a href="produto.php?id=<?= (int)$item['idProduto'] ?>#product-reviews" class="btn btn-dark btn-sm" data-t="product_review_submit">Review</a>

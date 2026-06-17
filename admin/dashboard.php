@@ -346,6 +346,11 @@ include 'admin_header.php';
           <?php foreach ($monthlyPerformance as $entry): ?><span><?= h($entry['period_label']) ?></span><?php endforeach; ?>
         </div>
       <?php endif; ?>
+      <div class="dash-v4-side-metrics">
+        <div><span data-admin-t="stat_paid_orders">Encomendas pagas</span><strong><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?></strong></div>
+        <div><span data-admin-t="stat_average_order">Valor medio</span><strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong></div>
+        <div><span data-admin-t="stat_commission">Comissao</span><strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong></div>
+      </div>
     </section>
 
     <section class="dash-v4-card dash-v4-bars-card dash-v4-line-card admin-music-bars-card">
@@ -384,6 +389,11 @@ include 'admin_header.php';
           <?php foreach ($musicPerformance as $entry): ?><span><?= h($entry['period_label']) ?></span><?php endforeach; ?>
         </div>
       <?php endif; ?>
+      <div class="dash-v4-side-metrics">
+        <div><span data-admin-t="music_total_plays">Reproducoes</span><strong><?= (int)($stats['listens'] ?? 0) ?></strong></div>
+        <div><span data-admin-t="music_unique_listeners">Ouvintes unicos</span><strong><?= (int)($stats['listeners'] ?? 0) ?></strong></div>
+        <div><span data-admin-t="card_active_artists">Artistas ativos</span><strong><?= (int)($stats['active_artists'] ?? 0) ?></strong></div>
+      </div>
     </section>
 
   </div>

@@ -206,7 +206,6 @@ include 'admin_header.php';
     <div class="admin-card-list">
       <?php foreach ($pending as $product): ?>
         <?php $productImages = product_images($conn, (int)$product['idProduto']); ?>
-            <?php $productImage = $productImages[0] ?? ''; ?>
         <article class="admin-review-card" data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
           <div class="admin-review-main">
             <div class="admin-review-meta">
@@ -240,8 +239,15 @@ include 'admin_header.php';
                 <p style="margin-top: 12px; font-size: 0.88rem; line-height: 1.5; color: var(--admin-soft);"><?= h($product['descricaoProduto']) ?></p>
               <?php endif; ?>
             </div>
-            <?php if ($productImage): ?>
-              <img src="../assets/img/<?= h($productImage) ?>" alt="" class="admin-review-image">
+            <?php if ($productImages): ?>
+              <div class="admin-review-gallery" data-admin-image-gallery>
+                <?php foreach ($productImages as $imageIndex => $image): ?>
+                  <button type="button" class="admin-review-gallery-item <?= $imageIndex === 0 ? 'is-main' : '' ?>" data-admin-image-viewer data-image-src="../assets/img/<?= h($image) ?>" data-image-alt="<?= h($product['nomeProduto']) ?> - imagem <?= (int)($imageIndex + 1) ?>">
+                    <img src="../assets/img/<?= h($image) ?>" alt="<?= h($product['nomeProduto']) ?> - imagem <?= (int)($imageIndex + 1) ?>">
+                  </button>
+                <?php endforeach; ?>
+                <span class="admin-review-gallery-count"><?= count($productImages) ?> <?= count($productImages) === 1 ? 'imagem' : 'imagens' ?></span>
+              </div>
             <?php endif; ?>
           </div>
 
@@ -301,13 +307,19 @@ include 'admin_header.php';
         <tbody>
           <?php foreach ($allProducts as $product): ?>
             <?php $productImages = product_images($conn, (int)$product['idProduto']); ?>
-            <?php $productImage = $productImages[0] ?? ''; ?>
             <tr data-review-type="product" data-review-id="<?= (int)$product['idProduto'] ?>" data-admin-state="<?= h($product['estado']) ?>">
               <td>#<?= (int)$product['idProduto'] ?></td>
               <td>
-                <div class="admin-table-thumb">
-                  <?php if ($productImage): ?>
-                    <img src="../assets/img/<?= h($productImage) ?>" alt="">
+                <div class="admin-table-thumb admin-table-thumb-stack" data-admin-image-gallery>
+                  <?php if ($productImages): ?>
+                    <?php foreach (array_slice($productImages, 0, 3) as $imageIndex => $image): ?>
+                      <button type="button" class="admin-table-thumb-btn" data-admin-image-viewer data-image-src="../assets/img/<?= h($image) ?>" data-image-alt="<?= h($product['nomeProduto']) ?> - imagem <?= (int)($imageIndex + 1) ?>">
+                        <img src="../assets/img/<?= h($image) ?>" alt="<?= h($product['nomeProduto']) ?> - imagem <?= (int)($imageIndex + 1) ?>">
+                      </button>
+                    <?php endforeach; ?>
+                    <?php if (count($productImages) > 3): ?>
+                      <span class="admin-table-thumb-more">+<?= count($productImages) - 3 ?></span>
+                    <?php endif; ?>
                   <?php else: ?>
                     <span data-admin-t="products_no_image">Sem imagem</span>
                   <?php endif; ?>

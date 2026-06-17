@@ -259,7 +259,6 @@ function initOrderAccordions(root = document) {
       requestAnimationFrame(() => {
         const fullHeight = body.scrollHeight;
         if (typeof window.anime === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          window.setTimeout(() => scrollToOrderDetails(details), 120);
           window.anime({
             targets: body,
             height: [0, fullHeight],
@@ -283,7 +282,6 @@ function initOrderAccordions(root = document) {
         body.style.opacity = '';
         body.style.transform = '';
         body.style.willChange = '';
-        scrollToOrderDetails(details);
       });
     });
   });
@@ -854,7 +852,7 @@ function initStreamSidebarToggle(root = document) {
     button.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
   };
 
-  apply(false);
+  apply(localStorage.getItem(storageKey) === '1');
 
   button.addEventListener('click', () => {
     const expanded = !document.body.classList.contains('sidebar-expanded');

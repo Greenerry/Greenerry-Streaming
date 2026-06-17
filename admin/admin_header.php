@@ -58,6 +58,11 @@ $adminPreviewPages = [
   <title>Greenerry Admin</title>
   <script>
     document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
+    try {
+      if (localStorage.getItem('g_admin_sidebar_expanded_v2') === '1' && window.matchMedia('(min-width: 769px)').matches) {
+        document.documentElement.classList.add('admin-sidebar-expanded-boot');
+      }
+    } catch (error) {}
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,6 +72,13 @@ $adminPreviewPages = [
   <link rel="stylesheet" href="<?= h($_base) ?>/assets/css/admin.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin.css') ?>">
 </head>
 <body>
+<script>
+  try {
+    if (document.documentElement.classList.contains('admin-sidebar-expanded-boot')) {
+      document.body.classList.add('admin-sidebar-expanded', 'admin-sidebar-booting');
+    }
+  } catch (error) {}
+</script>
 <script>
 window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
 </script>
@@ -141,7 +153,7 @@ window.CSRF_TOKEN='<?= h(csrf_token()) ?>';
       <?php endif; ?>
       <?php if (admin_can('genres', $adminAccount)): ?>
       <a href="genres.php" class="<?= $page === 'genres.php' ? 'on' : '' ?>">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 7h8"/><path d="M6 15a6 6 0 0 0 12 0"/><path d="M4 21h16"/></svg>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
         <span data-admin-t="nav_genres">Generos</span>
       </a>
       <?php endif; ?>

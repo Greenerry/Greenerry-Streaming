@@ -12271,3 +12271,145 @@ body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-mark {
     display: none !important;
   }
 }
+
+/* PAP final polish: keep the left rail state readable and prevent the compact logo from showing stray wordmark letters. */
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand,
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-mark {
+  overflow: hidden !important;
+}
+
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-mark {
+  width: 34px !important;
+  height: 34px !important;
+  max-height: 34px !important;
+  flex: 0 0 34px !important;
+  border-radius: 6px !important;
+}
+
+body:not(.sidebar-expanded) .sl-brand.greenerry-brand .greenerry-brand-mark .greenerry-logo {
+  width: 38px !important;
+  max-width: none !important;
+  transform: translateX(-1px) !important;
+  clip-path: inset(0 18% 0 0) !important;
+}
+
+:root[data-theme="light"] .sl-link .cart-badge,
+:root[data-theme="light"] .sl-link .orders-badge {
+  background: rgba(15, 23, 42, .08) !important;
+  color: #111827 !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .12) !important;
+}
+
+/* PAP handoff polish: keep short pages composed and make buyer flows easier to scan. */
+.library-shell {
+  min-height: calc(100svh - var(--nav, 72px) + 220px) !important;
+  padding-bottom: max(120px, calc(var(--player-h, 92px) + 72px)) !important;
+}
+
+.buyer-order-item .simple-list-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 18px !important;
+  align-items: center !important;
+}
+
+.buyer-order-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+.order-item-price {
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 92px !important;
+  text-align: right !important;
+}
+
+.order-item-price strong {
+  color: var(--text) !important;
+  font-size: .95rem !important;
+}
+
+.order-item-price small {
+  color: var(--text3) !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .06em !important;
+}
+
+.product-review-form .card-body {
+  display: grid !important;
+  gap: 18px !important;
+}
+
+.product-review-form .frow {
+  display: grid !important;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) !important;
+  gap: 22px !important;
+  align-items: end !important;
+}
+
+.product-review-form select[name="rating"] {
+  width: 100% !important;
+  min-height: 52px !important;
+}
+
+.product-review-form textarea {
+  min-height: 100px !important;
+  resize: vertical !important;
+}
+
+body:has(.support-plain-title) .content-shell {
+  min-height: calc(100svh - var(--nav, 72px) + 160px) !important;
+  display: grid !important;
+  align-items: start !important;
+}
+
+body:has(.support-plain-title) .content-shell > .wrap {
+  width: min(1120px, calc(100vw - 48px)) !important;
+  margin-inline: auto !important;
+}
+
+body:has(.support-plain-title) .support-plain-title h2 {
+  text-align: left !important;
+  margin-bottom: 20px !important;
+}
+
+body:has(.support-plain-title) .two-column-layout {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+body:has(.support-plain-title) .two-column-layout .surface-card {
+  border-radius: 28px !important;
+}
+
+body:has(.support-plain-title) .stack-form .btn {
+  width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  .library-shell {
+    min-height: calc(100svh - var(--nav, 72px) + 160px) !important;
+  }
+
+  .buyer-order-item .simple-list-item,
+  .product-review-form .frow,
+  body:has(.support-plain-title) .two-column-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .buyer-order-actions {
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .order-item-price {
+    text-align: left !important;
+  }
+}

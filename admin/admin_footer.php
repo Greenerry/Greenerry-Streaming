@@ -871,9 +871,14 @@
     adminPeekButton?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     adminPeekButton?.setAttribute('aria-label', expanded ? 'Collapse sidebar' : 'Expand sidebar');
     if (adminPeekButton) adminPeekButton.title = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+    window.setTimeout(syncAdminScrollAreas, 180);
   }
 
-  setAdminDesktopSidebar(false);
+  setAdminDesktopSidebar(localStorage.getItem(adminSidebarStorageKey) === '1');
+  window.requestAnimationFrame(() => {
+    document.body.classList.remove('admin-sidebar-booting');
+    document.documentElement.classList.remove('admin-sidebar-expanded-boot');
+  });
 
   function setAdminSidebar(open) {
     adminSidebar?.classList.toggle('mobile-open', open);
@@ -1219,6 +1224,98 @@
     window.clearTimeout(toast._timer);
     toast._timer = window.setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
+
+  let adminImageViewerItems = [];
+  let adminImageViewerIndex = 0;
+
+  function ensureAdminImageViewer() {
+    let viewer = document.querySelector('[data-admin-image-lightbox]');
+    if (viewer) return viewer;
+    viewer = document.createElement('div');
+    viewer.className = 'admin-image-lightbox';
+    viewer.dataset.adminImageLightbox = '1';
+    viewer.innerHTML = `
+      <button type="button" class="admin-image-lightbox__backdrop" data-admin-image-close aria-label="${adminText('btn_close', 'Fechar')}"></button>
+      <div class="admin-image-lightbox__panel" role="dialog" aria-modal="true" aria-label="${adminText('products_image', 'Imagem')}">
+        <button type="button" class="admin-image-lightbox__close" data-admin-image-close aria-label="${adminText('btn_close', 'Fechar')}">×</button>
+        <button type="button" class="admin-image-lightbox__nav admin-image-lightbox__nav--prev" data-admin-image-prev aria-label="Anterior">‹</button>
+        <img src="" alt="">
+        <button type="button" class="admin-image-lightbox__nav admin-image-lightbox__nav--next" data-admin-image-next aria-label="Seguinte">›</button>
+        <p class="admin-image-lightbox__caption"></p>
+      </div>`;
+    document.body.appendChild(viewer);
+    return viewer;
+  }
+
+  function renderAdminImageViewer() {
+    const viewer = ensureAdminImageViewer();
+    const item = adminImageViewerItems[adminImageViewerIndex];
+    const img = viewer.querySelector('img');
+    const caption = viewer.querySelector('.admin-image-lightbox__caption');
+    const prev = viewer.querySelector('[data-admin-image-prev]');
+    const next = viewer.querySelector('[data-admin-image-next]');
+    if (!item || !img) return;
+    img.src = item.src;
+    img.alt = item.alt || '';
+    if (caption) caption.textContent = `${adminImageViewerIndex + 1} / ${adminImageViewerItems.length}`;
+    [prev, next].forEach((button) => {
+      if (!button) return;
+      button.hidden = adminImageViewerItems.length < 2;
+    });
+    viewer.classList.add('is-visible');
+    document.body.classList.add('admin-image-open');
+  }
+
+  function openAdminImageViewer(trigger) {
+    const gallery = trigger.closest('[data-admin-image-gallery]');
+    const buttons = gallery ? Array.from(gallery.querySelectorAll('[data-admin-image-viewer]')) : [trigger];
+    adminImageViewerItems = buttons.map((button) => ({
+      src: button.dataset.imageSrc,
+      alt: button.dataset.imageAlt || button.querySelector('img')?.alt || ''
+    })).filter((item) => item.src);
+    adminImageViewerIndex = Math.max(0, buttons.indexOf(trigger));
+    renderAdminImageViewer();
+  }
+
+  function closeAdminImageViewer() {
+    document.querySelector('[data-admin-image-lightbox]')?.classList.remove('is-visible');
+    document.body.classList.remove('admin-image-open');
+  }
+
+  document.addEventListener('click', (event) => {
+    const trigger = event.target?.closest?.('[data-admin-image-viewer]');
+    if (trigger) {
+      event.preventDefault();
+      openAdminImageViewer(trigger);
+      return;
+    }
+    if (event.target?.closest?.('[data-admin-image-close]')) {
+      closeAdminImageViewer();
+      return;
+    }
+    if (event.target?.closest?.('[data-admin-image-prev]')) {
+      adminImageViewerIndex = (adminImageViewerIndex - 1 + adminImageViewerItems.length) % adminImageViewerItems.length;
+      renderAdminImageViewer();
+      return;
+    }
+    if (event.target?.closest?.('[data-admin-image-next]')) {
+      adminImageViewerIndex = (adminImageViewerIndex + 1) % adminImageViewerItems.length;
+      renderAdminImageViewer();
+    }
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (!document.body.classList.contains('admin-image-open')) return;
+    if (event.key === 'Escape') closeAdminImageViewer();
+    if (event.key === 'ArrowLeft' && adminImageViewerItems.length > 1) {
+      adminImageViewerIndex = (adminImageViewerIndex - 1 + adminImageViewerItems.length) % adminImageViewerItems.length;
+      renderAdminImageViewer();
+    }
+    if (event.key === 'ArrowRight' && adminImageViewerItems.length > 1) {
+      adminImageViewerIndex = (adminImageViewerIndex + 1) % adminImageViewerItems.length;
+      renderAdminImageViewer();
+    }
+  });
 
   function actionCellHtml(type, state, csrf) {
     if (type === 'release' && state === 'rejeitado') {
