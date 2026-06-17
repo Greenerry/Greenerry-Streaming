@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Ends the current user session safely.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 logout_all_sessions();

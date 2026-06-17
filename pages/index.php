@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows the public home page and loads featured music, artists, and products.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 $showMusicArea = public_page_active('music.php') && public_page_active('release.php');

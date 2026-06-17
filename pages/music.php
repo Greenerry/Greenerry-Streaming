@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows the music catalogue and player-ready track data.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 // Filters arrive through the URL, for example: music.php?q=rock&tipo=EP&page=2

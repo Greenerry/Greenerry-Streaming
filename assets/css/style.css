@@ -1,3 +1,5 @@
+/* Stylesheet purpose: Defines the public Greenerry visual system and responsive layout. */
+/* Keep these rules grouped by layout, components, states, and responsive fixes. */
 /* ── Variables ── */
 
 @custom-variant dark (&:is(.dark *));

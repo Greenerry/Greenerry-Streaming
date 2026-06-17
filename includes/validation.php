@@ -1,4 +1,6 @@
 <?php
+// Shared validation helper: Keeps input validation rules reusable across forms.
+// Keep this shared code small, reusable, and safe for every page.
 const GREENERRY_MAX_IMAGE_BYTES = 5_000_000;
 const GREENERRY_MAX_AUDIO_BYTES = 25_000_000;
 const GREENERRY_MAX_PRODUCT_IMAGES = 5;

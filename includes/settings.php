@@ -1,4 +1,6 @@
 <?php
+// Shared settings helper: Reads and writes platform settings.
+// Keep this shared code small, reusable, and safe for every page.
 function site_setting(string $key, string $default = ''): string
 {
     global $conn;

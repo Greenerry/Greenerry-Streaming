@@ -1,3 +1,5 @@
+// Frontend script purpose: Handles favourite and library buttons in the browser.
+// Keep browser behavior small, readable, and reusable.
 function _favKey() {
   // Logged-in users and guests get separate localStorage keys.
   const userId = document.body?.dataset?.userId || '0';

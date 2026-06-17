@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Lets administrators review and update customer orders.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 require_admin_permission('orders');
 

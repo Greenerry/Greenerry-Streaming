@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Starts the password recovery flow.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 redirect_if_authenticated();
 

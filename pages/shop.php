@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows the public merchandising store.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 // Shop filters come from the URL, for example: shop.php?q=hoodie&cat=2&price=25-50

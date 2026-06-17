@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Lets administrators manage platform settings.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 require_admin_permission('settings');
 

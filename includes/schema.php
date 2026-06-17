@@ -1,4 +1,6 @@
 <?php
+// Shared setup helper: Creates or updates database tables needed by the app.
+// Keep this shared code small, reusable, and safe for every page.
 
 function greenerry_column_exists(mysqli $conn, string $table, string $column): bool
 {

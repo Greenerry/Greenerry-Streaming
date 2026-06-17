@@ -1,3 +1,5 @@
+// Frontend script purpose: Adds visual experience effects and interface state helpers.
+// Keep browser behavior small, readable, and reusable.
 /* GREENERRY - visual experience layer */
 (() => {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');

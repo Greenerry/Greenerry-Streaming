@@ -1,4 +1,6 @@
 <?php
+// Shared maintenance helper: Checks whether pages are enabled or paused.
+// Keep this shared code small, reusable, and safe for every page.
 function maintenance_pages(): array
 {
     $raw = site_setting('maintenance_pages', '');

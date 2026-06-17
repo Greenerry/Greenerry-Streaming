@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Lets administrators review and manage products.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 require_admin_permission('products');
 

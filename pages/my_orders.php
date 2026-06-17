@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows the logged-in user order history and order details.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 require_user_login();
 

@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Lets artists manage their music releases.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 require_user_login();
 

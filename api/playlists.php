@@ -1,4 +1,6 @@
 <?php
+// API purpose: Creates and updates user playlists.
+// Keep this endpoint simple: validate input, perform the action, then return JSON.
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../includes/config.php';
 

@@ -1,4 +1,6 @@
 <?php
+// Shared admin layout: Builds the protected admin sidebar, header, and navigation state.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once __DIR__ . '/../includes/config.php';
 require_admin_login();
 

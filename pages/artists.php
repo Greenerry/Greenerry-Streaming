@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Lists public artist profiles.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 // Artist search is simple: it filters active artists by name.

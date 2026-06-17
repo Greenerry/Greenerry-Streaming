@@ -1,4 +1,6 @@
 <?php
+// Shared helper file: Provides reusable formatting, path, and utility helpers.
+// Keep this shared code small, reusable, and safe for every page.
 function h(?string $value): string
 {
     // Escape output before printing it into HTML.

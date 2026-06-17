@@ -1,3 +1,5 @@
+// Frontend script purpose: Provides browser helpers for paths, CSRF, and track normalization.
+// Keep browser behavior small, readable, and reusable.
 /* GREENERRY - core browser helpers */
 
 /* Path helpers */

@@ -1,4 +1,6 @@
 <?php
+// Shared public layout: Builds the public sidebar, top navigation, and player shell.
+// Keep this shared code small, reusable, and safe for every page.
 if (!isset($conn)) {
     require_once __DIR__ . '/config.php';
 }

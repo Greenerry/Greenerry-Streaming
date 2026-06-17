@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Generates the PDF receipt or invoice for an order.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 require_user_login();
 

@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Shows a friendly message when an admin lacks permission.
+// Keep this admin file simple: check access, load data, then render the view.
 $forbiddenTitle = current_lang() === 'en' ? 'Access limited' : 'Acesso limitado';
 $forbiddenText = current_lang() === 'en'
     ? 'Your admin role does not have permission to open this área.'

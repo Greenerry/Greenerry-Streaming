@@ -1,4 +1,6 @@
 <?php
+// Shared language helper: Stores translation labels and language helper functions.
+// Keep this shared code small, reusable, and safe for every page.
 function current_lang(): string
 {
     $lang = strtolower((string)($_COOKIE['g_lang'] ?? $_SESSION['g_lang'] ?? 'pt'));

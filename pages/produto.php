@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows one product and lets the user choose purchase options.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 $productId = (int)($_GET['id'] ?? 0);

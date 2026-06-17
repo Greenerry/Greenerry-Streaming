@@ -1,3 +1,5 @@
+// Frontend script purpose: Controls responsive navigation and sidebars.
+// Keep browser behavior small, readable, and reusable.
 const _softNavPages = new Set([
   'index.php',
   'music.php',

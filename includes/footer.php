@@ -1,4 +1,7 @@
-<?php if (!isset($_base)) include __DIR__ . '/config.php'; ?>
+<?php
+// Shared public layout: Closes the public layout and loads browser scripts.
+// Keep this shared code small, reusable, and safe for every page.
+if (!isset($_base)) include __DIR__ . '/config.php'; ?>
 <?php if (!empty($showMaintenanceContent)) { ob_end_clean(); } ?>
 <?php
 $translationsJson = file_get_contents(__DIR__ . '/../assets/js/translations.json');

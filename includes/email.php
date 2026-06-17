@@ -1,4 +1,6 @@
 <?php
+// Shared email helper: Sends account and support emails through the configured mailer.
+// Keep this shared code small, reusable, and safe for every page.
 function greenerry_email_text(string $html): string
 {
     $text = preg_replace('#<br\s*/?>#i', "\n", $html);

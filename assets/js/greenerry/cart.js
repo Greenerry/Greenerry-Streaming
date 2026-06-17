@@ -1,3 +1,5 @@
+// Frontend script purpose: Handles cart interactions in the browser.
+// Keep browser behavior small, readable, and reusable.
 /* GREENERRY - commerce helpers */
 
 function commerceLang() {

@@ -1,3 +1,5 @@
+/* Stylesheet purpose: Defines the admin dashboard visual system and responsive layout. */
+/* Keep these rules grouped by layout, components, states, and responsive fixes. */
 /* Greenerry admin-only interface. Loaded after the shared site CSS. */
 .admin-shell {
   --admin-sidebar: 272px;

@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Handles user registration and email verification setup.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 redirect_if_authenticated();
 

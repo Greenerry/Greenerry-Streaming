@@ -1,4 +1,6 @@
 <?php
+// Shared image helper: Normalizes and resolves product image paths.
+// Keep this shared code small, reusable, and safe for every page.
 
 function clean_product_image_name(?string $image): string
 {

@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Handles the private administrator login.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 
 if (is_admin_logged_in()) {

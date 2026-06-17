@@ -1,4 +1,6 @@
 <?php
+// Shared auth helper: Creates and validates account verification and recovery tokens.
+// Keep this shared code small, reusable, and safe for every page.
 function ensure_email_verification_table(mysqli $conn): bool
 {
     static $ready = null;

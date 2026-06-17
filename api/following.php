@@ -1,4 +1,6 @@
 <?php
+// API purpose: Handles artist follow and unfollow actions.
+// Keep this endpoint simple: validate input, perform the action, then return JSON.
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../includes/config.php';
 

@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows artist revenue and payout information.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 require_user_login();
 

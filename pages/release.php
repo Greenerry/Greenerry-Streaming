@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Shows one music release and its tracks.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 
 $releaseId = (int)($_GET['id'] ?? 0);

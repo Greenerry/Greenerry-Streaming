@@ -1,3 +1,5 @@
+// Frontend script purpose: Controls the bottom audio player, queue, shuffle, and loop actions.
+// Keep browser behavior small, readable, and reusable.
 let _cur = null;
 let _allTracks = [];
 let _queue = [];

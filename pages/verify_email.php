@@ -1,4 +1,6 @@
 <?php
+// Page purpose: Verifies the email code sent to a new user account.
+// Keep this page simple: prepare data first, then render the view.
 require_once '../includes/config.php';
 redirect_if_authenticated();
 

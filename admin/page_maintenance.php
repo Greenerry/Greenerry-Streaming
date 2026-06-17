@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Lets administrators switch public pages on or off.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 require_admin_permission('maintenance');
 

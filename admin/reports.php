@@ -1,4 +1,6 @@
 <?php
+// Admin page purpose: Shows administrative reports and charts.
+// Keep this admin file simple: check access, load data, then render the view.
 require_once '../includes/config.php';
 require_admin_permission('reports');
 

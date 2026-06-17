@@ -1,3 +1,5 @@
+// Frontend script purpose: Adds small page interactions and layout polish.
+// Keep browser behavior small, readable, and reusable.
 
 function initArtistFilters(root = document) {
   // Artist profile filters hide/show releases or merch without reloading the page.
