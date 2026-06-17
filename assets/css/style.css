@@ -4930,7 +4930,7 @@ a.nav-user-name:hover { color:var(--text); }
 
 .client-revenue-product-row {
   display:grid;
-  grid-template-columns:minmax(0, 1fr) auto;
+  grid-template-columns:minmax(0, 1fr) max-content;
   gap:10px;
   align-items:center;
   padding:12px;
@@ -4939,8 +4939,14 @@ a.nav-user-name:hover { color:var(--text); }
   background:var(--bg3);
 }
 
+.client-revenue-product-row .artist-mini-media,
+.client-revenue-product-row .artist-mini-media > div {
+  min-width:0;
+}
+
 .client-revenue-product-row strong {
   display:block;
+  max-width:100%;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -4952,9 +4958,11 @@ a.nav-user-name:hover { color:var(--text); }
 }
 
 .client-revenue-product-row > span {
+  justify-self:end;
   color:var(--text2);
   font-size:.86rem;
   font-weight:900;
+  white-space:nowrap;
 }
 
 .client-revenue-product-track {
@@ -8053,6 +8061,13 @@ footer {
   transform:translateY(-50%);
   background:var(--border);
 }
+.order-pager {
+  margin-top:18px;
+}
+.order-pager:empty,
+.order-pager.is-hidden {
+  display:none;
+}
 :root[data-theme="light"] .surface-card,
 :root[data-theme="light"] .simple-list-item,
 :root[data-theme="light"] .buyer-order-item,
@@ -8064,6 +8079,32 @@ footer {
 :root[data-theme="light"] .simple-list-item p,
 :root[data-theme="light"] .buyer-order-item p,
 :root[data-theme="light"] .library-track-main small { color:#586273 !important; }
+:root[data-theme="light"] .order-message-thread {
+  background:#f4f7fb;
+  border-color:#d8e0eb;
+}
+:root[data-theme="light"] .order-message-bubble {
+  background:#fff;
+  color:#172033;
+  border-color:#d7e0eb;
+  box-shadow:0 10px 28px rgba(15,23,42,.06);
+}
+:root[data-theme="light"] .order-message-bubble.from-me {
+  background:#eaf0f7;
+  color:#111827;
+  border-color:#cbd6e4;
+}
+:root[data-theme="light"] .order-message-bubble span {
+  color:#475569;
+  opacity:1;
+}
+:root[data-theme="light"] .order-message-bubble p {
+  color:inherit !important;
+}
+:root[data-theme="light"] .order-message-form .finput {
+  background:#fff;
+  border-color:#d8e0eb;
+}
 .product-reviews-section { margin-top:34px; }
 .review-summary {
   display:flex;

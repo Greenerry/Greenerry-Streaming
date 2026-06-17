@@ -124,23 +124,60 @@ function initOrderFilters(root = document) {
   const cards = Array.from(root.querySelectorAll?.('[data-order-card]') || document.querySelectorAll('[data-order-card]'));
   const buttons = Array.from(root.querySelectorAll?.('[data-order-filter]') || document.querySelectorAll('[data-order-filter]'));
   const empty = root.getElementById?.('orders-filter-empty') || document.getElementById('orders-filter-empty');
+  const pager = root.querySelector?.('[data-orders-pager]') || document.querySelector('[data-orders-pager]');
+  const pageSize = Math.max(1, parseInt(pager?.dataset.ordersPageSize || '6', 10) || 6);
   if (!cards.length || !buttons.length) return;
 
   let activeStatus = 'all';
+  let currentPage = 1;
+
+  const orderText = (key, fallback) => (typeof _tr === 'function' ? _tr(key, fallback) : fallback);
+
+  const renderOrderPager = (totalPages) => {
+    if (!pager) return;
+
+    if (totalPages <= 1) {
+      pager.innerHTML = '';
+      pager.classList.add('is-hidden');
+      return;
+    }
+
+    pager.classList.remove('is-hidden');
+    pager.innerHTML = `
+      <button type="button" class="btn btn-ghost btn-sm ${currentPage <= 1 ? 'is-disabled' : ''}" data-order-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''} data-t="pagination_previous">${orderText('pagination_previous', 'Anterior')}</button>
+      <span class="pager-status"><span data-t="pagination_page">${orderText('pagination_page', 'Pagina')}</span> ${currentPage} <span data-t="pagination_of">${orderText('pagination_of', 'de')}</span> ${totalPages}</span>
+      <button type="button" class="btn btn-ghost btn-sm ${currentPage >= totalPages ? 'is-disabled' : ''}" data-order-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''} data-t="pagination_next">${orderText('pagination_next', 'Seguinte')}</button>
+    `;
+
+    pager.querySelectorAll('[data-order-page]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const targetPage = parseInt(button.dataset.orderPage || '1', 10);
+        if (!Number.isFinite(targetPage) || targetPage === currentPage) return;
+        currentPage = Math.max(1, Math.min(totalPages, targetPage));
+        applyOrderFilters();
+      });
+    });
+  };
 
   const applyOrderFilters = () => {
-    const query = (search?.value || '').trim().toLowerCase();
-    let visible = 0;
+    const query = normalizeSearchText(search?.value || '');
+    const matchingCards = cards.filter((card) => {
+      const statusMatch = activeStatus === 'all' || card.dataset.orderStatus === activeStatus;
+      const searchMatch = !query || normalizeSearchText(card.dataset.orderSearch || card.textContent || '').includes(query);
+      return statusMatch && searchMatch;
+    });
+    const totalPages = Math.max(1, Math.ceil(matchingCards.length / pageSize));
+    currentPage = Math.min(currentPage, totalPages);
+    const start = pager ? (currentPage - 1) * pageSize : 0;
+    const pagedCards = new Set(pager ? matchingCards.slice(start, start + pageSize) : matchingCards);
 
     cards.forEach((card) => {
-      const statusMatch = activeStatus === 'all' || card.dataset.orderStatus === activeStatus;
-      const searchMatch = !query || (card.dataset.orderSearch || '').includes(query);
-      const show = statusMatch && searchMatch;
+      const show = pagedCards.has(card);
       card.classList.toggle('is-hidden', !show);
-      if (show) visible += 1;
     });
 
-    empty?.classList.toggle('is-hidden', visible > 0);
+    empty?.classList.toggle('is-hidden', matchingCards.length > 0);
+    renderOrderPager(totalPages);
   };
 
   buttons.forEach((button) => {
@@ -148,6 +185,7 @@ function initOrderFilters(root = document) {
     button.dataset.orderFilterReady = '1';
     button.addEventListener('click', () => {
       activeStatus = button.dataset.orderFilter || 'all';
+      currentPage = 1;
       buttons.forEach((item) => item.classList.toggle('on', item === button));
       applyOrderFilters();
     });
@@ -155,8 +193,13 @@ function initOrderFilters(root = document) {
 
   if (search && search.dataset.orderSearchReady !== '1') {
     search.dataset.orderSearchReady = '1';
-    search.addEventListener('input', applyOrderFilters);
+    search.addEventListener('input', () => {
+      currentPage = 1;
+      applyOrderFilters();
+    });
   }
+
+  applyOrderFilters();
 }
 
 function initOrderActionForms(root = document) {

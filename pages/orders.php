@@ -438,6 +438,7 @@ include '../includes/header.php';
           </details>
         <?php endforeach; ?>
       </div>
+      <nav class="pager order-pager" id="orders-pager" data-orders-pager data-orders-page-size="6" aria-label="Pagination"></nav>
       <p class="empty-copy is-hidden" id="orders-filter-empty" data-t="orders_filter_empty">Nenhuma encomenda corresponde ao filtro.</p>
     <?php endif; ?>
   </div>
