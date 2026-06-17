@@ -449,7 +449,7 @@ include '../includes/header.php';
                   <option value="mbway" <?= $paymentMethod === 'mbway' ? 'selected' : '' ?>>MB Way</option>
                   <option value="transferencia" data-t="checkout_transfer" <?= $paymentMethod === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
                 </select>
-                <p class="form-note" data-t="checkout_payment_demo_note">Pagamento demonstrativo: o método fica registado na encomenda, mas não há cobrança bancária real.</p>
+                <p class="form-note" data-t="checkout_payment_safe_note">Modo seguro: o método fica registado para validação, sem cobrança bancária real.</p>
               </div>
 
               <div class="fg">

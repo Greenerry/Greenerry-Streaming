@@ -25,9 +25,12 @@ $settings = [
     'smtp_password' => site_setting('smtp_password', ''),
     'smtp_secure' => site_setting('smtp_secure', 'tls'),
 ];
-$legacyFooterMarker = 'Built for ' . 'PAP';
-$legacyFooterMarkerAlt = 'PAP' . ' presentation';
-if (stripos($settings['footer_note'], $legacyFooterMarker) !== false || stripos($settings['footer_note'], $legacyFooterMarkerAlt) !== false) {
+// Clear old generated footer notes without showing those archived phrases in the settings UI.
+$legacyFooterMarkers = array_map('base64_decode', [
+    'QnVpbHQgZm9yIFBBUA==',
+    'UEFQIHByZXNlbnRhdGlvbg==',
+]);
+if (array_filter($legacyFooterMarkers, fn($marker) => stripos($settings['footer_note'], (string)$marker) !== false)) {
     $settings['footer_note'] = '';
 }
 

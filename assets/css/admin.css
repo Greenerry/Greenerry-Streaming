@@ -8345,7 +8345,7 @@ body.admin-sidebar-expanded .admin-sidebar-logout a svg {
   }
 }
 
-/* PAP admin usability: keep long admin pages scrollable and product review cards readable. */
+/* Keep long admin pages scrollable and product review cards readable. */
 html body:has(.admin-shell) .admin-main-scroll,
 html body:has(.admin-shell) .admin-main-scroll.is-scrollable {
   overflow-y:auto !important;
@@ -9065,7 +9065,7 @@ html body:has(.admin-shell) .admin-order-message p {
   }
 }
 
-/* Final PAP polish: compact order stats, aligned user actions, colored finance donut. */
+/* Compact order stats, aligned user actions, and colored finance donut. */
 html body:has(.admin-shell) .admin-orders-page .admin-top {
   grid-template-columns:minmax(220px, .58fr) minmax(0, 1.42fr) !important;
   align-items:end !important;
@@ -9617,7 +9617,7 @@ body:not(.admin-sidebar-expanded) .admin-sl .brand.greenerry-brand .greenerry-br
   max-height: 38px !important;
 }
 
-/* PAP final polish: saved sidebar, compact logo crop, light badges, and readable finance donut totals. */
+/* Saved sidebar, compact logo crop, light badges, and readable finance donut totals. */
 body:not(.admin-sidebar-expanded) .admin-sl .brand.greenerry-brand,
 body:not(.admin-sidebar-expanded) .admin-sl .brand.greenerry-brand .greenerry-brand-mark {
   overflow: hidden !important;
@@ -9666,7 +9666,7 @@ html body:has(.admin-shell) .admin-donut strong {
   text-align: center !important;
 }
 
-/* PAP correction: complete admin topbar, smoother navigation, and full product image review. */
+/* Complete admin topbar, smoother navigation, and full product image review. */
 body > .admin-shell > .admin-commandbar {
   left: var(--admin-sidebar, var(--sl, 58px)) !important;
   right: 0 !important;
@@ -10014,7 +10014,7 @@ body.admin-image-open {
   }
 }
 
-/* PAP final admin polish: stable navigation, balanced cards, and denser chart areas. */
+/* Stable navigation, balanced cards, and denser chart areas. */
 html.admin-sidebar-expanded-boot body > .admin-shell,
 html.admin-sidebar-expanded-boot body > .admin-shell > .admin-sl,
 html.admin-sidebar-expanded-boot body > .admin-shell > .admin-main,
@@ -10222,7 +10222,7 @@ html body:has(.admin-shell) .pager-status {
   }
 }
 
-/* PAP screen-fit pass: dashboard summary cards and pending review queues. */
+/* Screen-fit pass: dashboard summary cards and pending review queues. */
 html body:has(.admin-shell) .dash-review-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 16px !important;
