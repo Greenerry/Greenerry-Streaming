@@ -215,7 +215,7 @@ include 'admin_header.php';
   <?php if ($totalPages > 1): ?>
     <nav class="pager" aria-label="Pagination">
       <?= $page > 1 ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page - 1) . '" data-users-pager data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-      <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$page ?>" data-page-total="<?= (int)$totalPages ?>">P?gina <?= (int)$page ?> de <?= (int)$totalPages ?></span>
+      <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$page ?>" data-page-total="<?= (int)$totalPages ?>">Página <?= (int)$page ?> de <?= (int)$totalPages ?></span>
       <?= $page < $totalPages ? '<a class="btn btn-ghost btn-sm" href="users.php?page=' . ($page + 1) . '" data-users-pager data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
     </nav>
   <?php endif; ?>

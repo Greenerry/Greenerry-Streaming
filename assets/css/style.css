@@ -10000,10 +10000,30 @@ body.artist-sidebar-mode .sl-link.on {
     padding-top:10px;
   }
 
+  .artist-dashboard-v4 > *,
+  .artist-dash-top,
+  .artist-dash-actions,
+  .artist-dash-kpis,
+  .artist-dash-grid,
+  .artist-dash-card {
+    min-width:0;
+    max-width:100%;
+  }
+
   .artist-dash-top {
     align-items:flex-start;
     flex-direction:column;
     padding:6px 0 14px;
+  }
+
+  .artist-dash-actions {
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .artist-dash-actions a {
+    flex:1 1 calc(50% - 6px);
+    min-width:0;
   }
 
   .artist-dash-kpis {

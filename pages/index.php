@@ -205,7 +205,7 @@ include '../includes/header.php';
           <div class="home-hero-grid">
             <div class="home-hero-copy home-hero-copy--fresh home-hero-copy--editorial">
               <div class="home-hero-stack">
-                <h1 data-t="home_title">Uma plataforma independente para musica e produtos de artistas.</h1>
+                <h1 data-t="home_title">Uma plataforma independente para música e produtos de artistas.</h1>
                 <div class="hero-actions">
                   <?php if ($showMusicArea): ?><a href="music.php" class="btn btn-dark btn-lg" data-t="home_cta_music">Explore music</a><?php endif; ?>
                   <?php if ($showShopArea): ?><a href="shop.php" class="btn btn-outline btn-lg" data-t="home_cta_shop">Shop products</a><?php endif; ?>

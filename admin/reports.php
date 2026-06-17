@@ -189,7 +189,7 @@ $breakdownTotal = max(
 );
 $incomeBreakdown = [
     ['label' => 'Receita paga', 'tkey' => 'stat_paid_revenue', 'value' => (float)($finance['paid_revenue'] ?? 0), 'color' => '#86aaf5'],
-    ['label' => 'Comissao', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#98d0b2'],
+    ['label' => 'Comissão', 'tkey' => 'label_commission', 'value' => (float)($finance['commission'] ?? 0), 'color' => '#98d0b2'],
     ['label' => 'Base para artistas', 'tkey' => 'stat_artist_base', 'value' => (float)($finance['artist_value'] ?? 0), 'color' => '#f0c44d'],
     ['label' => 'Bloqueado', 'tkey' => 'reports_blocked_short', 'value' => (float)($finance['blocked_value'] ?? 0), 'color' => '#e17699'],
 ];
@@ -826,7 +826,7 @@ include 'admin_header.php';
 
 <section class="acard-box">
   <div class="acard-box-head">
-    <h4 data-admin-t="reports_money_chart">Grafico do dinheiro</h4>
+    <h4 data-admin-t="reports_money_chart">Gráfico do dinheiro</h4>
     <span class="admin-card-note" data-admin-t="<?= h($rangeLabels[$range]['key']) ?>"><?= h($rangeLabels[$range]['label']) ?></span>
   </div>
   <?php if (!$monthlyRevenue): ?>

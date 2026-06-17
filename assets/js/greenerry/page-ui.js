@@ -145,7 +145,7 @@ function initOrderFilters(root = document) {
     pager.classList.remove('is-hidden');
     pager.innerHTML = `
       <button type="button" class="btn btn-ghost btn-sm ${currentPage <= 1 ? 'is-disabled' : ''}" data-order-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''} data-t="pagination_previous">${orderText('pagination_previous', 'Anterior')}</button>
-      <span class="pager-status"><span data-t="pagination_page">${orderText('pagination_page', 'Pagina')}</span> ${currentPage} <span data-t="pagination_of">${orderText('pagination_of', 'de')}</span> ${totalPages}</span>
+      <span class="pager-status"><span data-t="pagination_page">${orderText('pagination_page', 'Página')}</span> ${currentPage} <span data-t="pagination_of">${orderText('pagination_of', 'de')}</span> ${totalPages}</span>
       <button type="button" class="btn btn-ghost btn-sm ${currentPage >= totalPages ? 'is-disabled' : ''}" data-order-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''} data-t="pagination_next">${orderText('pagination_next', 'Seguinte')}</button>
     `;
 

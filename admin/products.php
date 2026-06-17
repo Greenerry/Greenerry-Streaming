@@ -270,7 +270,7 @@ include 'admin_header.php';
       <?php $otherPageParam = isset($_GET['page']) ? '&page=' . (int)$_GET['page'] : ''; ?>
       <nav class="pager" aria-label="Pending Pagination">
         <?= $pendingPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage - 1) . $otherPageParam . '#products-search" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$pendingPage ?>" data-page-total="<?= (int)$pendingTotalPages ?>">Pagina <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$pendingPage ?>" data-page-total="<?= (int)$pendingTotalPages ?>">Página <?= (int)$pendingPage ?> de <?= (int)$pendingTotalPages ?></span>
         <?= $pendingPage < $pendingTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?pending_page=' . (int)($pendingPage + 1) . $otherPageParam . '#products-search" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>
@@ -398,7 +398,7 @@ include 'admin_header.php';
       <?php $otherPendingPageParam = isset($_GET['pending_page']) ? '&pending_page=' . (int)$_GET['pending_page'] : ''; ?>
       <nav class="pager" aria-label="Pagination">
         <?= $adminProductsPage > 1 ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage - 1) . $otherPendingPageParam . '" data-admin-t="pagination_previous">Anterior</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_previous">Anterior</span>' ?>
-        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$adminProductsPage ?>" data-page-total="<?= (int)$adminProductsTotalPages ?>">Pagina <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
+        <span class="pager-status" data-admin-page-status data-page-current="<?= (int)$adminProductsPage ?>" data-page-total="<?= (int)$adminProductsTotalPages ?>">Página <?= (int)$adminProductsPage ?> de <?= (int)$adminProductsTotalPages ?></span>
         <?= $adminProductsPage < $adminProductsTotalPages ? '<a class="btn btn-ghost btn-sm" href="products.php?page=' . (int)($adminProductsPage + 1) . $otherPendingPageParam . '" data-admin-t="pagination_next">Seguinte</a>' : '<span class="btn btn-ghost btn-sm is-disabled" data-admin-t="pagination_next">Seguinte</span>' ?>
       </nav>
     <?php endif; ?>

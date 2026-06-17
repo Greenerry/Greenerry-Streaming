@@ -349,7 +349,7 @@ include '../includes/header.php';
 
               <?php if (!empty($order['observacoes'])): ?>
                 <div class="order-customer-note">
-                  <span class="slabel"><?= current_lang() === 'en' ? 'Customer instructions' : 'Instrucoes do cliente' ?></span>
+                  <span class="slabel"><?= current_lang() === 'en' ? 'Customer instructions' : 'Instruções do cliente' ?></span>
                   <p><?= nl2br(h($order['observacoes'])) ?></p>
                 </div>
               <?php endif; ?>

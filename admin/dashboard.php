@@ -239,7 +239,7 @@ include 'admin_header.php';
       <strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong>
     </a>
     <a href="reports.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
-      <span data-admin-t="stat_average_order">Ticket medio</span>
+      <span data-admin-t="stat_average_order">Ticket médio</span>
       <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
     </a>
     <a href="music.php?range=<?= h($range) ?>" class="dash-v4-kpi-link">
@@ -350,8 +350,8 @@ include 'admin_header.php';
       <?php endif; ?>
       <div class="dash-v4-side-metrics">
         <div><span data-admin-t="stat_paid_orders">Encomendas pagas</span><strong><?= (int)($paidOrderStats['total_paid_orders'] ?? 0) ?></strong></div>
-        <div><span data-admin-t="stat_average_order">Valor medio</span><strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong></div>
-        <div><span data-admin-t="stat_commission">Comissao</span><strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong></div>
+        <div><span data-admin-t="stat_average_order">Valor médio</span><strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong></div>
+        <div><span data-admin-t="stat_commission">Comissão</span><strong><?= h(format_eur((float)($finance['total_commission'] ?? 0))) ?></strong></div>
       </div>
     </section>
 

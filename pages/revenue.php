@@ -211,7 +211,7 @@ include '../includes/header.php';
           <small data-t="revenue_commission_note">sobre itens entregues</small>
         </article>
         <article>
-          <span data-t="revenue_avg_order">Ticket m?dio</span>
+          <span data-t="revenue_avg_order">Ticket médio</span>
           <strong><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></strong>
           <small data-t="revenue_avg_order_note">por encomenda paga</small>
         </article>
@@ -221,7 +221,7 @@ include '../includes/header.php';
         <article class="client-revenue-card client-revenue-main-chart">
           <div class="client-revenue-card-head">
             <div>
-              <span class="slabel" data-t="revenue_chart_label">Grafico</span>
+              <span class="slabel" data-t="revenue_chart_label">Gráfico</span>
               <h3><?= h(format_eur((float)($summary['total_artist_value'] ?? 0))) ?></h3>
             </div>
             <span class="badge badge-light" data-t="<?= h($rangeLabels[$range]['key']) ?>"><?= h($rangeLabels[$range]['label']) ?></span>

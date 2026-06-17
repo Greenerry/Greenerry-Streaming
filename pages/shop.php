@@ -264,7 +264,7 @@ include '../includes/header.php';
             <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
           <?php endif; ?>
           <span class="pager-status">
-            <span data-t="pagination_page">Pagina</span> <?= $pageNumber ?>
+            <span data-t="pagination_page">Página</span> <?= $pageNumber ?>
             <span data-t="pagination_of">de</span> <?= $totalPages ?>
           </span>
           <?php if ($pageNumber < $totalPages): ?>

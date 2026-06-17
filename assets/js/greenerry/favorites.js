@@ -354,7 +354,7 @@ function _renderFavPager(total, currentPage) {
     : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_next', 'Seguinte')}</span>`;
 
   pager.innerHTML = `${previous}
-    <span class="pager-status">${_tr('pagination_page', 'Pagina')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
+    <span class="pager-status">${_tr('pagination_page', 'Página')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
     ${next}`;
 }
 
@@ -397,7 +397,7 @@ function _renderFollowingPager(totalPages, currentPage) {
     : `<span class="btn btn-ghost btn-sm is-disabled">${_tr('pagination_next', 'Seguinte')}</span>`;
 
   pager.innerHTML = `${previous}
-    <span class="pager-status">${_tr('pagination_page', 'Pagina')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
+    <span class="pager-status">${_tr('pagination_page', 'Página')} ${currentPage} ${_tr('pagination_of', 'de')} ${totalPages}</span>
     ${next}`;
 }
 
