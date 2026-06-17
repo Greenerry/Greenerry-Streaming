@@ -63,13 +63,13 @@ if (str_ends_with($clientPagesDir, '/pages') && page_under_maintenance($page) &&
 
 ?>
 <!DOCTYPE html>
-<html lang="<?= h(current_lang()) ?>">
+<html lang="<?= h(current_lang()) ?>" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Greenerry</title>
   <script>
-    document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
+    document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'light';
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

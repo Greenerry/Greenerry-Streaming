@@ -53,13 +53,13 @@ $adminPreviewPages = [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="<?= h(current_lang()) ?>">
+<html lang="<?= h(current_lang()) ?>" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Greenerry Admin</title>
   <script>
-    document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'dark';
+    document.documentElement.dataset.theme = localStorage.getItem('g_theme') || 'light';
     try {
       if (localStorage.getItem('g_admin_sidebar_expanded_v2') === '1' && window.matchMedia('(min-width: 769px)').matches) {
         document.documentElement.classList.add('admin-sidebar-expanded-boot');

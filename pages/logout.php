@@ -6,7 +6,7 @@ require_once '../includes/config.php';
 logout_all_sessions();
 ?>
 <!doctype html>
-<html lang="pt">
+<html lang="pt" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">

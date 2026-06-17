@@ -7,7 +7,7 @@ $forbiddenText = current_lang() === 'en'
     : 'O teu cargo de admin não tem permissão para abrir esta área.';
 ?>
 <!DOCTYPE html>
-<html lang="<?= h(current_lang()) ?>">
+<html lang="<?= h(current_lang()) ?>" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">

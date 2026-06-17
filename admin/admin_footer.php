@@ -715,7 +715,7 @@
   const currentLang = localStorage.getItem('g_lang') || 'pt';
   const themeButtons = Array.from(document.querySelectorAll('#theme-toggle, [data-admin-theme-toggle]'));
   const themeButton = document.getElementById('theme-toggle') || themeButtons[0] || null;
-  const currentTheme = localStorage.getItem('g_theme') || document.documentElement.dataset.theme || 'dark';
+  const currentTheme = localStorage.getItem('g_theme') || document.documentElement.dataset.theme || 'light';
   document.documentElement.dataset.theme = currentTheme;
   themeButtons.forEach((button) => button.setAttribute('aria-pressed', currentTheme === 'light' ? 'true' : 'false'));
   function syncAdminScrollAreas() {

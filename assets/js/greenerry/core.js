@@ -69,7 +69,7 @@ function animateThemeSwitch(button) {
 }
 
 function initThemeToggle() {
-  const current = localStorage.getItem(THEME_KEY) || document.documentElement.dataset.theme || 'dark';
+  const current = localStorage.getItem(THEME_KEY) || document.documentElement.dataset.theme || 'light';
   document.documentElement.dataset.theme = current;
 
   document.querySelectorAll('#theme-toggle, [data-theme-toggle]').forEach((button) => {
