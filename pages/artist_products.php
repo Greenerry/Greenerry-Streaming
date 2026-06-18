@@ -79,7 +79,7 @@ include '../includes/header.php';
                     <?php endif; ?>
                   </div>
                 </td>
-                <td><strong><?= h($product['nomeProduto']) ?></strong></td>
+                <td><strong class="artist-product-name"><?= h($product['nomeProduto']) ?></strong></td>
                 <td>
                   <?php if (!empty($product['nomeCategoria'])): ?>
                     <span data-product-category="<?= h($product['nomeCategoria']) ?>"><?= h(category_label((string)$product['nomeCategoria'])) ?></span>

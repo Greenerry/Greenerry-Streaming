@@ -594,7 +594,16 @@
     "artist_analytics_search_tracks": "Procurar faixas",
     "upload_merch_edit_title": "Editar produto.",
     "artist_remove_image": "Remover imagem",
-    "revenue_search": "Procurar receitas"
+    "revenue_search": "Procurar receitas",
+    "foot_legal": "Legal",
+    "foot_privacy_note": "Projeto educativo PAP com dados de demonstração tratados com cuidado.",
+    "foot_rights": "Todos os direitos reservados.",
+    "cookies_title": "Cookies na Greenerry",
+    "cookies_text": "Usamos cookies essenciais para manter login, idioma, tema e carrinho a funcionar. Cookies opcionais ajudam a guardar preferências durante a demonstração.",
+    "cookies_accept": "Aceitar",
+    "cookies_reject": "Rejeitar opcionais",
+    "cookies_settings": "Definições de cookies",
+    "revenue_export_excel": "Exportar Excel"
   },
   "en": {
     "nav_discover": "Discover",
@@ -1191,6 +1200,15 @@
     "artist_analytics_search_tracks": "Search tracks",
     "upload_merch_edit_title": "Edit product.",
     "artist_remove_image": "Remove image",
-    "revenue_search": "Search revenue"
+    "revenue_search": "Search revenue",
+    "foot_legal": "Legal",
+    "foot_privacy_note": "Educational PAP project with privacy-aware demo data.",
+    "foot_rights": "All rights reserved.",
+    "cookies_title": "Cookies on Greenerry",
+    "cookies_text": "We use essential cookies to keep login, language, theme and cart working. Optional cookies help remember preferences during the demo.",
+    "cookies_accept": "Accept",
+    "cookies_reject": "Reject optional",
+    "cookies_settings": "Cookie settings",
+    "revenue_export_excel": "Export Excel"
   }
 }

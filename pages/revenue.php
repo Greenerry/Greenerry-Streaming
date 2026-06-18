@@ -24,6 +24,11 @@ $rangeLabels = [
     '1y' => ['key' => 'revenue_range_1y', 'label' => '1 ano'],
     'all' => ['key' => 'revenue_range_all', 'label' => 'Tudo'],
 ];
+$exportHref = 'revenue.php?' . http_build_query([
+    'range' => $range,
+    'export' => 'excel',
+    'lang' => current_lang(),
+]);
 $dateFromSql = $rangeSqlMap[$range];
 $periodKeySql = in_array($range, ['7d', '30d'], true)
     ? "DATE_FORMAT(e.criado_em, '%Y-%m-%d')"
@@ -173,6 +178,91 @@ if ($chartPoints) {
     $chartAreaPoints = array_merge([$firstX . ',' . ($chartHeight - $chartPadding)], $chartPoints, [$lastX . ',' . ($chartHeight - $chartPadding)]);
 }
 
+// Export an Excel-compatible report with the same revenue data shown on the page.
+if (($_GET['export'] ?? '') === 'excel') {
+    $filename = 'greenerry-artista-rendimento-' . date('Y-m-d') . '.xls';
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    echo "\xEF\xBB\xBF";
+    ?>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; color:#111827; }
+    h1 { font-size:24px; margin:0 0 4px; }
+    h2 { margin:24px 0 8px; font-size:18px; }
+    p { margin:0 0 16px; color:#4b5563; }
+    table { border-collapse:collapse; width:100%; margin-bottom:18px; }
+    th { background:#e8edf3; color:#111827; font-weight:700; }
+    th, td { border:1px solid #cfd6df; padding:8px; text-align:left; }
+    .num { text-align:right; }
+  </style>
+</head>
+<body>
+  <h1>Greenerry - Rendimento do artista</h1>
+  <p><?= h($rangeLabels[$range]['label']) ?> · <?= date('d/m/Y H:i') ?></p>
+
+  <h2>Resumo</h2>
+  <table>
+    <tr><th>Indicador</th><th>Valor</th></tr>
+    <tr><td>Valor recebido</td><td class="num"><?= h(format_eur((float)($summary['total_artist_value'] ?? 0))) ?></td></tr>
+    <tr><td>Itens vendidos</td><td class="num"><?= (int)($summary['total_items'] ?? 0) ?></td></tr>
+    <tr><td>Encomendas entregues</td><td class="num"><?= (int)($summary['total_orders'] ?? 0) ?></td></tr>
+    <tr><td>Comissao da plataforma</td><td class="num"><?= h(format_eur((float)($summary['total_commission'] ?? 0))) ?></td></tr>
+    <tr><td>Ticket medio</td><td class="num"><?= h(format_eur((float)($paidOrderStats['average_order_value'] ?? 0))) ?></td></tr>
+  </table>
+
+  <h2>Rendimento por periodo</h2>
+  <table>
+    <tr><th>Periodo</th><th>Valor artista</th><th>Receita total</th><th>Comissao</th><th>Itens</th></tr>
+    <?php foreach ($monthlyRevenue as $month): ?>
+      <tr>
+        <td><?= h($month['period_label']) ?></td>
+        <td class="num"><?= h(format_eur((float)$month['artist_value'])) ?></td>
+        <td class="num"><?= h(format_eur((float)$month['total_revenue'])) ?></td>
+        <td class="num"><?= h(format_eur((float)$month['commission'])) ?></td>
+        <td class="num"><?= (int)$month['items_count'] ?></td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+
+  <h2>Top produtos</h2>
+  <table>
+    <tr><th>Produto</th><th>Encomendas</th><th>Itens</th><th>Valor artista</th></tr>
+    <?php foreach ($productRevenue as $product): ?>
+      <tr>
+        <td><?= h($product['nome_produto']) ?></td>
+        <td class="num"><?= (int)$product['orders_count'] ?></td>
+        <td class="num"><?= (int)$product['items_count'] ?></td>
+        <td class="num"><?= h(format_eur((float)$product['artist_value'])) ?></td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+
+  <h2>Movimentos recentes</h2>
+  <table>
+    <tr><th>Encomenda</th><th>Produto</th><th>Qtd</th><th>Estado</th><th>Valor artista</th><th>Comissao</th><th>Data</th></tr>
+    <?php foreach ($sales as $sale): ?>
+      <tr>
+        <td>#<?= (int)$sale['idEncomenda'] ?></td>
+        <td><?= h($sale['nome_produto']) ?></td>
+        <td class="num"><?= (int)$sale['quantidade'] ?></td>
+        <td><?= h(order_status_label($sale['estado_item'])) ?></td>
+        <td class="num"><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['valor_artista'])) ?></td>
+        <td class="num"><?= h(format_eur($sale['estado_item'] === 'cancelado' ? 0.0 : (float)$sale['comissao_valor'])) ?></td>
+        <td><?= date('d/m/Y', strtotime($sale['criado_em'])) ?></td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
+</body>
+</html>
+    <?php
+    exit;
+}
+
 include '../includes/header.php';
 ?>
 
@@ -183,11 +273,14 @@ include '../includes/header.php';
         <div>
           <h2 data-t="revenue_title">Resumo das vendas</h2>
         </div>
-        <nav class="client-revenue-range" aria-label="Revenue range">
-          <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
-            <a href="revenue.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
-          <?php endforeach; ?>
-        </nav>
+        <div class="client-revenue-top-actions">
+          <nav class="client-revenue-range" aria-label="Revenue range">
+            <?php foreach ($rangeLabels as $rangeKey => $rangeItem): ?>
+              <a href="revenue.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
+            <?php endforeach; ?>
+          </nav>
+          <a href="<?= h($exportHref) ?>" class="btn btn-dark btn-sm" data-t="revenue_export_excel">Exportar Excel</a>
+        </div>
       </header>
 
       <div class="client-revenue-kpis">

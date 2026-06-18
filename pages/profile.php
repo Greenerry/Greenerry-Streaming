@@ -417,7 +417,7 @@ include '../includes/header.php';
                               <?= (int)$release['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
                             </button>
                           <?php else: ?>
-                            <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
+                            <span class="badge badge-light profile-action-note"><?= h(tr('misc.no_action')) ?></span>
                           <?php endif; ?>
                           <form method="post" class="inline-delete-form js-delete-release-form" data-confirm="<?= h(tr('confirm.release_delete')) ?>">
                             <?= csrf_input() ?>
@@ -481,7 +481,7 @@ include '../includes/header.php';
                         </div>
                       </td>
                       <td>
-                        <strong><?= h($product['nomeProduto']) ?></strong>
+                        <strong class="artist-product-name"><?= h($product['nomeProduto']) ?></strong>
                         <?php if (!empty($product['motivo_rejeicao'])): ?>
                           <br><span class="color-text3"><?= h($product['motivo_rejeicao']) ?></span>
                         <?php endif; ?>
@@ -506,7 +506,7 @@ include '../includes/header.php';
                               <?= (int)$product['ativo'] === 1 ? 'Inativar' : 'Ativar' ?>
                             </button>
                           <?php else: ?>
-                            <span class="color-text3"><?= h(tr('misc.no_action')) ?></span>
+                            <span class="badge badge-light profile-action-note"><?= h(tr('misc.no_action')) ?></span>
                           <?php endif; ?>
                         </div>
                       </td>

@@ -52,29 +52,66 @@ foreach ($releaseStatus as $statusRow) {
     }
 }
 
-$listenRows = db_all_prepared(
-    $conn,
-    "SELECT DATE(criado_em) AS day_key, COUNT(*) AS listens
-     FROM faixa_listen
-     WHERE idArtista = ?
-       AND criado_em >= {$dateFromSql}
-     GROUP BY DATE(criado_em)
-     ORDER BY DATE(criado_em) ASC",
-    'i',
-    [$uid]
-);
 $listenMap = [];
-foreach ($listenRows as $row) {
-    $listenMap[(string)$row['day_key']] = (int)$row['listens'];
-}
 $listenDays = [];
 $maxListens = 0;
-for ($offset = min(364, max(6, $rangeDays - 1)); $offset >= 0; $offset--) {
-    $date = new DateTimeImmutable("-{$offset} days");
-    $key = $date->format('Y-m-d');
-    $listens = $listenMap[$key] ?? 0;
-    $listenDays[] = ['label' => $date->format('d/m'), 'listens' => $listens];
-    $maxListens = max($maxListens, $listens);
+
+// Month buckets keep the overview readable on yearly and full-history ranges.
+$useMonthlyChart = in_array($range, ['1y', 'all'], true);
+if ($useMonthlyChart) {
+    $listenRows = db_all_prepared(
+        $conn,
+        "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS period_key, COUNT(*) AS listens
+         FROM faixa_listen
+         WHERE idArtista = ?
+           AND criado_em >= {$dateFromSql}
+         GROUP BY DATE_FORMAT(criado_em, '%Y-%m')
+         ORDER BY period_key ASC",
+        'i',
+        [$uid]
+    );
+    foreach ($listenRows as $row) {
+        $listenMap[(string)$row['period_key']] = (int)$row['listens'];
+    }
+
+    $lastMonth = new DateTimeImmutable('first day of this month');
+    $firstMonth = $range === 'all' && $listenRows
+        ? new DateTimeImmutable((string)$listenRows[0]['period_key'] . '-01')
+        : $lastMonth->modify('-11 months');
+    $earliestVisibleMonth = $lastMonth->modify('-17 months');
+    if ($firstMonth < $earliestVisibleMonth) {
+        $firstMonth = $earliestVisibleMonth;
+    }
+
+    for ($cursor = $firstMonth; $cursor <= $lastMonth; $cursor = $cursor->modify('+1 month')) {
+        $key = $cursor->format('Y-m');
+        $listens = $listenMap[$key] ?? 0;
+        $listenDays[] = ['label' => $cursor->format('m/Y'), 'listens' => $listens];
+        $maxListens = max($maxListens, $listens);
+    }
+} else {
+    $listenRows = db_all_prepared(
+        $conn,
+        "SELECT DATE(criado_em) AS day_key, COUNT(*) AS listens
+         FROM faixa_listen
+         WHERE idArtista = ?
+           AND criado_em >= {$dateFromSql}
+         GROUP BY DATE(criado_em)
+         ORDER BY DATE(criado_em) ASC",
+        'i',
+        [$uid]
+    );
+    foreach ($listenRows as $row) {
+        $listenMap[(string)$row['day_key']] = (int)$row['listens'];
+    }
+
+    for ($offset = min(364, max(6, $rangeDays - 1)); $offset >= 0; $offset--) {
+        $date = new DateTimeImmutable("-{$offset} days");
+        $key = $date->format('Y-m-d');
+        $listens = $listenMap[$key] ?? 0;
+        $listenDays[] = ['label' => $date->format('d/m'), 'listens' => $listens];
+        $maxListens = max($maxListens, $listens);
+    }
 }
 
 $topTracks = db_all_prepared(

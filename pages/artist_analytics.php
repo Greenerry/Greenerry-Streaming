@@ -18,38 +18,87 @@ if (!isset($rangeOptions[$selectedRange])) {
 $rangeDays = (int)$rangeOptions[$selectedRange]['days'];
 $rangeSqlDays = $selectedRange === 'all' ? 20000 : max(1, $rangeDays - 1);
 
-$listenRows = db_all_prepared(
-    $conn,
-    "SELECT DATE(criado_em) AS day_key, DATE_FORMAT(criado_em, '%d/%m') AS label, COUNT(*) AS listens, COUNT(DISTINCT idCliente) AS listeners
-     FROM faixa_listen
-     WHERE idArtista = ?
-       AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-     GROUP BY DATE(criado_em), DATE_FORMAT(criado_em, '%d/%m')
-     ORDER BY DATE(criado_em) ASC",
-    'ii',
-    [$uid, $rangeSqlDays]
-);
-$listenMap = [];
-foreach ($listenRows as $row) {
-    $listenMap[(string)$row['day_key']] = ['listens' => (int)$row['listens'], 'listeners' => (int)$row['listeners']];
-}
 $days = [];
 $maxListens = 0;
 $activeDays = 0;
 $bestDay = ['label' => '-', 'listens' => 0, 'listeners' => 0];
-for ($offset = min(364, max(6, $rangeSqlDays)); $offset >= 0; $offset--) {
-    $date = new DateTimeImmutable("-{$offset} days");
-    $key = $date->format('Y-m-d');
-    $listens = $listenMap[$key]['listens'] ?? 0;
-    $listeners = $listenMap[$key]['listeners'] ?? 0;
-    $dayData = ['label' => $date->format('d/m'), 'listens' => $listens, 'listeners' => $listeners];
-    $days[] = $dayData;
-    $maxListens = max($maxListens, $listens);
-    if ($listens > 0) {
-        $activeDays++;
+
+// Long ranges use months so the line chart stays readable.
+$useMonthlyChart = in_array($selectedRange, ['1y', 'all'], true);
+if ($useMonthlyChart) {
+    $listenRows = db_all_prepared(
+        $conn,
+        "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS period_key,
+                DATE_FORMAT(criado_em, '%m/%Y') AS label,
+                COUNT(*) AS listens,
+                COUNT(DISTINCT idCliente) AS listeners
+         FROM faixa_listen
+         WHERE idArtista = ?
+           AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+         GROUP BY DATE_FORMAT(criado_em, '%Y-%m'), DATE_FORMAT(criado_em, '%m/%Y')
+         ORDER BY period_key ASC",
+        'ii',
+        [$uid, $rangeSqlDays]
+    );
+    $listenMap = [];
+    foreach ($listenRows as $row) {
+        $listenMap[(string)$row['period_key']] = ['listens' => (int)$row['listens'], 'listeners' => (int)$row['listeners']];
     }
-    if ($listens > (int)$bestDay['listens']) {
-        $bestDay = $dayData;
+
+    $lastMonth = new DateTimeImmutable('first day of this month');
+    $firstMonth = $selectedRange === 'all' && $listenRows
+        ? new DateTimeImmutable((string)$listenRows[0]['period_key'] . '-01')
+        : $lastMonth->modify('-11 months');
+    $earliestVisibleMonth = $lastMonth->modify('-17 months');
+    if ($firstMonth < $earliestVisibleMonth) {
+        $firstMonth = $earliestVisibleMonth;
+    }
+
+    for ($cursor = $firstMonth; $cursor <= $lastMonth; $cursor = $cursor->modify('+1 month')) {
+        $key = $cursor->format('Y-m');
+        $listens = $listenMap[$key]['listens'] ?? 0;
+        $listeners = $listenMap[$key]['listeners'] ?? 0;
+        $dayData = ['label' => $cursor->format('m/Y'), 'listens' => $listens, 'listeners' => $listeners];
+        $days[] = $dayData;
+        $maxListens = max($maxListens, $listens);
+        if ($listens > 0) {
+            $activeDays++;
+        }
+        if ($listens > (int)$bestDay['listens']) {
+            $bestDay = $dayData;
+        }
+    }
+} else {
+    $listenRows = db_all_prepared(
+        $conn,
+        "SELECT DATE(criado_em) AS day_key, DATE_FORMAT(criado_em, '%d/%m') AS label, COUNT(*) AS listens, COUNT(DISTINCT idCliente) AS listeners
+         FROM faixa_listen
+         WHERE idArtista = ?
+           AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+         GROUP BY DATE(criado_em), DATE_FORMAT(criado_em, '%d/%m')
+         ORDER BY DATE(criado_em) ASC",
+        'ii',
+        [$uid, $rangeSqlDays]
+    );
+    $listenMap = [];
+    foreach ($listenRows as $row) {
+        $listenMap[(string)$row['day_key']] = ['listens' => (int)$row['listens'], 'listeners' => (int)$row['listeners']];
+    }
+
+    for ($offset = min(364, max(6, $rangeSqlDays)); $offset >= 0; $offset--) {
+        $date = new DateTimeImmutable("-{$offset} days");
+        $key = $date->format('Y-m-d');
+        $listens = $listenMap[$key]['listens'] ?? 0;
+        $listeners = $listenMap[$key]['listeners'] ?? 0;
+        $dayData = ['label' => $date->format('d/m'), 'listens' => $listens, 'listeners' => $listeners];
+        $days[] = $dayData;
+        $maxListens = max($maxListens, $listens);
+        if ($listens > 0) {
+            $activeDays++;
+        }
+        if ($listens > (int)$bestDay['listens']) {
+            $bestDay = $dayData;
+        }
     }
 }
 

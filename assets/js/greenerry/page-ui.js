@@ -739,6 +739,11 @@ function initNotificationMenus(root = document) {
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       const nextOpen = popover.hidden;
+      document.querySelectorAll('.account-popover').forEach((item) => { item.hidden = true; });
+      document.querySelectorAll('[data-account-menu]').forEach((item) => {
+        item.classList.remove('is-open');
+        item.querySelector('[data-account-toggle]')?.setAttribute('aria-expanded', 'false');
+      });
       if (nextOpen && window.innerWidth <= 768 && popover.parentElement !== document.body) {
         document.body.appendChild(popover);
         popover.classList.add('notification-popover--mobile-fixed');
@@ -816,6 +821,12 @@ function initAccountMenus(root = document) {
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       const nextOpen = popover.hidden;
+      document.querySelectorAll('.notification-popover').forEach((item) => { item.hidden = true; });
+      document.querySelectorAll('[data-notifications-menu]').forEach((item) => {
+        item.classList.remove('is-open');
+        item.querySelector('[data-notification-toggle]')?.setAttribute('aria-expanded', 'false');
+      });
+      document.documentElement.classList.remove('notifications-open');
       document.querySelectorAll('.account-popover').forEach((item) => {
         if (item !== popover) item.hidden = true;
       });
@@ -839,6 +850,38 @@ function initAccountMenus(root = document) {
       if (event.key === 'Escape') close();
     });
   });
+}
+
+function initCookieConsent(root = document) {
+  // Cookie banner stays simple: store one local choice and keep essential cookies active.
+  const banner = root.querySelector?.('[data-cookie-banner]') || document.querySelector('[data-cookie-banner]');
+  if (!banner || banner.dataset.cookieReady === '1') return;
+  banner.dataset.cookieReady = '1';
+
+  const storageKey = 'g_cookie_choice_v1';
+  const showBanner = () => {
+    banner.hidden = false;
+    window.requestAnimationFrame(() => banner.classList.add('is-visible'));
+  };
+  const hideBanner = () => {
+    banner.classList.remove('is-visible');
+    window.setTimeout(() => { banner.hidden = true; }, 180);
+  };
+  const saveChoice = (choice) => {
+    localStorage.setItem(storageKey, choice);
+    document.cookie = `g_cookie_choice=${encodeURIComponent(choice)}; path=/; max-age=31536000; samesite=lax`;
+    hideBanner();
+  };
+
+  banner.querySelector('[data-cookie-accept]')?.addEventListener('click', () => saveChoice('accepted'));
+  banner.querySelector('[data-cookie-reject]')?.addEventListener('click', () => saveChoice('essential'));
+  document.querySelectorAll('[data-cookie-settings]').forEach((button) => {
+    if (button.dataset.cookieSettingsReady === '1') return;
+    button.dataset.cookieSettingsReady = '1';
+    button.addEventListener('click', showBanner);
+  });
+
+  if (!localStorage.getItem(storageKey)) showBanner();
 }
 
 function initArtistModeSidebar(root = document) {
@@ -1057,6 +1100,7 @@ async function _initPageContent() {
   initImageFilePreviews();
   initNotificationMenus();
   initAccountMenus();
+  initCookieConsent();
   initArtistModeSidebar();
   initStreamSidebarToggle();
   initAnimeEnhancements();
