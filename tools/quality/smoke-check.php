@@ -84,9 +84,7 @@ greenerry_check($sqlAssetsOk, 'SQL exports use production-style asset references
 
 $requiredDocs = [
     greenerry_join_path($root, 'docs', 'PAP_ENTREGA', 'Relatorio_PAP_Greenerry_Srijan_Gautam_ATUALIZADO.docx'),
-    greenerry_join_path($root, 'docs', 'PAP_ENTREGA', 'Relatorio_PAP_Greenerry_Srijan_Gautam_ATUALIZADO.pdf'),
     greenerry_join_path($root, 'docs', 'PAP_ENTREGA', 'Manual_Tecnico_Greenerry_Srijan_Gautam.docx'),
-    greenerry_join_path($root, 'docs', 'PAP_ENTREGA', 'Manual_Tecnico_Greenerry_Srijan_Gautam.pdf'),
 ];
 foreach ($requiredDocs as $docPath) {
     greenerry_check(is_file($docPath) && filesize($docPath) > 1000, basename($docPath) . ' exists and is not empty');

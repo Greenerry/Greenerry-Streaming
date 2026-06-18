@@ -52,22 +52,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$perPage = 12;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
+$notificationTotals = db_one_prepared(
+    $conn,
+    "SELECT COUNT(*) AS total, SUM(lida = 0) AS unread FROM notificacao WHERE idCliente = ?",
+    'i',
+    [$uid]
+) ?: [];
+$totalNotifications = (int)($notificationTotals['total'] ?? 0);
+$unreadTotal = (int)($notificationTotals['unread'] ?? 0);
+$totalPages = max(1, (int)ceil($totalNotifications / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$offset = ($pageNumber - 1) * $perPage;
+
 $notifications = db_all_prepared(
     $conn,
     "SELECT *
      FROM notificacao
      WHERE idCliente = ?
      ORDER BY criado_em DESC
-     LIMIT 80",
+     LIMIT {$perPage} OFFSET {$offset}",
     'i',
     [$uid]
 );
-$unreadTotal = 0;
-foreach ($notifications as $note) {
-    if ((int)$note['lida'] === 0) {
-        $unreadTotal++;
-    }
-}
 
 include '../includes/header.php';
 ?>
@@ -137,6 +145,21 @@ include '../includes/header.php';
               </article>
             <?php endforeach; ?>
           </div>
+          <?php if ($totalPages > 1): ?>
+            <nav class="pager" aria-label="Pagination">
+              <?php if ($pageNumber > 1): ?>
+                <a class="btn btn-ghost btn-sm" href="notifications.php?page=<?= $pageNumber - 1 ?>" data-t="pagination_previous">Anterior</a>
+              <?php else: ?>
+                <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+              <?php endif; ?>
+              <span class="pager-status"><span data-t="pagination_page">Página</span> <?= $pageNumber ?> <span data-t="pagination_of">de</span> <?= $totalPages ?></span>
+              <?php if ($pageNumber < $totalPages): ?>
+                <a class="btn btn-ghost btn-sm" href="notifications.php?page=<?= $pageNumber + 1 ?>" data-t="pagination_next">Seguinte</a>
+              <?php else: ?>
+                <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+              <?php endif; ?>
+            </nav>
+          <?php endif; ?>
         <?php endif; ?>
       </div>
     </section>

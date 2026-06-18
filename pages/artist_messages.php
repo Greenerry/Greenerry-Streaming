@@ -5,7 +5,11 @@ require_once '../includes/config.php';
 require_user_login();
 
 $uid = current_user_id();
-$feedback = '';
+$allowedFilters = ['all', 'reply', 'unread', 'answered'];
+$filter = (string)($_GET['filter'] ?? 'all');
+$filter = in_array($filter, $allowedFilters, true) ? $filter : 'all';
+$feedback = (string)($_SESSION['artist_message_feedback'] ?? '');
+unset($_SESSION['artist_message_feedback']);
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -66,7 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (current_lang() === 'en' ? 'Order #' : 'Encomenda #') . $orderId . ': ' . mb_substr($message, 0, 120),
             'encomenda'
         );
-        $feedback = current_lang() === 'en' ? 'Reply sent.' : 'Resposta enviada.';
+        $_SESSION['artist_message_feedback'] = current_lang() === 'en' ? 'Reply sent.' : 'Resposta enviada.';
+        header('Location: artist_messages.php?filter=answered');
+        exit;
     }
 }
 
@@ -114,14 +120,40 @@ $threads = db_all_prepared(
 
 $openThreads = 0;
 $waitingBuyer = 0;
+$answeredThreads = 0;
 foreach ($threads as $threadRow) {
     if ((int)$threadRow['unread_count'] > 0) {
         $openThreads++;
     }
     if ((string)$threadRow['last_sender'] === 'comprador') {
         $waitingBuyer++;
+    } else {
+        $answeredThreads++;
     }
 }
+
+$threadTotal = count($threads);
+$filteredThreads = array_values(array_filter($threads, static function (array $threadRow) use ($filter): bool {
+    if ($filter === 'reply') {
+        return (string)$threadRow['last_sender'] === 'comprador';
+    }
+    if ($filter === 'unread') {
+        return (int)$threadRow['unread_count'] > 0;
+    }
+    if ($filter === 'answered') {
+        return (string)$threadRow['last_sender'] === 'artista';
+    }
+    return true;
+}));
+$perPage = 5;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
+$totalPages = max(1, (int)ceil(count($filteredThreads) / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$threads = array_slice($filteredThreads, ($pageNumber - 1) * $perPage, $perPage);
+$pageUrl = static fn(int $targetPage): string => 'artist_messages.php?' . http_build_query([
+    'filter' => $filter,
+    'page' => $targetPage,
+]);
 
 include '../includes/header.php';
 ?>
@@ -134,15 +166,16 @@ include '../includes/header.php';
   </header>
 
   <?php if ($error): ?><div class="alert alert-err"><?= h($error) ?></div><?php endif; ?>
+  <?php if ($feedback): ?><div class="alert alert-ok"><?= h($feedback) ?></div><?php endif; ?>
 
   <div class="artist-dash-kpis">
-    <a href="#artist-order-messages"><span data-t="artist_messages_threads">Threads</span><strong><?= count($threads) ?></strong></a>
-    <a href="#artist-order-messages"><span data-t="artist_messages_needs_reply">Needs reply</span><strong><?= (int)$waitingBuyer ?></strong></a>
-    <a href="#artist-order-messages"><span data-t="artist_messages_unread">Unread</span><strong><?= (int)$openThreads ?></strong></a>
-    <a href="orders.php"><span data-t="artist_messages_orders">Orders</span><strong><?= count($threads) ?></strong></a>
+    <a class="<?= $filter === 'all' ? 'is-active' : '' ?>" href="artist_messages.php?filter=all#artist-order-messages"><span data-t="artist_messages_threads">Threads</span><strong><?= $threadTotal ?></strong></a>
+    <a class="<?= $filter === 'reply' ? 'is-active' : '' ?>" href="artist_messages.php?filter=reply#artist-order-messages"><span data-t="artist_messages_needs_reply">Needs reply</span><strong><?= (int)$waitingBuyer ?></strong></a>
+    <a class="<?= $filter === 'unread' ? 'is-active' : '' ?>" href="artist_messages.php?filter=unread#artist-order-messages"><span data-t="artist_messages_unread">Unread</span><strong><?= (int)$openThreads ?></strong></a>
+    <a class="<?= $filter === 'answered' ? 'is-active' : '' ?>" href="artist_messages.php?filter=answered#artist-order-messages"><span data-t="artist_messages_answered">Answered</span><strong><?= (int)$answeredThreads ?></strong></a>
   </div>
 
-  <?php if (!$threads): ?>
+  <?php if (!$filteredThreads): ?>
     <article class="artist-dash-card">
       <p class="artist-dash-empty" data-t="artist_messages_empty">No buyer messages yet.</p>
     </article>
@@ -208,6 +241,21 @@ include '../includes/header.php';
         </article>
       <?php endforeach; ?>
     </div>
+    <?php if ($totalPages > 1): ?>
+      <nav class="pager" aria-label="Pagination">
+        <?php if ($pageNumber > 1): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber - 1)) ?>#artist-order-messages" data-t="pagination_previous">Anterior</a>
+        <?php else: ?>
+          <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+        <?php endif; ?>
+        <span class="pager-status"><span data-t="pagination_page">Página</span> <?= $pageNumber ?> <span data-t="pagination_of">de</span> <?= $totalPages ?></span>
+        <?php if ($pageNumber < $totalPages): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= h($pageUrl($pageNumber + 1)) ?>#artist-order-messages" data-t="pagination_next">Seguinte</a>
+        <?php else: ?>
+          <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+        <?php endif; ?>
+      </nav>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 

@@ -193,6 +193,7 @@ include '../includes/header.php';
       <?php foreach ($rangeOptions as $rangeKey => $rangeItem): ?>
         <a href="artist_dashboard.php?range=<?= h($rangeKey) ?>" class="<?= $range === $rangeKey ? 'on' : '' ?>" data-t="<?= h($rangeItem['key']) ?>"><?= h($rangeItem['label']) ?></a>
       <?php endforeach; ?>
+      <a href="revenue.php?range=all&amp;export=excel" class="artist-dash-primary" data-t="revenue_export_excel">Exportar Excel</a>
     </nav>
   </header>
 

@@ -210,6 +210,41 @@ function send_test_email(string $to): bool
     );
 }
 
+function send_notification_email(mysqli $conn, int $userId, string $title, string $message, string $type = 'sistema'): bool
+{
+    $user = db_one_prepared(
+        $conn,
+        "SELECT nome, email FROM cliente WHERE idCliente = ? AND estado = 'ativo' LIMIT 1",
+        'i',
+        [$userId]
+    );
+    if (!$user) {
+        return false;
+    }
+
+    $notificationsUrl = absolute_site_url('pages/notifications.php');
+    $subject = 'Greenerry - ' . trim($title);
+    $intro = current_lang() === 'en'
+        ? 'There is an update in your Greenerry account.'
+        : 'Tens uma atualização na tua conta Greenerry.';
+    $body = trim($message) . "\n\n" . $notificationsUrl;
+    $html = greenerry_email_shell(
+        $title,
+        $intro,
+        '<p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">' . nl2br(h($message)) . '</p>'
+        . '<p style="margin:0;"><a href="' . h($notificationsUrl) . '" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;">'
+        . h(current_lang() === 'en' ? 'Open notifications' : 'Abrir notificações')
+        . '</a></p>'
+    );
+
+    return greenerry_send_email(
+        (string)$user['email'],
+        $subject,
+        $body,
+        ['html' => $html]
+    );
+}
+
 function greenerry_order_invoice_html(mysqli $conn, int $orderId): string
 {
     $order = db_one_prepared(

@@ -5,6 +5,20 @@ require_once '../includes/config.php';
 require_user_login();
 
 $uid = current_user_id();
+$perPage = 10;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
+$totalCustomers = (int)(db_one_prepared(
+    $conn,
+    "SELECT COUNT(DISTINCT e.idCliente) AS total
+     FROM encomenda_item ei
+     JOIN encomenda e ON e.idEncomenda = ei.idEncomenda
+     WHERE ei.idArtista = ?",
+    'i',
+    [$uid]
+)['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalCustomers / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$offset = ($pageNumber - 1) * $perPage;
 $customers = db_all_prepared(
     $conn,
     "SELECT
@@ -25,7 +39,8 @@ $customers = db_all_prepared(
        AND em.idArtista = ?
      WHERE ei.idArtista = ?
      GROUP BY c.idCliente, c.nome, c.email, c.foto
-     ORDER BY last_order_at DESC",
+     ORDER BY last_order_at DESC
+     LIMIT {$perPage} OFFSET {$offset}",
     'ii',
     [$uid, $uid]
 );
@@ -48,7 +63,7 @@ include '../includes/header.php';
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input type="search" data-artist-search="artist-customers" data-tp="artist_customers_search" placeholder="Search customers">
         </label>
-        <span class="badge badge-light"><?= count($customers) ?> <span data-t="nav_artist_customers">customers</span></span>
+        <span class="badge badge-light"><?= $totalCustomers ?> <span data-t="nav_artist_customers">customers</span></span>
       </div>
     </div>
     <?php if (!$customers): ?>
@@ -91,6 +106,13 @@ include '../includes/header.php';
           </tbody>
         </table>
       </div>
+      <?php if ($totalPages > 1): ?>
+        <nav class="pager" aria-label="Pagination">
+          <?php if ($pageNumber > 1): ?><a class="btn btn-ghost btn-sm" href="artist_customers.php?page=<?= $pageNumber - 1 ?>" data-t="pagination_previous">Anterior</a><?php else: ?><span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span><?php endif; ?>
+          <span class="pager-status"><span data-t="pagination_page">Página</span> <?= $pageNumber ?> <span data-t="pagination_of">de</span> <?= $totalPages ?></span>
+          <?php if ($pageNumber < $totalPages): ?><a class="btn btn-ghost btn-sm" href="artist_customers.php?page=<?= $pageNumber + 1 ?>" data-t="pagination_next">Seguinte</a><?php else: ?><span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span><?php endif; ?>
+        </nav>
+      <?php endif; ?>
     <?php endif; ?>
   </article>
 </section>

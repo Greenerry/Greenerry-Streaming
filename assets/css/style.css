@@ -1767,7 +1767,7 @@ tbody td strong { color:var(--text); font-weight:500; }
 .footer-wrap { flex:1; display:flex; flex-direction:column; }
 .page-body   { flex:1; }
 footer { border-top:1px solid var(--border); padding:40px 36px 32px; margin-top:auto; }
-.foot-grid  { display:grid; grid-template-columns:2fr repeat(5, minmax(110px, 1fr)); gap:28px; margin-bottom:32px; }
+.foot-grid  { display:grid; grid-template-columns:2fr repeat(4, minmax(110px, 1fr)); gap:28px; margin-bottom:32px; }
 .foot-brand { font-family:var(--display); font-size:1.35rem; font-style:italic; margin-bottom:8px; }
 .foot-desc  { font-size:.82rem; color:var(--text3); line-height:1.75; max-width:220px; }
 .foot-col h5 { font-size:.66rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); margin-bottom:12px; }
@@ -1787,12 +1787,24 @@ footer { border-top:1px solid var(--border); padding:40px 36px 32px; margin-top:
   cursor:pointer;
 }
 .foot-link-button:hover { color:var(--text); }
-.foot-col span {
-  display:block;
-  max-width:20ch;
+.foot-legal-inline {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:0;
   color:var(--text3);
-  font-size:.82rem;
-  line-height:1.55;
+  font-size:.75rem;
+  line-height:1.4;
+  text-align:center;
+}
+.foot-legal-inline .foot-link-button {
+  flex:0 0 auto;
+  font-size:.75rem;
+  color:var(--text2);
+}
+.foot-legal-inline span:last-child {
+  max-width:42ch;
 }
 
 .cookie-banner {
@@ -1836,6 +1848,24 @@ footer { border-top:1px solid var(--border); padding:40px 36px 32px; margin-top:
 .foot-socials { display:flex; gap:7px; }
 .soc { width:32px; height:32px; border-radius:10px; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text3); transition:all .15s var(--ease); }
 .soc:hover { color:var(--text); border-color:var(--border2); }
+
+@media (max-width: 920px) {
+  .foot-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .foot-grid > div:first-child { grid-column:1 / -1; }
+  .foot-btm { align-items:flex-start; flex-wrap:wrap; gap:14px; }
+  .foot-legal-inline { order:3; width:100%; justify-content:flex-start; text-align:left; }
+}
+
+@media (max-width: 560px) {
+  footer { padding:32px 20px 24px; }
+  .foot-grid { grid-template-columns:1fr 1fr; gap:24px 18px; }
+  .foot-legal-inline { align-items:flex-start; flex-wrap:wrap; }
+}
+
+.artist-dash-kpis a.is-active {
+  border-color:var(--text);
+  background:var(--bg3);
+}
 
 /* WAVEFORM */
 .wv { display:flex; align-items:center; gap:3px; height:22px; }

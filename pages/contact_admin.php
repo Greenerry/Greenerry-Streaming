@@ -9,8 +9,8 @@ $ok = '';
 $assuntoValue = trim($_POST['assunto'] ?? '');
 $mensagemValue = trim($_POST['mensagem'] ?? '');
 $uid = current_user_id();
-$showAllMessages = (int)($_GET['all'] ?? 0) === 1;
-$messageLimit = 3;
+$messageLimit = 5;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $err = verify_csrf_request();
@@ -46,6 +46,9 @@ $totalMessages = (int)(db_one(
     $conn,
     "SELECT COUNT(*) AS total FROM mensagem_admin WHERE idCliente = {$uid}"
 )['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalMessages / $messageLimit));
+$pageNumber = min($pageNumber, $totalPages);
+$messageOffset = ($pageNumber - 1) * $messageLimit;
 
 $messages = db_all(
     $conn,
@@ -53,7 +56,8 @@ $messages = db_all(
      FROM mensagem_admin m
      LEFT JOIN admin a ON a.idAdmin = m.idAdminResposta
      WHERE m.idCliente = {$uid}
-     ORDER BY m.criado_em DESC" . ($showAllMessages ? "" : " LIMIT {$messageLimit}")
+     ORDER BY m.criado_em DESC
+     LIMIT {$messageLimit} OFFSET {$messageOffset}"
 );
 
 include '../includes/header.php';
@@ -95,17 +99,6 @@ include '../includes/header.php';
       <div class="card surface-card surface-card--soft">
         <div class="card-body">
           <h3 class="section-card-title" data-t="contact_history">Historico</h3>
-          <?php if ($totalMessages > $messageLimit): ?>
-            <div class="message-history-tools">
-              <p>
-                <span data-t="contact_history_recent">A mostrar as mensagens mais recentes.</span>
-                <span><?= min($totalMessages, $showAllMessages ? $totalMessages : $messageLimit) ?>/<?= $totalMessages ?></span>
-              </p>
-              <a class="btn btn-ghost btn-sm" href="contact_admin.php<?= $showAllMessages ? '' : '?all=1' ?>" data-t="<?= $showAllMessages ? 'contact_show_recent' : 'contact_show_all' ?>">
-                <?= $showAllMessages ? 'Mostrar recentes' : 'Mostrar todas' ?>
-              </a>
-            </div>
-          <?php endif; ?>
           <?php if (!$messages): ?>
             <p data-t="contact_empty">Ainda não enviaste nenhuma mensagem.</p>
           <?php else: ?>
@@ -127,6 +120,21 @@ include '../includes/header.php';
                 </article>
               <?php endforeach; ?>
             </div>
+          <?php endif; ?>
+          <?php if ($totalPages > 1): ?>
+            <nav class="pager" aria-label="Pagination">
+              <?php if ($pageNumber > 1): ?>
+                <a class="btn btn-ghost btn-sm" href="contact_admin.php?page=<?= $pageNumber - 1 ?>" data-t="pagination_previous">Anterior</a>
+              <?php else: ?>
+                <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span>
+              <?php endif; ?>
+              <span class="pager-status"><span data-t="pagination_page">Página</span> <?= $pageNumber ?> <span data-t="pagination_of">de</span> <?= $totalPages ?></span>
+              <?php if ($pageNumber < $totalPages): ?>
+                <a class="btn btn-ghost btn-sm" href="contact_admin.php?page=<?= $pageNumber + 1 ?>" data-t="pagination_next">Seguinte</a>
+              <?php else: ?>
+                <span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span>
+              <?php endif; ?>
+            </nav>
           <?php endif; ?>
         </div>
       </div>

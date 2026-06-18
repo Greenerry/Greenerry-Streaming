@@ -231,12 +231,22 @@ function create_notification(mysqli $conn, int $userId, string $title, string $m
     $allowedTypes = ['sistema', 'produto', 'musica', 'encomenda', 'mensagem', 'password'];
     $type = in_array($type, $allowedTypes, true) ? $type : 'sistema';
 
-    return (bool)db_prepared(
+    $statement = db_prepared(
         $conn,
         "INSERT INTO notificacao (idCliente, titulo, mensagem, tipo) VALUES (?, ?, ?, ?)",
         'isss',
         [$userId, $title, $message, $type]
     );
+    if (!$statement) {
+        return false;
+    }
+
+    // Product and music reviews already send their own detailed email.
+    if (!in_array($type, ['produto', 'musica'], true) && function_exists('send_notification_email')) {
+        send_notification_email($conn, $userId, $title, $message, $type);
+    }
+
+    return true;
 }
 
 function notification_context(mysqli $conn, array $note, int $userId): array

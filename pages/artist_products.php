@@ -5,6 +5,17 @@ require_once '../includes/config.php';
 require_user_login();
 
 $uid = current_user_id();
+$perPage = 10;
+$pageNumber = max(1, (int)($_GET['page'] ?? 1));
+$totalProducts = (int)(db_one_prepared(
+    $conn,
+    "SELECT COUNT(*) AS total FROM produto WHERE idCliente = ?",
+    'i',
+    [$uid]
+)['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalProducts / $perPage));
+$pageNumber = min($pageNumber, $totalPages);
+$offset = ($pageNumber - 1) * $perPage;
 $products = db_all_prepared(
     $conn,
     "SELECT
@@ -18,7 +29,8 @@ $products = db_all_prepared(
      LEFT JOIN encomenda_item ei ON ei.idProduto = p.idProduto
      WHERE p.idCliente = ?
      GROUP BY p.idProduto
-     ORDER BY p.criado_em DESC",
+     ORDER BY p.criado_em DESC
+     LIMIT {$perPage} OFFSET {$offset}",
     'i',
     [$uid]
 );
@@ -41,7 +53,7 @@ include '../includes/header.php';
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input type="search" data-artist-search="artist-products" data-tp="artist_products_search" placeholder="Search products">
         </label>
-        <span class="badge badge-light"><?= count($products) ?> <span data-t="artist_total">total</span></span>
+        <span class="badge badge-light"><?= $totalProducts ?> <span data-t="artist_total">total</span></span>
       </div>
     </div>
     <?php if (!$products): ?>
@@ -103,6 +115,13 @@ include '../includes/header.php';
           </tbody>
         </table>
       </div>
+      <?php if ($totalPages > 1): ?>
+        <nav class="pager" aria-label="Pagination">
+          <?php if ($pageNumber > 1): ?><a class="btn btn-ghost btn-sm" href="artist_products.php?page=<?= $pageNumber - 1 ?>" data-t="pagination_previous">Anterior</a><?php else: ?><span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_previous">Anterior</span><?php endif; ?>
+          <span class="pager-status"><span data-t="pagination_page">Página</span> <?= $pageNumber ?> <span data-t="pagination_of">de</span> <?= $totalPages ?></span>
+          <?php if ($pageNumber < $totalPages): ?><a class="btn btn-ghost btn-sm" href="artist_products.php?page=<?= $pageNumber + 1 ?>" data-t="pagination_next">Seguinte</a><?php else: ?><span class="btn btn-ghost btn-sm is-disabled" data-t="pagination_next">Seguinte</span><?php endif; ?>
+        </nav>
+      <?php endif; ?>
     <?php endif; ?>
   </article>
 </section>
